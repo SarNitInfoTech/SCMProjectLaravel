@@ -6,7 +6,7 @@
     <title></title>
 
     {{-- Favicon --}}
-    <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('images/favicon.ico') }}">
 
     {{-- Main JS --}}
     <script src="{{ asset('js/main.js') }}"></script>
@@ -21,19 +21,13 @@
 </head>
 
 <body>
-    {{-- Header --}}
-    @include("layouts.header")
-
+  
     {{-- Page Content --}}
     <div class="page">
-        <div class="content">
-            <div class="main-content" style="margin-top: 20px !important;">
+       
                 @yield('bodyContent')
-            </div>
-        </div>
+            
 
-        {{-- Footer --}}
-        @include("layouts.footer")
     </div>
 
     {{-- Scroll to Top Button --}}
