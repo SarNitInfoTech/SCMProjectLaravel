@@ -79,12 +79,28 @@
                                         @break
 
                                     @case('action')
-                                      <a href="{{ $value }}"
-   class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm transition-all duration-150">
-    <i class="bi bi-pencil-square text-sm"></i> Edit
-</a>
+    @php
+        // If $value is a string (old format), treat it as edit URL
+        $editUrl = is_array($value) ? ($value['edit'] ?? '#') : $value;
+        $filePoUrl = is_array($value) ? ($value['file_po'] ?? null) : null;
+    @endphp
 
-                                        @break
+    <div class="flex gap-2">
+        {{-- Always show Edit button --}}
+        <a href="{{ $editUrl }}"
+           class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm transition-all duration-150">
+            <i class="bi bi-pencil-square text-sm"></i> Edit
+        </a>
+
+        {{-- Show File PO button only if provided --}}
+        @if ($filePoUrl)
+            <a href="{{ $filePoUrl }}"
+               class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-md shadow-sm transition-all duration-150">
+                <i class="bi bi-file-earmark-plus text-sm"></i> File PO
+            </a>
+        @endif
+    </div>
+    @break
 
                                     @default
                                         {{ $value }}

@@ -12,7 +12,74 @@ use Illuminate\Http\Request;
 
 class IndentController extends Controller
 {
-    // Show the indent form with department dropdown
+   public function index()
+{
+    $title = 'Indent Register List';
+
+    $columns = [
+        ['key' => 'indent_id', 'label' => 'Indent ID'],
+        ['key' => 'department_name', 'label' => 'Department'],
+        ['key' => 'item_description', 'label' => 'Desciption'],
+        ['key' => 'unit', 'label' => 'Unit'],
+        ['key' => 'created_at', 'label' => 'Created At'],
+        ['key' => 'updated_at', 'label' => 'Updated At'],
+        ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
+    ];
+
+    // Join with departments for department name
+    $registers = DB::table('indent_registers')
+        ->join('departments', 'departments.id', '=', 'indent_registers.indent_department')
+        ->select(
+            'indent_registers.id',
+            'indent_registers.indent_id',
+            'departments.name as department_name',
+            'item_description as item_description',
+            'unit as unit',
+            'indent_registers.created_at',
+            'indent_registers.updated_at'
+        )
+        ->orderByDesc('indent_registers.created_at')
+        ->paginate(10);
+
+    // Format rows
+    $rows = $registers->map(function ($reg) {
+    return [
+        'indent_id' => $reg->indent_id,
+        'department_name' => $reg->department_name,
+        'item_description' => $reg->item_description,
+        'unit' => $reg->unit,
+        'created_at' => \Carbon\Carbon::parse($reg->created_at)->format('Y-m-d H:i'),
+        'updated_at' => \Carbon\Carbon::parse($reg->updated_at)->format('Y-m-d H:i'),
+
+        // 👇 Pass both URLs inside an array for 'action'
+        'action' => [
+            'edit' => route('indent.create', $reg->id),
+            'file_po' =>route('indent.create', $reg->id), // only if not already filed
+        ],
+    ];
+});
+
+
+    $searchPlaceholder = 'Search indent records...';
+    $redirectUrl = route('indent.create');
+
+    $customButton = <<<HTML
+<a href="{$redirectUrl}" class="ti-btn ti-btn-primary-full">
+    <i class="bi bi-plus-lg"></i>
+    Add New Indent
+</a>
+HTML;
+
+    return view('pages.indent.indentView.indentView', [
+        'title' => $title,
+        'columns' => $columns,
+        'rows' => $rows,
+        'searchPlaceholder' => $searchPlaceholder,
+        'customButton' => $customButton,
+        'pagination' => $registers,
+    ]);
+}
+
     public function create()
 {   
     $title = 'Draft List';
@@ -33,9 +100,8 @@ class IndentController extends Controller
         ->get();
 
     $columns = [
-    ['key' => 'department_id', 'label' => 'Department ID'],
+        ['key' => 'indent_id', 'label' => 'Indent ID'],
     ['key' => 'department_name', 'label' => 'Department Name'],
-    ['key' => 'indent_id', 'label' => 'Indent ID'],
     ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
 ];
 
@@ -50,8 +116,6 @@ $rows = $rows->map(function ($row) {
 
     return view('pages.indent.generateIndent.generateIndent', compact('departments', 'title','columns', 'rows'));
 }
-
-    // Store the indent
 
    public function store(Request $request)
 {
@@ -109,13 +173,7 @@ $rows = $rows->map(function ($row) {
         'success' => session('success'),
     ]);
 }
-
-
-
-
-
-    // AJAX: Generate next token for selected department
-    public function generateToken(Request $request)
+public function generateToken(Request $request)
 {
     $request->validate([
         'department' => 'required|string'
@@ -156,7 +214,8 @@ public function registerStore(Request $request)
 
     $indent->save();
 
-    return redirect()->route('indent-register.index')->with('success', 'Indent registered successfully!');
+    return redirect()->route('indent.index')->with('success', 'Indent registered successfully!');
+
 }
 
 

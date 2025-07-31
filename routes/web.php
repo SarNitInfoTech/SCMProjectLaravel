@@ -28,10 +28,11 @@ Route::middleware(['auth'])->group(callback: function () {
     Route::get('/unit', [UnitController::class, 'index'])->name('unit.index');
     Route::get('/project', [ProjectController::class, 'index'])->name('project.index');
     Route::get('/department', [DepartmentController::class, 'index'])->name('department.index');
+
+    Route::get('/indent-registers', [IndentController::class, 'index'])->name('indent.index');
     Route::get('/indents/create', [IndentController::class, 'create'])->name('indent.create');
     Route::post('/indents/store', [IndentController::class, 'store'])->name('indent.store');
     Route::post('/indents/generate-token', [IndentController::class, 'generateToken'])->name('indent.token');
-
     Route::post('/indent/token', [IndentController::class, 'generateToken'])->name('indent.token');
     Route::post('/indentregister', [IndentController::class, 'registerStore'])->name('indent-register.store');
     Route::get('/indent/form', [IndentController::class, 'createForm'])->name('indent.create.form');
