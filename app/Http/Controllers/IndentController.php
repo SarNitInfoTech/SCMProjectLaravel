@@ -34,6 +34,7 @@ class IndentController extends Controller
             'indent_registers.indent_id',
             'departments.name as department_name',
             'item_description as item_description',
+            'indent_registers.indent_department as department_id',
             'unit as unit',
             'indent_registers.created_at',
             'indent_registers.updated_at'
@@ -46,6 +47,7 @@ class IndentController extends Controller
     return [
         'indent_id' => $reg->indent_id,
         'department_name' => $reg->department_name,
+        'department_id' => $reg->department_id,
         'item_description' => $reg->item_description,
         'unit' => $reg->unit,
         'created_at' => \Carbon\Carbon::parse($reg->created_at)->format('Y-m-d H:i'),
@@ -54,7 +56,10 @@ class IndentController extends Controller
         // 👇 Pass both URLs inside an array for 'action'
         'action' => [
             'edit' => route('indent.create', $reg->id),
-            'file_po' =>route('indent.create', $reg->id), // only if not already filed
+           'file_po' => route('po-register.create', [
+                'indent_id' => $reg->indent_id,
+                'department_id' => $reg->department_id,
+            ]),// only if not already filed
         ],
     ];
 });

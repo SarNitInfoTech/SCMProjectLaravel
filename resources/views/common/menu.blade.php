@@ -44,20 +44,33 @@
 
 
 <!-- Start::Master - Unit -->
+<!-- Indent Generate -->
 <li class="slide">
 	<a href="{{ route('indent.create') }}" class="side-menu__item">
 		<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/>
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
 		</svg>
 		<span class="side-menu__label">Indent Generate</span>
 	</a>
 </li>
+
+<!-- Indent Register List -->
 <li class="slide">
 	<a href="{{ route('indent.index') }}" class="side-menu__item">
 		<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/>
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
 		</svg>
 		<span class="side-menu__label">Indent Register List</span>
+	</a>
+</li>
+
+<!-- Purchase Order List -->
+<li class="slide">
+	<a href="{{ route('indentroview.index') }}" class="side-menu__item">
+		<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h9m-6 4h6" />
+		</svg>
+		<span class="side-menu__label">Purchase Order List</span>
 	</a>
 </li>
 

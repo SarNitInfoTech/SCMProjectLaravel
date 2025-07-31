@@ -6,6 +6,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\IndentController;
+use App\Http\Controllers\PORegisterController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -38,9 +39,14 @@ Route::middleware(['auth'])->group(callback: function () {
     Route::get('/indent/form', [IndentController::class, 'createForm'])->name('indent.create.form');
     Route::post('/indent/fill', [IndentController::class, 'redirectToForm'])->name('indent.redirect.to.form');
     Route::post('/indent/redirect', [IndentController::class, 'redirectToForm'])->name('indent.redirect.to.form');
+    Route::get('/indents/po/index', [PORegisterController::class, 'index'])->name('indentroview.index');
 
+    Route::resource('po-register', PORegisterController::class);
+    Route::get('po-register/indent/{indent_id}/department/{department_id}', [PORegisterController::class, 'viewByIndent'])->name('po-register.viewByIndent');
+    Route::get('/po/export/excel/{indent_id}/{department_id}', [PORegisterController::class, 'downloadPORegisterExcel'])
+    ->name('po.export.excel');
 
-
+    Route::get('/po/export/pdf/{indent_id}/{department_id}', [PORegisterController::class, 'downloadPORegisterPDF'])->name('po.export.pdf');
 
 
 

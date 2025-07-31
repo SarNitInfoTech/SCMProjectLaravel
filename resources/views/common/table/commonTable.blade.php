@@ -83,6 +83,7 @@
         // If $value is a string (old format), treat it as edit URL
         $editUrl = is_array($value) ? ($value['edit'] ?? '#') : $value;
         $filePoUrl = is_array($value) ? ($value['file_po'] ?? null) : null;
+        $viewPageUrl = is_array($value) ? ($value['viewPage'] ?? null) : null;
     @endphp
 
     <div class="flex gap-2">
@@ -97,6 +98,12 @@
             <a href="{{ $filePoUrl }}"
                class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-md shadow-sm transition-all duration-150">
                 <i class="bi bi-file-earmark-plus text-sm"></i> File PO
+            </a>
+        @endif
+         @if ($viewPageUrl)
+            <a href="{{ $viewPageUrl }}"
+               class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md shadow-sm transition-all duration-150">
+                <i class="bi bi-file-text"></i>View
             </a>
         @endif
     </div>
