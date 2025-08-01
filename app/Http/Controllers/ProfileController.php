@@ -11,13 +11,13 @@ class ProfileController extends Controller
     public function show()
     {
         $user = Auth::user();
-        return view('pages.user.profile.view', compact('user'));
+        return view('pages.user.profile.viewProfile.viewProfile', compact('user'));
     }
 
     public function edit()
     {
         $user = Auth::user();
-        return view('pages.user.profile.edit', compact('user'));
+        return view('pages.user.profile.editProfile.editProfile', compact('user'));
     }
 
     public function update(Request $request)

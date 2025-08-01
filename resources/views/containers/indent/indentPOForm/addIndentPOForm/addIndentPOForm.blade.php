@@ -4,7 +4,6 @@
 
         <input type="hidden" name="indent_id" value="{{ $indent_id }}">
         <input type="hidden" name="department_id" value="{{ $department_id }}">
-        <input type="hidden" name="expected_days" id="expected_days_hidden" value="">
 
         <div class="grid grid-cols-4 gap-6">
             <div class="w-full col-span-1">
@@ -13,7 +12,8 @@
             </div>
             <div class="w-full col-span-1">
                 <label class="form-label text-black block mb-1">Department</label>
-                <input type="text" class="form-control w-full bg-gray-100" value="{{ $department_name }}" readonly disabled>
+                <input type="text" class="form-control w-full bg-gray-100" value="{{ $department_name }}" readonly
+                    disabled>
             </div>
             <div class="w-full col-span-1">
                 <label for="po_date" class="form-label text-black block mb-1">PO Date</label>
@@ -21,11 +21,11 @@
             </div>
             <div class="w-full col-span-1">
                 <label for="status" class="form-label text-black block mb-1">Status</label>
-                <select name="status" id="status" class="form-control w-full" required>
-                    @foreach ($statusList as $status)
-                        <option value="{{ $status }}" {{ old('status') == $status ? 'selected' : '' }}>{{ $status }}</option>
-                    @endforeach
+                <select name="status" id="status" class="form-control w-full bg-gray-100 cursor-not-allowed" required
+                    disabled>
+                    <option value="Pending" selected>Pending</option>
                 </select>
+                <input type="hidden" name="status" value="Pending">
             </div>
         </div>
 
@@ -44,19 +44,27 @@
             </div>
             <div class="w-full col-span-1">
                 <label for="debit_head" class="form-label text-black block mb-1">Debit Head</label>
-                <input type="text" name="debit_head" id="debit_head" class="form-control w-full">
+                <select name="debit_head" id="debit_head" class="form-control w-full" required>
+                    <option value="" disabled selected>Select Debit Head</option>
+                    @foreach ($departmentHeads as $head)
+                        <option value="{{ $head->id }}">{{ $head->department_head }}</option>
+                    @endforeach
+                </select>
             </div>
+
         </div>
 
         <div class="w-full">
             <label for="item_description" class="form-label text-black block mb-1">Item Description</label>
-            <textarea name="item_description" id="item_description" class="form-control w-full" rows="3" required></textarea>
+            <textarea name="item_description" id="item_description" class="form-control w-full" rows="3"
+                required></textarea>
         </div>
 
         <div class="grid grid-cols-4 gap-6">
             <div class="w-full col-span-1">
                 <label for="expected_days" class="form-label text-black block mb-1">Expected Days</label>
-                <input type="text" id="expected_days" class="form-control w-full bg-gray-100" value="" readonly disabled>
+                <input type="text" id="expected_days" class="form-control w-full bg-gray-100" readonly disabled>
+                <input type="hidden" name="expected_days" id="expected_days_hidden">
             </div>
             <div class="w-full col-span-1">
                 <label for="expected_date" class="form-label text-black block mb-1">Expected Date</label>
@@ -68,7 +76,7 @@
             </div>
             <div class="w-full col-span-1">
                 <label for="receiving_date" class="form-label text-black block mb-1">Receiving Date</label>
-                <input type="text" name="receiving_date" id="receiving_date" class="form-control w-full">
+                <input type="date" name="receiving_date" id="receiving_date" class="form-control w-full">
             </div>
         </div>
 
@@ -79,7 +87,8 @@
             </div>
             <div class="w-full col-span-1">
                 <label for="delay_in_days" class="form-label text-black block mb-1">Delay (Days)</label>
-                <input type="number" name="delay_in_days" id="delay_in_days" class="form-control w-full">
+                <input type="text" name="delay_in_days" id="delay_in_days" class="form-control w-full bg-gray-100"
+                    readonly disabled>
             </div>
             <div class="w-full col-span-1">
                 <label for="store_indent_no" class="form-label text-black block mb-1">Store Indent No.</label>
@@ -102,22 +111,48 @@
     document.addEventListener('DOMContentLoaded', function () {
         const poDateInput = document.getElementById('po_date');
         const expectedDateInput = document.getElementById('expected_date');
+        const receivingDateInput = document.getElementById('receiving_date');
+
         const expectedDaysDisplay = document.getElementById('expected_days');
         const expectedDaysHidden = document.getElementById('expected_days_hidden');
+        const delayDaysInput = document.getElementById('delay_in_days');
 
         function calculateExpectedDays() {
             const poDate = new Date(poDateInput.value);
             const expectedDate = new Date(expectedDateInput.value);
 
-            if (!isNaN(poDate.getTime()) && !isNaN(expectedDate.getTime())) {
-                const diffTime = expectedDate - poDate;
-                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-                expectedDaysDisplay.value = diffDays;
-                expectedDaysHidden.value = diffDays;
+            if (!isNaN(poDate) && !isNaN(expectedDate)) {
+                const days = Math.round((expectedDate - poDate) / (1000 * 60 * 60 * 24));
+                expectedDaysDisplay.value = days;
+                expectedDaysHidden.value = days;
+            } else {
+                expectedDaysDisplay.value = '';
+                expectedDaysHidden.value = '';
             }
         }
 
-        poDateInput.addEventListener('change', calculateExpectedDays);
-        expectedDateInput.addEventListener('change', calculateExpectedDays);
+        function calculateDelayDays() {
+            const expectedDate = new Date(expectedDateInput.value);
+            const receivingDate = new Date(receivingDateInput.value);
+
+            if (!isNaN(expectedDate) && !isNaN(receivingDate)) {
+                const delay = Math.round((receivingDate - expectedDate) / (1000 * 60 * 60 * 24));
+                delayDaysInput.value = delay >= 0 ? delay : 0;
+            } else {
+                delayDaysInput.value = '';
+            }
+        }
+
+        poDateInput.addEventListener('change', () => {
+            calculateExpectedDays();
+            calculateDelayDays(); // recalculate delay in case expected date is changed too
+        });
+
+        expectedDateInput.addEventListener('change', () => {
+            calculateExpectedDays();
+            calculateDelayDays();
+        });
+
+        receivingDateInput.addEventListener('change', calculateDelayDays);
     });
 </script>

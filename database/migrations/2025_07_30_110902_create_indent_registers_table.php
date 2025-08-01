@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->string('indent_project')->nullable();
             $table->text('item_description');
             $table->string('unit')->nullable();
+            $table->string('status')->default('Pending');
             $table->integer('quantity_required')->default(0);
             $table->text('purchased_order')->nullable(); // text instead of boolean
             $table->integer('quantity_received')->default(0);

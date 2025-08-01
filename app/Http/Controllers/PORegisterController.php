@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Department;
+use App\Models\DepartmentHead;
 use App\Models\PORegister;
 use App\Enums\POStatus;
+use App\Enums\Notification;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -72,7 +74,7 @@ public function index()
         ];
     });
 
-    return view('pages.indent.indentPOView.indentPOView', [
+    return view('pages.indent.indentPOForm.listIndentPOForm.listIndentPOForm', [
         'title' => $title,
         'columns' => $columns,
         'rows' => $rows,
@@ -91,20 +93,22 @@ public function index()
 {
     $indent_id = $request->get('indent_id');
     $department_id = $request->get('department_id');
-
+    $departmentHeads = DepartmentHead::where('department_id', $department_id)->get();
     $statusList = POStatus::values();
+    
 
 
     // You can also fetch department name from DB if needed
     $department_name = Department::find($department_id)?->name ?? '';
 
-    return view('pages.indent.indentPOForm.indentPOForm', compact('indent_id', 'department_id', 'department_name','statusList'));
+    return view('pages.indent.indentPOForm.addIndentPOForm.addIndentPOForm', compact('indent_id','departmentHeads', 'department_id', 'department_name','statusList'));
 }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+   
+public function store(Request $request)
 {
     $validated = $request->validate([
         'indent_id'        => 'required|integer|exists:indent_registers,indent_id',
@@ -116,7 +120,7 @@ public function index()
         'po_amount'        => 'required|numeric|min:0',
         'debit_head'       => 'nullable|string|max:255',
         'item_description' => 'required|string',
-        'expected_days' => 'nullable|string|max:255',
+        'expected_days'    => 'nullable|string|max:255',
         'expected_date'    => 'nullable|date',
         'invoice_date'     => 'nullable|date',
         'receiving_date'   => 'nullable|string|max:100',
@@ -126,7 +130,17 @@ public function index()
         'invoice'          => 'nullable|string|max:100',
     ]);
 
-    PORegister::create($validated);
+    // ✅ Store PO data
+    $po = PORegister::create($validated);
+
+    // ✅ Generate Notification
+    Notification::create([
+        'title' => "New PO Registered: {$po->po_wo_no}",
+        'link' => route('po-register.index'),
+        'icon' => 'la la-file-invoice',
+        'bg_color' => 'bg-primary',
+        'is_read' => false,
+    ]);
 
     return redirect()->route('po-register.index')->with('success', 'PO Registered successfully.');
 }
@@ -223,7 +237,7 @@ public function viewByIndent($indent_id, $department_id)
 
     $po = $allPos->first(); // Used for summary
 
-    return view('pages.indent.indentPOViewDetail.indentPOViewDetail', compact('title', 'po', 'allPos', 'indent_id', 'department_id'));
+    return view('pages.indent.indentPOForm.viewDetailIndentPOForm.viewDetailIndentPOForm', compact('title', 'po', 'allPos', 'indent_id', 'department_id'));
 }
 
 

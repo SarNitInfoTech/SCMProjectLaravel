@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Unit;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 
 class UnitController extends Controller
@@ -41,7 +42,7 @@ public function index()
 </a>
 HTML;
 
-    return view('pages.units.Units', [
+    return view('pages.units.listUnits.listUnits', [
         'title' => $title,
         'columns' => $columns,
         'rows' => $rows,
@@ -58,16 +59,29 @@ public function create()
 
 public function store(Request $request)
 {
+    // ✅ Validate input
     $request->validate([
         'name' => 'required|string|max:255',
     ]);
 
-    Unit::create([
+    // ✅ Create the Unit
+    $unit = Unit::create([
         'name' => $request->name,
     ]);
 
+    // ✅ Create Notification
+    Notification::create([
+        'title'    => "New Unit Created: {$unit->name}",
+        'link'     => route('units.index'),
+        'icon'     => 'la la-balance-scale', // Optional: use icon related to units
+        'bg_color' => 'bg-primary',
+        'is_read'  => false,
+    ]);
+
+    // ✅ Redirect back with success message
     return redirect()->route('units.index')->with('success', 'Unit created successfully!');
 }
+
 public function edit($id)
 {
     $Unit = Unit::findOrFail($id);

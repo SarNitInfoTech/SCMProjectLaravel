@@ -7,7 +7,7 @@
         <div class="xxl:col-span-4 xl:col-span-4 lg:col-span-4 md:col-span-6 sm:col-span-8 col-span-12">
             <div class="my-[2.5rem] flex justify-center">
                 <a href="{{ url('/') }}">
-                    <img src="{{ asset('images/nitra-logo.png') }}" alt="NITRA Logo" class="desktop-logo h-12">
+                    <img src="{{ asset('images/logo.png') }}" alt="NITRA Logo" class="desktop-logo h-12">
                 </a>
             </div>
             <div class="box">

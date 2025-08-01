@@ -1,5 +1,4 @@
 @extends("layouts.layout")
 @section("bodyContent")
-
-@include("containers.user.profile.view")
+@include("common.table.commonTable")
 @endsection

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 
 class ProjectController extends Controller
@@ -39,7 +40,7 @@ class ProjectController extends Controller
 </a>
 HTML;
 
-        return view('pages.projects.projects', [
+        return view('pages.projects.listProjects.listProjects', [
             'title' => $title,
             'columns' => $columns,
             'rows' => $rows,
@@ -54,18 +55,30 @@ HTML;
         return view('pages.projects.addProjects.addProjects');
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+  public function store(Request $request)
+{
+    // ✅ Validate project input
+    $request->validate([
+        'name' => 'required|string|max:255',
+    ]);
 
-        Project::create([
-            'name' => $request->name,
-        ]);
+    // ✅ Create the project
+    $project = Project::create([
+        'name' => $request->name,
+    ]);
 
-        return redirect()->route('projects.index')->with('success', 'Project created successfully!');
-    }
+    // ✅ Create a notification
+    Notification::create([
+        'title'    => "New Project Created: {$project->name}",
+        'link'     => route('projects.index'),
+        'icon'     => 'la la-folder-plus',
+        'bg_color' => 'bg-success',
+        'is_read'  => false,
+    ]);
+
+    // ✅ Redirect with success message
+    return redirect()->route('projects.index')->with('success', 'Project created successfully!');
+}
 
     public function edit($id)
     {

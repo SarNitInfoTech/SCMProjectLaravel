@@ -1,5 +1,5 @@
 @extends("layouts.layout")
 @section("bodyContent")
 
-@include("containers.indent.indentForm.indentForm")
+@include("containers.user.profile.viewProfile.viewProfile")
 @endsection

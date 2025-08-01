@@ -23,6 +23,7 @@
 <body>
     {{-- Header --}}
     @include("layouts.header")
+    @include('common.toast.commonToast')
 
     {{-- Page Content --}}
     <div class="page">

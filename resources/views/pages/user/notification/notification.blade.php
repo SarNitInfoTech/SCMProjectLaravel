@@ -1,5 +1,5 @@
 @extends("layouts.layout")
 @section("bodyContent")
 
-@include("common.table.commonTable")
+@include("containers.user.notification.notification")
 @endsection

@@ -4,7 +4,7 @@
         <span class="text-gray dark:text-defaulttextcolor/50">
             Copyright © <span id="year"></span>
             <a href="https://www.nitratextile.org/" target="_blank" class="text-defaulttextcolor font-semibold dark:text-defaulttextcolor">
-                Nitra Technical Campus
+                Northern India Textile Research Association
             </a>.
             All rights reserved.
         </span>

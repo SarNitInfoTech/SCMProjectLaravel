@@ -41,7 +41,7 @@ public function index()
 </a>
 HTML;
 
-    return view('pages.departments.departments', [
+    return view('pages.departments.listDepartments.listDepartments', [
         'title' => $title,
         'columns' => $columns,
         'rows' => $rows,
