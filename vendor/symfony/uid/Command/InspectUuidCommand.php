@@ -74,7 +74,7 @@ EOF
 
         if ($uuid instanceof TimeBasedUidInterface) {
             $rows[] = new TableSeparator();
-            $rows[] = ['Time', $uuid->getDateTime()->format('Y-m-d H:i:s.u \U\T\C')];
+            $rows[] = ['Time', $uuid->getDateTime()->format('d-m-Y:s.u \U\T\C')];
         }
 
         $io->table(['Label', 'Value'], $rows);

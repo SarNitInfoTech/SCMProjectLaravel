@@ -11,6 +11,7 @@
                 </a>
             </div>
             <div class="box">
+                
                 <div class="box-body !p-[3rem]">
                     <p class="h5 font-semibold mb-2 text-center !text-defaulttextcolor dark:!text-defaulttextcolor/85">NITRA Login</p>
                     <p class="mb-4 text-[#8c9097] opacity-[0.7] font-normal text-center">Welcome back! Please log in to continue.</p>
@@ -22,6 +23,7 @@
                                 <label for="email" class="form-label text-default">Email Address</label>
                                 <input type="email" class="form-control form-control-lg w-full !rounded-md" id="email" name="email" placeholder="you@example.com" required>
                             </div>
+                            
 
                             <div class="xl:col-span-12 col-span-12">
                                 <label for="password" class="form-label text-default block">Password
@@ -49,8 +51,9 @@
                                 </button>
                             </div>
                         </div>
+                        
                     </form>
-
+@include("common.toast.commonToast")
                     {{-- <div class="text-center">
                         <p class="text-[0.75rem] text-[#8c9097] mt-4">Don’t have an account?
                             <a href="{{ route('register') }}" class="text-primary">Register</a>

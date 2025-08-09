@@ -1,33 +1,18 @@
 <aside class="app-sidebar" id="sidebar">
-
-	<!-- Start::main-sidebar-header -->
 	<div class="main-sidebar-header">
 		<a href="{{ url('/') }}" class="header-logo flex items-center space-x-2">
-			<!-- Show on full desktop view -->
 			<img src="{{ asset('images/logo.png') }}" alt="logo" class="desktop-logo h-[40px]">
-
-			<!-- Show only logo on toggle/sidebar collapsed -->
 			<img src="{{ asset('images/logo.png') }}" alt="logo" class="toggle-logo h-[40px]">
 		</a>
 	</div>
-
-	<!-- End::main-sidebar-header -->
-
-	<!-- Start::main-sidebar -->
 	<div class="main-sidebar" id="sidebar-scroll">
-
-		<!-- Start::nav -->
 		<nav class="main-menu-container nav nav-pills flex-column sub-open">
 			<div class="slide-left" id="slide-left"><svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24"
 					height="24" viewBox="0 0 24 24">
 					<path d="M13.293 6.293 7.586 12l5.707 5.707 1.414-1.414L10.414 12l4.293-4.293z"></path>
 				</svg></div>
 			<ul class="main-menu">
-				<!-- Start::slide__category -->
 				<li class="slide__category"><span class="category-name">Main</span></li>
-				<!-- End::slide__category -->
-
-				<!-- Dashboard Main Link -->
 				<li class="slide">
 					<a href="{{ route('dashboard.index') }}" class="side-menu__item">
 						<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 24 24">
@@ -39,20 +24,14 @@
 						<span class="side-menu__label">Dashboard</span>
 					</a>
 				</li>
-
 				<li class="slide__category">
 					<span class="category-name">Indent</span>
 				</li>
-				<!-- End::Category Label -->
-
-
-				<!-- Start::Master - Unit -->
-				<!-- Indent Generate -->
 				<li class="slide">
 					<a href="{{ route('indent.create') }}" class="side-menu__item">
 						<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
 							stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
 						</svg>
 						<span class="side-menu__label">Indent Generate</span>
 					</a>
@@ -63,7 +42,7 @@
 					<a href="{{ route('indent.index') }}" class="side-menu__item">
 						<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
 							stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
 						</svg>
 						<span class="side-menu__label">Indent Register List</span>
 					</a>
@@ -74,7 +53,7 @@
 					<a href="{{ route('indentroview.index') }}" class="side-menu__item">
 						<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
 							stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
 								d="M3 10h18M3 6h18M3 14h9m-6 4h6" />
 						</svg>
 						<span class="side-menu__label">Purchase Order List</span>
@@ -83,77 +62,121 @@
 
 
 
+@if(auth()->check() && auth()->user()->role === 'admin')
+	<!-- Start::Category Label -->
+	<li class="slide__category">
+		<span class="category-name">Master</span>
+	</li>
+	<!-- End::Category Label -->
 
-				<!-- Start::Category Label -->
-				<li class="slide__category">
-					<span class="category-name">Master</span>
-				</li>
-				<!-- End::Category Label -->
+	<!-- Master - Unit -->
+	<li class="slide">
+		<a href="{{ route('unit.index') }}" class="side-menu__item">
+			<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 7h18M3 12h18M3 17h18" />
+			</svg>
+			<span class="side-menu__label">Unit</span>
+		</a>
+	</li>
 
+	<!-- Master - Project -->
+	<li class="slide">
+		<a href="{{ route('project.index') }}" class="side-menu__item">
+			<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+			</svg>
+			<span class="side-menu__label">Project</span>
+		</a>
+	</li>
 
-				<!-- Start::Master - Unit -->
-				<li class="slide">
-					<a href="{{ route('unit.index') }}" class="side-menu__item">
-						<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
-							stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-								d="M3 7h18M3 12h18M3 17h18" />
-						</svg>
-						<span class="side-menu__label">Unit</span>
-					</a>
-				</li>
+	<!-- Master - Department -->
+	<li class="slide">
+		<a href="{{ route('department.index') }}" class="side-menu__item">
+			<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 10h18M4 6h16a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1z" />
+			</svg>
+			<span class="side-menu__label">Department</span>
+		</a>
+	</li>
 
-				<!-- Start::Master - Project -->
-				<li class="slide">
-					<a href="{{ route('project.index') }}" class="side-menu__item">
-						<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
-							stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-						</svg>
-						<span class="side-menu__label">Project</span>
-					</a>
-				</li>
+	<!-- Department Heads -->
+	<li class="slide">
+		<a href="{{ route('departmentHead.list') }}" class="side-menu__item">
+			<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5.121 17.804A1 1 0 016 17h12a1 1 0 01.879.515l2 4A1 1 0 0120 23H4a1 1 0 01-.879-1.485l2-4zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+			</svg>
+			<span class="side-menu__label">Department Heads</span>
+		</a>
+	</li>
 
-				<!-- Start::Master - Department -->
-				<li class="slide">
-					<a href="{{ route('department.index') }}" class="side-menu__item">
-						<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
-							stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-								d="M3 10h18M4 6h16a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1z" />
-						</svg>
-						<span class="side-menu__label">Department</span>
-					</a>
-				</li>
+	<!-- Master - Users -->
+	<li class="slide">
+		<a href="{{ route('users.list') }}" class="side-menu__item">
+			<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20h6m-3-16a4 4 0 110 8 4 4 0 010-8z" />
+			</svg>
+			<span class="side-menu__label">Users</span>
+		</a>
+	</li>
 
-				<li class="slide">
-					<a href="{{ route('departmentHead.list') }}" class="side-menu__item">
-						<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
-							stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-								d="M5.121 17.804A1 1 0 016 17h12a1 1 0 01.879.515l2 4A1 1 0 0120 23H4a1 1 0 01-.879-1.485l2-4zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-						</svg>
-						<span class="side-menu__label">Department Heads</span>
-					</a>
-				</li>
+	<!-- Master - Vendors -->
+	<li class="slide">
+		<a href="{{ route('vendors.list') }}" class="side-menu__item">
+			<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 10h18M3 6h18M3 14h18M3 18h18" />
+			</svg>
+			<span class="side-menu__label">Vendors</span>
+		</a>
+	</li>
 
+	<!-- Master - Items -->
+	<li class="slide">
+		<a href="{{ route('items.index') }}" class="side-menu__item">
+			<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 10h16M4 14h10M4 18h10" />
+			</svg>
+			<span class="side-menu__label">Items</span>
+		</a>
+	</li>
+@endif
 
-				<!-- Start::Category Label -->
-				<li class="slide__category">
-					<span class="category-name">Other</span>
-				</li>
-				<!-- End::Category Label -->
-				<!-- Start::Master - Notification -->
+<li class="slide__category"><span class="category-name">Other</span></li>
+
 <li class="slide">
     <a href="{{ route('notifications.index') }}" class="side-menu__item">
         <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
              stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         <span class="side-menu__label">Notifications</span>
     </a>
 </li>
+<li class="slide">
+    <a href="{{ route('profile.show') }}" class="side-menu__item">
+        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                  d="M5.121 17.804A1 1 0 016 17h12a1 1 0 01.879.515l2 4A1 1 0 0120 23H4a1 1 0 01-.879-1.485l2-4zM12 11a4 4 0 100-8 4 4 0 000 8z" />
+        </svg>
+        <span class="side-menu__label">My Profile</span>
+    </a>
+</li>
+<li class="slide">
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit" class="side-menu__item w-full text-left">
+            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span class="side-menu__label">Logout</span>
+        </button>
+    </form>
+</li>
+
+
 <!-- End::Master - Notification -->
 
 

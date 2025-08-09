@@ -3,46 +3,70 @@
         @csrf
 
         <input type="hidden" name="indent_id" value="{{ $indent_id }}">
-        <input type="hidden" name="department_id" value="{{ $department_id }}">
+        <input type="hidden" name="department_id" value="{{ $department_id}}">
 
         <div class="grid grid-cols-4 gap-6">
             <div class="w-full col-span-1">
-                <label class="form-label text-black block mb-1">Indent ID</label>
+                <label class="form-label text-black block mb-1">Indent ID <span class="text-red-500">*</span></label>
                 <input type="text" class="form-control w-full bg-gray-100" value="{{ $indent_id }}" readonly disabled>
             </div>
             <div class="w-full col-span-1">
-                <label class="form-label text-black block mb-1">Department</label>
-                <input type="text" class="form-control w-full bg-gray-100" value="{{ $department_name }}" readonly
+                <label class="form-label text-black block mb-1">Department <span class="text-red-500">*</span></label>
+                <input type="text" class="form-control w-full bg-gray-100" value="{{ $department_id}}" readonly
                     disabled>
             </div>
             <div class="w-full col-span-1">
-                <label for="po_date" class="form-label text-black block mb-1">PO Date</label>
-                <input type="date" name="po_date" id="po_date" class="form-control w-full" required>
-            </div>
-            <div class="w-full col-span-1">
-                <label for="status" class="form-label text-black block mb-1">Status</label>
+                <label for="status" class="form-label text-black block mb-1">Status <span class="text-red-500">*</span></label>
                 <select name="status" id="status" class="form-control w-full bg-gray-100 cursor-not-allowed" required
                     disabled>
                     <option value="Pending" selected>Pending</option>
                 </select>
                 <input type="hidden" name="status" value="Pending">
             </div>
+            <div class="w-full col-span-1">
+                <label for="po_date" class="form-label text-black block mb-1">PO Date <span class="text-red-500">*</span></label>
+                <input type="date" name="po_date" id="po_date" class="form-control w-full" required>
+            </div>
         </div>
 
         <div class="grid grid-cols-4 gap-6">
             <div class="w-full col-span-1">
-                <label for="party_name" class="form-label text-black block mb-1">Party Name</label>
-                <input type="text" name="party_name" id="party_name" class="form-control w-full" required>
+                <label for="party_name" class="form-label text-black block mb-1">Party Name <span class="text-red-500">*</span></label>
+                <select name="party_name" id="party_name" class="form-control w-full" required>
+                    <option value="">Select party</option>
+                    @foreach ($projectList as $vendor)
+                        <option value="{{ $vendor->name }}">{{ $vendor->name }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="w-full col-span-1">
-                <label for="po_wo_no" class="form-label text-black block mb-1">PO/WO No.</label>
+                <label for="po_wo_no" class="form-label text-black block mb-1">PO/WO No. <span class="text-red-500">*</span></label>
                 <input type="text" name="po_wo_no" id="po_wo_no" class="form-control w-full" required>
             </div>
             <div class="w-full col-span-1">
-                <label for="po_amount" class="form-label text-black block mb-1">PO Amount</label>
-                <input type="number" name="po_amount" id="po_amount" class="form-control w-full" step="0.01" required>
+                <label for="po_amount" class="form-label text-black block mb-1">PO Amount <span class="text-red-500">*</span></label>
+                <input
+  type="number"
+  name="po_amount"
+  id="po_amount"
+  class="form-control w-full"
+  step="1"
+  min="0"
+  inputmode="decimal"
+  required
+  onkeydown="if (['e','E','+','-'].includes(event.key)) event.preventDefault();"
+  oninput="
+    this.value = this.value.replace(/[^0-9.]/g,'');
+    this.value = this.value.replace(/(\..*)\./g,'$1');
+    const p = this.value.split('.');
+    if (p[1]) p[1] = p[1].slice(0,2);
+    this.value = p.join('.');
+    if (this.value.startsWith('.')) this.value = '0' + this.value;
+  "
+/>
+
             </div>
-            <div class="w-full col-span-1">
+            {{-- <div class="w-full col-span-1">
                 <label for="debit_head" class="form-label text-black block mb-1">Debit Head</label>
                 <select name="debit_head" id="debit_head" class="form-control w-full" required>
                     <option value="" disabled selected>Select Debit Head</option>
@@ -50,56 +74,34 @@
                         <option value="{{ $head->id }}">{{ $head->department_head }}</option>
                     @endforeach
                 </select>
-            </div>
+            </div> --}}
 
-        </div>
+     
 
-        <div class="w-full">
-            <label for="item_description" class="form-label text-black block mb-1">Item Description</label>
-            <textarea name="item_description" id="item_description" class="form-control w-full" rows="3"
-                required></textarea>
+        <div class="w-full col-span-1">
+            <label for="item_description" class="form-label text-black block mb-1">Item Description <span class="text-red-500">*</span></label>
+            <select class="ti-form-select rounded-sm !py-2 !px-3 choices-multiple-remove" name="item_description[]"
+                id="item_description" multiple required>
+                @foreach ($items as $item)
+                    <option value="{{ $item['description'] }}">{{ $item['description'] }}</option>
+                @endforeach
+            </select>
         </div>
+    </div>
 
         <div class="grid grid-cols-4 gap-6">
+            <div class="w-full col-span-1">
+                <label for="expected_date" class="form-label text-black block mb-1">Expected Date <span class="text-red-500">*</span></label>
+                <input type="date" name="expected_date" id="expected_date" class="form-control w-full">
+            </div>
             <div class="w-full col-span-1">
                 <label for="expected_days" class="form-label text-black block mb-1">Expected Days</label>
                 <input type="text" id="expected_days" class="form-control w-full bg-gray-100" readonly disabled>
                 <input type="hidden" name="expected_days" id="expected_days_hidden">
             </div>
-            <div class="w-full col-span-1">
-                <label for="expected_date" class="form-label text-black block mb-1">Expected Date</label>
-                <input type="date" name="expected_date" id="expected_date" class="form-control w-full">
-            </div>
-            <div class="w-full col-span-1">
-                <label for="invoice_date" class="form-label text-black block mb-1">Invoice Date</label>
-                <input type="date" name="invoice_date" id="invoice_date" class="form-control w-full">
-            </div>
-            <div class="w-full col-span-1">
-                <label for="receiving_date" class="form-label text-black block mb-1">Receiving Date</label>
-                <input type="date" name="receiving_date" id="receiving_date" class="form-control w-full">
-            </div>
+            
         </div>
 
-        <div class="grid grid-cols-4 gap-6">
-            <div class="w-full col-span-2">
-                <label for="invoice" class="form-label text-black block mb-1">Invoice Number</label>
-                <input type="text" name="invoice" id="invoice" class="form-control w-full">
-            </div>
-            <div class="w-full col-span-1">
-                <label for="delay_in_days" class="form-label text-black block mb-1">Delay (Days)</label>
-                <input type="text" name="delay_in_days" id="delay_in_days" class="form-control w-full bg-gray-100"
-                    readonly disabled>
-            </div>
-            <div class="w-full col-span-1">
-                <label for="store_indent_no" class="form-label text-black block mb-1">Store Indent No.</label>
-                <input type="text" name="store_indent_no" id="store_indent_no" class="form-control w-full">
-            </div>
-        </div>
-
-        <div class="w-full">
-            <label for="remarks" class="form-label text-black block mb-1">Remarks</label>
-            <textarea name="remarks" id="remarks" class="form-control w-full" rows="2"></textarea>
-        </div>
 
         <div class="flex justify-end">
             <button type="submit" class="ti-btn ti-btn-primary-full">Submit PO</button>
@@ -156,3 +158,15 @@
         receivingDateInput.addEventListener('change', calculateDelayDays);
     });
 </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        new Choices('#item_description', {
+            removeItemButton: true,
+            placeholderValue: 'Select item(s)',
+            searchPlaceholderValue: 'Search items...',
+        });
+    });
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>

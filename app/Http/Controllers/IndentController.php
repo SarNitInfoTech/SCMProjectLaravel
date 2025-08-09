@@ -5,6 +5,7 @@ use App\Models\Department;
 use App\Models\IndentRegister;
 use App\Models\IndentTicket;
 use App\Models\Notification;
+use App\Models\Item;
 use App\Models\Project;
 use App\Models\Unit;
 use Illuminate\Http\Request;
@@ -13,84 +14,112 @@ use Illuminate\Validation\Rule;
 
 class IndentController extends Controller
 {
-    public function index()
-    {
-        $title = 'Indent Register List';
+  public function index()
+{
+    $title = 'Indent Register List';
 
-        $columns = [
-            ['key' => 'indent_id', 'label' => 'Indent ID'],
-            ['key' => 'department_name', 'label' => 'Department'],
-            ['key' => 'item_description', 'label' => 'Desciption'],
-            ['key' => 'unit', 'label' => 'Unit'],
-            ['key' => 'status', 'label' => 'Status'],  // ✅ Added status
-            ['key' => 'created_at', 'label' => 'Created At'],
-            ['key' => 'updated_at', 'label' => 'Updated At'],
-            ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
-        ];
+    $columns = [
+        ['key' => 'indent_id', 'label' => 'Indent ID'],
+        ['key' => 'department_name', 'label' => 'Department'],
+        ['key' => 'item_description', 'label' => 'Description'], // Will hold comma-separated items
+        ['key' => 'status', 'label' => 'Status', 'type' => 'status'],
+        ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
+    ];
 
-        // Join with departments for department name
-        $registers = DB::table('indent_registers')
-            ->join('departments', 'departments.id', '=', 'indent_registers.indent_department')
-            ->select(
-                'indent_registers.id',
-                'indent_registers.indent_id',
-                'departments.name as department_name',
-                'item_description as item_description',
-                'indent_registers.indent_department as department_id',
-                'unit as unit',
-                'status',
-                'indent_registers.created_at',
-                'indent_registers.updated_at'
-            )
-            ->orderByDesc('indent_registers.created_at')
-            ->paginate(10);
+    // Join with departments for department name
+    $registers = DB::table('indent_registers')
+        ->join('departments', 'departments.name', '=', 'indent_registers.indent_department')
+        ->select(
+            'indent_registers.id',
+            'indent_registers.indent_id',
+            'departments.name as department_name',
+            'indent_registers.items_description',
+            'indent_registers.indent_department as department_id',
+            'indent_registers.status',
+            'indent_registers.created_at',
+            'indent_registers.updated_at'
+        )
+        ->orderByDesc('indent_registers.created_at')
+        ->paginate(10);
 
-        // Format rows
-        $rows = $registers->map(function ($reg) {
-            return [
-                'indent_id' => $reg->indent_id,
-                'department_name' => $reg->department_name,
-                'department_id' => $reg->department_id,
-                'item_description' => $reg->item_description,
-                'unit' => $reg->unit,
-                'status' => ucfirst($reg->status ?? 'Pending'),
-                'created_at' => \Carbon\Carbon::parse($reg->created_at)->format('Y-m-d H:i'),
-                'updated_at' => \Carbon\Carbon::parse($reg->updated_at)->format('Y-m-d H:i'),
-                // 👇 Pass both URLs inside an array for 'action'
-                'action' => [
-                    'edit' => route('indent-register.edit', $reg->id),
-                    'file_po' => route('po-register.create', [
+    // Format rows
+    $rows = $registers->map(function ($reg) {
+        $items = json_decode($reg->items_description, true) ?? [];
+        $itemDescriptions = collect($items)->pluck('description')->filter()->implode(', '); // ✅
+
+        return [
+            'indent_id' => $reg->indent_id,
+            'department_name' => $reg->department_name,
+            'department_id' => $reg->department_id,
+            'item_description' => $itemDescriptions ?: '-',
+            'status' => ucfirst($reg->status ?? 'Pending'),
+
+            'action' => (function () use ($reg) {
+                $status = strtolower($reg->status ?? 'pending');
+                if (in_array($status, ['close', 'cancel'])) {
+                    return [];
+                }
+
+                $actions = [];
+
+                $actions['close'] = [
+                    'route' => route('po-register.updateStatus'),
+                    'params' => [
                         'indent_id' => $reg->indent_id,
                         'department_id' => $reg->department_id,
-                    ]),  // only if not already filed
-                ],
-            ];
-        });
+                        'status' => 'Close'
+                    ]
+                ];
 
-        $searchPlaceholder = 'Search indent records...';
-        $redirectUrl = route('indent.create');
+                $actions['cancel'] = [
+                    'route' => route('po-register.updateStatus'),
+                    'params' => [
+                        'indent_id' => $reg->indent_id,
+                        'department_id' => $reg->department_id,
+                        'status' => 'Cancel'
+                    ]
+                ];
 
-        $customButton = <<<HTML
-            <a href="{$redirectUrl}" class="ti-btn ti-btn-primary-full">
-                <i class="bi bi-plus-lg"></i>
-                Add New Indent
-            </a>
-            HTML;
+                if ($status === 'pending') {
+                    $actions['edit'] = route('indent-register.edit', $reg->id);
+                    $actions['file_po'] = route('po-register.create', [
+                        'indent_id' => $reg->indent_id,
+                        'department_id' => $reg->department_id,
+                    ]);
+                }
 
-        return view('pages.indent.indentForm.viewIndentForm.viewIndentForm', [
-            'title' => $title,
-            'columns' => $columns,
-            'rows' => $rows,
-            'searchPlaceholder' => $searchPlaceholder,
-            'customButton' => $customButton,
-            'pagination' => $registers,
-        ]);
-    }
+                return $actions;
+            })(),
+        ];
+    });
+
+    $searchPlaceholder = 'Search indent records...';
+    $redirectUrl = route('indent.create');
+
+    $customButton = <<<HTML
+        <a href="{$redirectUrl}" class="ti-btn ti-btn-primary-full">
+            <i class="bi bi-plus-lg"></i>
+            Add New Indent
+        </a>
+    HTML;
+
+    return view('pages.indent.indentForm.viewIndentForm.viewIndentForm', [
+        'title' => $title,
+        'columns' => $columns,
+        'rows' => $rows,
+        'searchPlaceholder' => $searchPlaceholder,
+        'customButton' => $customButton,
+        'pagination' => $registers,
+    ]);
+}
+
 
     public function create()
     {
         $title = 'Draft List';
         $departments = Department::all();
+        $items = Item::all();
+
 
         $rows = DB::table('indent_tickets')
             ->leftJoin('indent_registers', function ($join) {
@@ -122,62 +151,64 @@ class IndentController extends Controller
             return $row;
         });
 
-        return view('pages.indent.generateIndent.generateIndent', compact('departments', 'title', 'columns', 'rows'));
+        return view('pages.indent.generateIndent.generateIndent', compact('departments','items', 'title', 'columns', 'rows'));
     }
 
-   public function store(Request $request)
-{
-    // ✅ Validate required fields and unique indent_id per department
-    $request->validate([
-        'department_id' => 'required|exists:departments,id',
-        'indent_id' => [
-            'required',
-            Rule::unique('indent_registers', 'indent_id')
-                ->where(fn($query) => $query->where('indent_department', $request->department_id)),
-        ],
-    ]);
-
-    // ✅ Fetch department safely
-    $department = Department::findOrFail($request->department_id);
-
-    // ✅ Check for already registered indent (defensive redundancy)
-    $alreadyRegistered = IndentTicket::where('indent_id', $request->indent_id)
-        ->where('department_id', $request->department_id)
-        ->exists();
-
-    if ($alreadyRegistered) {
-        return redirect()->route('indent.create')->with('warning', "Indent ID {$request->indent_id} is already registered for this department.");
-    }
-
-    // ✅ Create Indent Ticket (prefill use-case)
-    $indentTicket = IndentTicket::create([
-        'indent_id' => $request->indent_id,
-        'department_id' => $department->id,
-    ]);
-
-    // ✅ Create Notification for new indent
-    Notification::create([
-        'title' => "New Indent Created",
-        'link' => route('indent.create.form'),
-        'icon' => 'la la-file-alt',
-        'bg_color' => 'bg-primary',
-        'is_read' => false,
-    ]);
-
-    // ✅ Redirect to Indent Register form with flash data
-    return redirect()
-        ->route('indent.create.form')
-        ->with([
-            'indent_id' => $indentTicket->indent_id,
-            'department_id' => $department->id,
-            'success' => 'Indent generated successfully!',
+    public function store(Request $request)
+    {
+        // ✅ Validate required fields and unique indent_id per department
+        $request->validate([
+            'department_id' => 'required|exists:departments,id',
+            'indent_id' => [
+                'required',
+                Rule::unique('indent_registers', 'indent_id')
+                    ->where(fn($query) => $query->where('indent_department', $request->department_id)),
+            ],
         ]);
-}
+
+        // ✅ Fetch department safely
+        $department = Department::findOrFail($request->department_id);
+
+        // ✅ Check for already registered indent (defensive redundancy)
+        $alreadyRegistered = IndentTicket::where('indent_id', $request->indent_id)
+            ->where('department_id', $request->department_id)
+            ->exists();
+
+        if ($alreadyRegistered) {
+            return redirect()->route('indent.create')->with('warning', "Indent ID {$request->indent_id} is already registered for this department.");
+        }
+
+        // ✅ Create Indent Ticket (prefill use-case)
+        $indentTicket = IndentTicket::create([
+            'indent_id' => $request->indent_id,
+            'department_id' => $department->id,
+        ]);
+
+        // ✅ Create Notification for new indent
+        Notification::create([
+            'title' => 'New Indent Created',
+            'link' => route('indent.create.form'),
+            'icon' => 'la la-file-alt',
+            'bg_color' => 'bg-primary',
+            'is_read' => false,
+        ]);
+
+        // ✅ Redirect to Indent Register form with flash data
+        return redirect()
+            ->route('indent.create.form')
+            ->with([
+                'indent_id' => $indentTicket->indent_id,
+                'department_id' => $department->id,
+                'success' => 'Indent generated successfully!',
+            ]);
+    }
+
     public function createForm(Request $request)
     {
         $departments = Department::all();
         $projects = Project::all();
         $units = Unit::all();
+        $items = Item::all();
 
         $departmentId = $request->get('department_id', session('department_id'));
         $indentId = $request->get('indent_id', session('indent_id'));
@@ -192,6 +223,7 @@ class IndentController extends Controller
             'departments' => $departments,
             'projects' => $projects,
             'units' => $units,
+            'items' => $items,
             'indent_id' => $indentId,
             'department_id' => $departmentId,
             'department_name' => $departmentName,
@@ -206,6 +238,8 @@ class IndentController extends Controller
         $departments = Department::all();
         $projects = Project::all();
         $units = Unit::all();
+        $items = Item::all();
+
 
         $departmentId = $indent->indent_department;
         $department = Department::find($departmentId);
@@ -216,6 +250,7 @@ class IndentController extends Controller
             'departments' => $departments,
             'projects' => $projects,
             'units' => $units,
+            'items' => $items,
             'department_id' => $departmentId,
             'department_name' => $departmentName,
             'success' => session('success'),
@@ -246,67 +281,90 @@ class IndentController extends Controller
         return response()->json(['indent_id' => $indentId]);
     }
 
-   public function registerStore(Request $request)
+  public function registerStore(Request $request)
 {
-    // Check if the indent already exists for this department
+    // Check for duplicates
     $alreadyRegistered = IndentRegister::where('indent_id', $request->indent_id)
         ->where('indent_department', $request->indent_department)
         ->exists();
 
     if ($alreadyRegistered) {
-        return redirect()->route('indent.create')->with('warning', "Indent ID {$request->indent_id} is already registered for this department.");
+        return redirect()->route('indent.create')
+            ->with('warning', "Indent ID {$request->indent_id} is already registered for this department.");
     }
 
-    // Proceed with saving if not exists
-    $indent = new IndentRegister();
+    // Build items JSON array
+    $items = [];
 
-    $indent->indent_id = $request->indent_id;
-    $indent->indent_date = $request->indent_date;
-    $indent->indent_department = $request->indent_department;
-    $indent->indent_project = $request->indent_project;
-    $indent->item_description = $request->item_description;
-    $indent->unit = $request->unit;
-    $indent->quantity_required = $request->quantity_required;
-    $indent->purchased_order = $request->purchased_order;
-    $indent->quantity_received = $request->quantity_received;
-    $indent->quantity_balance = $request->quantity_balance;
+    foreach ($request->items as $item) {
+        $items[] = [
+            'description'       => $item['description'],
+            'unit'              => $item['unit'],
+            'quantity_required' => (int) $item['required'],
+            'quantity_received' => (int) $item['received'],
+            'quantity_balance'  => (int) $item['balance'],
+        ];
+    }
 
-    $indent->save();
+    // Save one row with JSON column
+    IndentRegister::create([
+        'indent_id'          => $request->indent_id,
+        'indent_date'        => $request->indent_date,
+        'indent_department'  => $request->indent_department,
+        'indent_project'     => $request->indent_project,
+        'items_description'  => json_encode($items), // store as JSON
+        'status'             => 'Pending',
+    ]);
 
-    // ✅ Create notification for indent register
+    // Notification
     Notification::create([
-        'title' => "Indent Registered - {$indent->indent_id}",
-        'link' => route('indent.index'),
-        'icon' => 'la la-clipboard-list',
-        'bg_color' => 'bg-success',
-        'is_read' => false,
+        'title'     => "Indent Registered - {$request->indent_id}",
+        'link'      => route('indent.index'),
+        'icon'      => 'la la-clipboard-list',
+        'bg_color'  => 'bg-success',
+        'is_read'   => false,
     ]);
 
     return redirect()->route('indent.index')->with('success', 'Indent registered successfully!');
 }
 
-    public function indentRegisterUpdate(Request $request, $id)
-    {
-        // Check if another indent (not the same ID) has same indent_id and department
-        $alreadyRegistered = IndentRegister::where('indent_id', $request->indent_id)
-            ->where('indent_department', $request->indent_department)
-            ->where('id', '!=', $id)
-            ->exists();
 
-        // Proceed with update
-        $indent = IndentRegister::findOrFail($id);
+   public function indentRegisterUpdate(Request $request, $id)
+{
+    // Check if another indent (not the same ID) has same indent_id and department
+    $alreadyRegistered = IndentRegister::where('indent_id', $request->indent_id)
+        ->where('indent_department', $request->indent_department)
+        ->where('id', '!=', $id)
+        ->exists();
 
-        $indent->indent_date = $request->indent_date;
-        $indent->indent_project = $request->indent_project;
-        $indent->item_description = $request->item_description;
-        $indent->unit = $request->unit;
-        $indent->quantity_required = $request->quantity_required;
-        $indent->purchased_order = $request->purchased_order;
-        $indent->quantity_received = $request->quantity_received;
-        $indent->quantity_balance = $request->quantity_balance;
-
-        $indent->save();
-
-        return redirect()->route('indent.index')->with('success', 'Indent updated successfully!');
+    if ($alreadyRegistered) {
+        return redirect()->back()->with('warning', "Indent ID {$request->indent_id} is already registered for this department.");
     }
+
+    // Prepare the item data from the request
+    $items = $request->input('items', []);
+    $processedItems = [];
+
+    foreach ($items as $item) {
+        $processedItems[] = [
+            'description'        => $item['description'] ?? '',
+            'unit'               => $item['unit'] ?? '',
+            'quantity_required'  => (int)($item['required'] ?? 0),
+            'quantity_received'  => (int)($item['received'] ?? 0),
+            'quantity_balance'   => (int)($item['balance'] ?? 0),
+        ];
+    }
+
+    // Proceed with update
+    $indent = IndentRegister::findOrFail($id);
+    $indent->indent_date        = $request->indent_date;
+    $indent->indent_project     = $request->indent_project;
+    $indent->items_description  = json_encode($processedItems); // ✅ Save all items as JSON
+    $indent->save();
+
+    return redirect()->route('indent.index')->with('success', 'Indent updated successfully!');
+}
+
+
+    
 }

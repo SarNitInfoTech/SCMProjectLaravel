@@ -24,8 +24,8 @@ class ProjectController extends Controller
         $rows = $projects->map(function ($proj) {
             return [
                 'name' => $proj->name,
-                'created_at' => $proj->created_at->format('Y-m-d H:i'),
-                'updated_at' => $proj->updated_at->format('Y-m-d H:i'),
+                'created_at' => $proj->created_at->format('d-m-Y'),
+                'updated_at' => $proj->updated_at->format('d-m-Y'),
                 'action' => route('projects.edit', $proj->id),
             ];
         });

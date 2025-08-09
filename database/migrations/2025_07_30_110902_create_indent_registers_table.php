@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->date('indent_date');
             $table->string('indent_department');
             $table->string('indent_project')->nullable();
-            $table->text('item_description');
+            $table->json('items_description');
             $table->string('unit')->nullable();
             $table->string('status')->default('Pending');
             $table->integer('quantity_required')->default(0);

@@ -28,8 +28,8 @@ class DepartmentHeadController extends Controller
             return [
                 'department_name' => $dh->department?->name ?? 'N/A',
                 'department_head' => $dh->department_head,
-                'created_at' => $dh->created_at->format('Y-m-d H:i'),
-                'updated_at' => $dh->updated_at->format('Y-m-d H:i'),
+                'created_at' => $dh->created_at->format('d-m-Y'),
+                'updated_at' => $dh->updated_at->format('d-m-Y'),
                 'action' => route('department-head.edit', $dh->id),
             ];
         });

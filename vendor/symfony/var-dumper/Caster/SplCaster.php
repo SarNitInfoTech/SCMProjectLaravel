@@ -134,7 +134,7 @@ class SplCaster
         static $mapDate = ['aTime', 'mTime', 'cTime'];
         foreach ($mapDate as $key) {
             if (isset($a[$prefix.$key])) {
-                $a[$prefix.$key] = new ConstStub(date('Y-m-d H:i:s', $a[$prefix.$key]), $a[$prefix.$key]);
+                $a[$prefix.$key] = new ConstStub(date('d-m-Y:s', $a[$prefix.$key]), $a[$prefix.$key]);
             }
         }
 

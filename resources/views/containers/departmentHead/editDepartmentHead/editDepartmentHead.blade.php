@@ -9,7 +9,7 @@
             <select name="department_id" id="department_id" class="form-control w-full" required>
                 <option value="" disabled>Select Department</option>
                 @foreach($departments as $dept)
-                    <option value="{{ $dept->id }}" {{ $departmentHead->department_id == $dept->id ? 'selected' : '' }}>
+                    <option value="{{ $dept->name }}" {{ $departmentHead->department_id == $dept->id ? 'selected' : '' }}>
                         {{ $dept->name }}
                     </option>
                 @endforeach

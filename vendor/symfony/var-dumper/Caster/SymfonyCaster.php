@@ -104,7 +104,7 @@ class SymfonyCaster
 
         // symfony/uid >= 5.3
         if (method_exists($uuid, 'getDateTime')) {
-            $a[Caster::PREFIX_VIRTUAL.'time'] = $uuid->getDateTime()->format('Y-m-d H:i:s.u \U\T\C');
+            $a[Caster::PREFIX_VIRTUAL.'time'] = $uuid->getDateTime()->format('d-m-Y:s.u \U\T\C');
         }
 
         return $a;
@@ -117,7 +117,7 @@ class SymfonyCaster
 
         // symfony/uid >= 5.3
         if (method_exists($ulid, 'getDateTime')) {
-            $a[Caster::PREFIX_VIRTUAL.'time'] = $ulid->getDateTime()->format('Y-m-d H:i:s.v \U\T\C');
+            $a[Caster::PREFIX_VIRTUAL.'time'] = $ulid->getDateTime()->format('d-m-Y:s.v \U\T\C');
         }
 
         return $a;

@@ -8,7 +8,7 @@
             <select name="department_id" id="department_id" class="form-control w-full" required>
                 <option value="" disabled selected>Choose Department</option>
                 @foreach($departments as $dept)
-                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                    <option value="{{ $dept->name }}">{{ $dept->name }}</option>
                 @endforeach
             </select>
             @error('department_id')

@@ -26,8 +26,8 @@ public function index()
     $rows = $Units->map(function ($dept) {
         return [
             'name' => $dept->name,
-            'created_at' => $dept->created_at->format('Y-m-d H:i'),
-            'updated_at' => $dept->updated_at->format('Y-m-d H:i'),
+            'created_at' => $dept->created_at->format('d-m-Y'),
+            'updated_at' => $dept->updated_at->format('d-m-Y'),
             'action' => route('units.edit', $dept->id),
         ];
     });

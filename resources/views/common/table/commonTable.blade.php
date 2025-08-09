@@ -61,7 +61,7 @@
                                     @case('badge')
                                         <span class="badge bg-primary/10 text-primary">{{ $value }}</span>
                                         @break
-
+                                        
                                     @case('progress')
                                         <div class="progress progress-xs">
                                             <div class="progress-bar bg-primary w-[{{ $value }}%]" aria-valuenow="{{ $value }}" aria-valuemin="0" aria-valuemax="100"></div>
@@ -77,34 +77,77 @@
                                             @endforeach
                                         </div>
                                         @break
+                                        @case('status')
+    <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold
+        @if($value === 'Pending') bg-yellow-100 text-yellow-800
+        @elseif($value === 'Cancel') bg-red-100 text-red-800
+        @elseif($value === 'Close') bg-green-100 text-green-800
+        @else bg-gray-200 text-gray-800
+        @endif">
+        {{ $value }}
+    </span>
+    @break
 
-                                    @case('action')
+                                  @case('action')
     @php
-        // If $value is a string (old format), treat it as edit URL
-        $editUrl = is_array($value) ? ($value['edit'] ?? '#') : $value;
+        $editUrl = is_array($value) ? ($value['edit'] ?? null) : $value;
         $filePoUrl = is_array($value) ? ($value['file_po'] ?? null) : null;
         $viewPageUrl = is_array($value) ? ($value['viewPage'] ?? null) : null;
+        $closeData = is_array($value) ? ($value['close'] ?? null) : null;
+        $cancelData = is_array($value) ? ($value['cancel'] ?? null) : null;
     @endphp
 
-    <div class="flex gap-2">
-        {{-- Always show Edit button --}}
-        <a href="{{ $editUrl }}"
-           class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm transition-all duration-150">
-            <i class="bi bi-pencil-square text-sm"></i> Edit
-        </a>
+    <div class="flex flex-wrap gap-2 text-center">
+        {{-- Edit --}}
+        @if ($editUrl)
+            <a href="{{ $editUrl }}"
+               class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm transition-all duration-150">
+                <i class="bi bi-pencil-square text-sm"></i> Edit
+            </a>
+        @endif
 
-        {{-- Show File PO button only if provided --}}
+        {{-- File PO --}}
         @if ($filePoUrl)
             <a href="{{ $filePoUrl }}"
                class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-md shadow-sm transition-all duration-150">
                 <i class="bi bi-file-earmark-plus text-sm"></i> File PO
             </a>
         @endif
-         @if ($viewPageUrl)
+
+        {{-- View --}}
+        @if ($viewPageUrl)
             <a href="{{ $viewPageUrl }}"
                class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md shadow-sm transition-all duration-150">
-                <i class="bi bi-file-text"></i>View
+                <i class="bi bi-file-text text-sm"></i> View
             </a>
+        @endif
+
+        {{-- Close (form button) --}}
+        @if (is_array($closeData))
+            <form action="{{ $closeData['route'] }}" method="POST" style="display:inline;">
+                @csrf
+                <input type="hidden" name="indent_id" value="{{ $closeData['params']['indent_id'] }}">
+                <input type="hidden" name="department_id" value="{{ $closeData['params']['department_id'] }}">
+                <input type="hidden" name="status" value="Close">
+                <button type="submit"
+                        class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 rounded-md shadow-sm transition-all duration-150">
+                    <i class="bi bi-x-octagon text-sm"></i> Close
+                </button>
+            </form>
+        @endif
+
+        {{-- Cancel (form button) --}}
+        @if (is_array($cancelData))
+            <form action="{{ $cancelData['route'] }}" method="POST" style="display:inline;">
+                @csrf
+                <input type="hidden" name="indent_id" value="{{ $cancelData['params']['indent_id'] }}">
+                <input type="hidden" name="department_id" value="{{ $cancelData['params']['department_id'] }}">
+                <input type="hidden" name="status" value="Cancel">
+                <button type="submit"
+                        class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md shadow-sm transition-all duration-150">
+                    <i class="bi bi-x-circle text-sm"></i> Cancel
+                </button>
+            </form>
         @endif
     </div>
     @break
@@ -144,4 +187,23 @@
             row.style.display = text.includes(filter) ? '' : 'none';
         });
     }
+</script>
+
+<script>
+function submitStatusChange(data) {
+    fetch(data.url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        },
+        body: JSON.stringify({
+            indent_id: data.indent_id,
+            department_id: data.department_id,
+            status: data.status
+        })
+    })
+    .then(res => res.ok ? location.reload() : alert("Status update failed."))
+    .catch(err => console.error("Error:", err));
+}
 </script>

@@ -16,7 +16,7 @@ return new class extends Migration
 
     // New fields
     $table->unsignedBigInteger('indent_id')->nullable();
-    $table->unsignedBigInteger('department_id')->nullable();
+    $table->string('department_id')->nullable();
     $table->string('status')->default('Pending'); // Enum: Pending, Cancel, Close
     $table->string('invoice')->nullable();
 

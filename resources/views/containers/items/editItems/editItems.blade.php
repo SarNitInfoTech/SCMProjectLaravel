@@ -1,0 +1,28 @@
+<div class="w-full px-4 py-6 bg-white shadow rounded">
+    <form method="POST" action="{{ route('items.update', $item->id) }}" class="grid grid-rows-[auto_1fr] gap-6 h-full">
+        @csrf
+        @method('PUT')
+
+        <div class="w-full">
+            <label for="name" class="form-label text-black block mb-1">Item Name</label>
+            <input
+                type="text"
+                name="name"
+                id="name"
+                value="{{ old('name', $item->name) }}"
+                class="form-control w-full"
+                placeholder="Enter Item Name"
+                required
+            >
+            @error('name')
+                <small class="text-red-600">{{ $message }}</small>
+            @enderror
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" class="ti-btn ti-btn-primary-full">
+                Update Item
+            </button>
+        </div>
+    </form>
+</div>

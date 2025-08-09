@@ -5,13 +5,16 @@
 
         <!-- Department Dropdown -->
         <div class="w-full">
-            <label for="department_id" class="form-label text-black block mb-1">Select Department</label>
-            <select name="department_id" id="department_id" class="form-control w-full" required>
+            <label for="department_id" class="form-label block mb-1">
+                Select Department <span class="text-red-500">*</span>
+            </label>
+            <select name="department_id" id="department_id" class="form-control choices-js w-full" required>
                 <option value="">-- Select Department --</option>
                 @foreach($departments as $dept)
                     <option value="{{ $dept->id }}">{{ $dept->name }}</option>
                 @endforeach
             </select>
+
             @error('department_id')
                 <small class="text-red-600">{{ $message }}</small>
             @enderror
@@ -35,3 +38,12 @@
     </form>
 </div>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.choices-js').forEach(el => {
+    new Choices(el, { searchEnabled: true, itemSelectText: '' });
+  });
+});
+</script>

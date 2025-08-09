@@ -59,7 +59,7 @@ EOF
             ['toRfc4122', $ulid->toRfc4122()],
             ['toHex', $ulid->toHex()],
             new TableSeparator(),
-            ['Time', $ulid->getDateTime()->format('Y-m-d H:i:s.v \U\T\C')],
+            ['Time', $ulid->getDateTime()->format('d-m-Y:s.v \U\T\C')],
         ]);
 
         return 0;

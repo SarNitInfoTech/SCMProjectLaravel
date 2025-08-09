@@ -58,5 +58,53 @@
     <script src="{{ asset('js/sticky.js') }}"></script>
     <script src="{{ asset('js/custom-switcher-DhReuTTH.js') }}" type="module"></script>
     <script src="{{ asset('js/app-CLk324ZP.js') }}" type="module"></script>
+
+    <style>
+    .center-align {
+        text-align: center !important;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("✅ Script loaded");
+
+        const table = document.querySelector("table");
+        if (!table) {
+            console.log("❌ Table not found");
+            return;
+        }
+
+        const headers = table.querySelectorAll("thead th");
+        let actionColIndex = -1;
+
+        headers.forEach((th, index) => {
+            const headerText = th.textContent.trim().toLowerCase();
+            console.log(`🔍 Header ${index}: ${headerText}`);
+            if (headerText === "action") {
+                actionColIndex = index;
+                th.classList.add("center-align");
+                console.log(`✅ 'Action' column found at index ${index}`);
+            }
+        });
+
+        if (actionColIndex === -1) {
+            console.warn("⚠️ 'Action' column not found in header.");
+            return;
+        }
+
+        const rows = table.querySelectorAll("tbody tr");
+        rows.forEach((row, rowIndex) => {
+            const cells = row.querySelectorAll("td");
+            if (cells[actionColIndex]) {
+                cells[actionColIndex].classList.add("center-align");
+                console.log(`🔧 Aligned row ${rowIndex + 1}, cell ${actionColIndex + 1}`);
+            }
+        });
+
+        console.log("✅ Alignment applied to all 'Action' cells.");
+    });
+</script>
+
 </body>
 </html>

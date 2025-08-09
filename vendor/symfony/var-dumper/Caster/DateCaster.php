@@ -119,7 +119,7 @@ class DateCaster
 
     private static function formatDateTime(\DateTimeInterface $d, string $extra = ''): string
     {
-        return $d->format('Y-m-d H:i:'.self::formatSeconds($d->format('s'), $d->format('u')).$extra);
+        return $d->format('d-m-Y:'.self::formatSeconds($d->format('s'), $d->format('u')).$extra);
     }
 
     private static function formatSeconds(string $s, string $us): string
