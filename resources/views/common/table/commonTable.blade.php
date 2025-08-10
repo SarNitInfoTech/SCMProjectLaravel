@@ -95,6 +95,7 @@
         $viewPageUrl = is_array($value) ? ($value['viewPage'] ?? null) : null;
         $closeData = is_array($value) ? ($value['close'] ?? null) : null;
         $cancelData = is_array($value) ? ($value['cancel'] ?? null) : null;
+        $pendingData = is_array($value) ? ($value['pending'] ?? null) : null;
     @endphp
 
     <div class="flex flex-wrap gap-2 text-center">
@@ -121,34 +122,55 @@
                 <i class="bi bi-file-text text-sm"></i> View
             </a>
         @endif
+         {{-- Pending (Re-Open) --}}
+@if (is_array($pendingData))
+<form action="{{ $pendingData['route'] }}" method="POST" class="js-status-form" style="display:inline;">
+  @csrf
+  <input type="hidden" name="indent_id" value="{{ $pendingData['params']['indent_id'] }}">
+  <input type="hidden" name="department_id" value="{{ $pendingData['params']['department_id'] }}">
+  <input type="hidden" name="status" value="Pending">
+  <button type="button"
+          data-action="Pending"
+          onclick="openStatusModal(this)"
+          class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm transition-all duration-150">
+    <i class="bi bi-arrow-counterclockwise text-sm"></i> Re-Open
+  </button>
+</form>
+@endif
 
-        {{-- Close (form button) --}}
-        @if (is_array($closeData))
-            <form action="{{ $closeData['route'] }}" method="POST" style="display:inline;">
-                @csrf
-                <input type="hidden" name="indent_id" value="{{ $closeData['params']['indent_id'] }}">
-                <input type="hidden" name="department_id" value="{{ $closeData['params']['department_id'] }}">
-                <input type="hidden" name="status" value="Close">
-                <button type="submit"
-                        class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 rounded-md shadow-sm transition-all duration-150">
-                    <i class="bi bi-x-octagon text-sm"></i> Close
-                </button>
-            </form>
-        @endif
+{{-- Close --}}
+@if (is_array($closeData))
+<form action="{{ $closeData['route'] }}" method="POST" class="js-status-form" style="display:inline;">
+  @csrf
+  <input type="hidden" name="indent_id" value="{{ $closeData['params']['indent_id'] }}">
+  <input type="hidden" name="department_id" value="{{ $closeData['params']['department_id'] }}">
+  <input type="hidden" name="status" value="Close">
+  <button type="button"
+          data-action="Close"
+          onclick="openStatusModal(this)"
+          class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 rounded-md shadow-sm transition-all duration-150">
+    <i class="bi bi-x-octagon text-sm"></i> Close
+  </button>
+</form>
+@endif
 
-        {{-- Cancel (form button) --}}
-        @if (is_array($cancelData))
-            <form action="{{ $cancelData['route'] }}" method="POST" style="display:inline;">
-                @csrf
-                <input type="hidden" name="indent_id" value="{{ $cancelData['params']['indent_id'] }}">
-                <input type="hidden" name="department_id" value="{{ $cancelData['params']['department_id'] }}">
-                <input type="hidden" name="status" value="Cancel">
-                <button type="submit"
-                        class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md shadow-sm transition-all duration-150">
-                    <i class="bi bi-x-circle text-sm"></i> Cancel
-                </button>
-            </form>
-        @endif
+{{-- Cancel --}}
+@if (is_array($cancelData))
+<form action="{{ $cancelData['route'] }}" method="POST" class="js-status-form" style="display:inline;">
+  @csrf
+  <input type="hidden" name="indent_id" value="{{ $cancelData['params']['indent_id'] }}">
+  <input type="hidden" name="department_id" value="{{ $cancelData['params']['department_id'] }}">
+  <input type="hidden" name="status" value="Cancel">
+  <button type="button"
+          data-action="Cancel"
+          onclick="openStatusModal(this)"
+          class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md shadow-sm transition-all duration-150">
+    <i class="bi bi-x-circle text-sm"></i> Cancel
+  </button>
+</form>
+@endif
+
+       
     </div>
     @break
 
@@ -175,6 +197,93 @@
     @endif
 </div>
 
+
+
+
+
+<!-- Status Confirm Modal -->
+<div id="statusConfirmModal" class="fixed inset-0 z-50 hidden">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/50" onclick="closeStatusModal()"></div>
+
+  <!-- Panel -->
+  <div class="relative mx-auto mt-24 w-[90%] max-w-md rounded-2xl bg-white shadow-xl">
+    <div class="px-5 py-4 border-b">
+      <h4 id="statusModalTitle" class="text-lg font-semibold text-gray-800">Confirm Action</h4>
+    </div>
+    <div class="px-5 py-4">
+      <p id="statusModalText" class="text-sm text-gray-700">
+        Are you sure you want to proceed?
+      </p>
+    </div>
+    <div class="px-5 py-4 border-t flex items-center justify-end gap-2">
+      <button type="button"
+              onclick="closeStatusModal()"
+              class="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">
+        No
+      </button>
+      <button type="button"
+              id="statusConfirmBtn"
+              class="px-4 py-2 text-sm font-medium rounded-md text-white bg-gray-700 hover:bg-gray-800">
+        Yes
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+  let __activeStatusForm = null;
+  let __activeAction = null;
+
+  function openStatusModal(btn) {
+    __activeStatusForm = btn.closest('form');
+    __activeAction = (btn.dataset.action || '').toLowerCase();
+
+    const modal = document.getElementById('statusConfirmModal');
+    const title = document.getElementById('statusModalTitle');
+    const text  = document.getElementById('statusModalText');
+    const confirmBtn = document.getElementById('statusConfirmBtn');
+
+    // Configure texts/styles per action
+    const map = {
+      close:   { title: 'Confirm Close',   text: 'This will mark the Indent & PO as Closed for this department. Continue?',  cls: 'bg-gray-700 hover:bg-gray-800' },
+      cancel:  { title: 'Confirm Cancel',  text: 'This will mark the Indent & PO as Cancelled for this department. Continue?', cls: 'bg-red-600 hover:bg-red-700' },
+      pending: { title: 'Re-Open (Pending)', text: 'This will re-open the Indent & PO (set status to Pending). Continue?',     cls: 'bg-green-600 hover:bg-green-700' },
+    };
+    const cfg = map[__activeAction] || map.close;
+
+    title.textContent = cfg.title;
+    text.textContent  = cfg.text;
+
+    // Reset confirm button classes then apply
+    confirmBtn.className = 'px-4 py-2 text-sm font-medium rounded-md text-white';
+    confirmBtn.classList.add(...cfg.cls.split(' '));
+
+    // Show modal
+    modal.classList.remove('hidden');
+  }
+
+  function closeStatusModal() {
+    const modal = document.getElementById('statusConfirmModal');
+    modal.classList.add('hidden');
+    __activeStatusForm = null;
+    __activeAction = null;
+  }
+
+  document.getElementById('statusConfirmBtn').addEventListener('click', function() {
+    if (__activeStatusForm) {
+      __activeStatusForm.submit(); // submit the original POST form
+    }
+    closeStatusModal();
+  });
+
+  // Optional: ESC to close
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeStatusModal();
+  });
+</script>
+<style>.flex.flex-wrap.gap-2.text-center {
+    justify-content: center !important;
+}</style>
 {{-- Optional client-side search script --}}
 <script>
     function filterTable(input) {

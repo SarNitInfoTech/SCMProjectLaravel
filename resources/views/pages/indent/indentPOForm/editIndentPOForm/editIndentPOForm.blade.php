@@ -1,4 +1,4 @@
 @extends("layouts.layout")
 @section("bodyContent")
-@include("common.table.commonTable")
+@include("containers.indent.indentPOForm.editIndentPOForm.editIndentPOForm")
 @endsection

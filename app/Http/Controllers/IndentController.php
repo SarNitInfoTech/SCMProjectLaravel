@@ -55,41 +55,61 @@ class IndentController extends Controller
             'status' => ucfirst($reg->status ?? 'Pending'),
 
             'action' => (function () use ($reg) {
-                $status = strtolower($reg->status ?? 'pending');
-                if (in_array($status, ['close', 'cancel'])) {
-                    return [];
-                }
+    $status = strtolower($reg->status ?? 'pending');
+    $actions = [];
 
-                $actions = [];
+    $baseParams = [
+        'indent_id'     => $reg->indent_id,
+        'department_id' => $reg->department_id,
+    ];
 
-                $actions['close'] = [
-                    'route' => route('po-register.updateStatus'),
-                    'params' => [
-                        'indent_id' => $reg->indent_id,
-                        'department_id' => $reg->department_id,
-                        'status' => 'Close'
-                    ]
-                ];
+    if ($status === 'pending') {
+        // usual pending actions
+        $actions['edit']    = route('indent-register.edit', $reg->id);
+        $actions['file_po'] = route('po-register.create', $baseParams);
 
-                $actions['cancel'] = [
-                    'route' => route('po-register.updateStatus'),
-                    'params' => [
-                        'indent_id' => $reg->indent_id,
-                        'department_id' => $reg->department_id,
-                        'status' => 'Cancel'
-                    ]
-                ];
+        // show Cancel and Close
+        $actions['cancel'] = [
+            'route'  => route('po-register.statusCancel'),
+            'params' => $baseParams,
+        ];
+        $actions['close'] = [
+            'route'  => route('po-register.statusClose'),
+            'params' => $baseParams,
+        ];
+    } elseif ($status === 'close') {
+        // when closed, only allow reverting to Pending
+        $actions['pending'] = [
+            'route'  => route('po-register.statusPending'),
+            'params' => $baseParams,
+        ];
+        $actions['cancel'] = [
+            'route'  => route('po-register.statusCancel'),
+            'params' => $baseParams,
+        ];
+    }elseif ($status === 'cancel') {
+        // when closed, only allow reverting to Pending
+        $actions['close'] = [
+            'route'  => route('po-register.statusClose'),
+            'params' => $baseParams,
+        ];
+        $actions['pending'] = [
+            'route'  => route('po-register.statusPending'),
+            'params' => $baseParams,
+        ];
+    } else {
+        // status is "cancel" (or anything else) → no actions
+        // If you want to allow reopen from cancel, uncomment below:
+        /*
+        $actions['pending'] = [
+            'route'  => route('po-register.statusPending'),
+            'params' => $baseParams,
+        ];
+        */
+    }
 
-                if ($status === 'pending') {
-                    $actions['edit'] = route('indent-register.edit', $reg->id);
-                    $actions['file_po'] = route('po-register.create', [
-                        'indent_id' => $reg->indent_id,
-                        'department_id' => $reg->department_id,
-                    ]);
-                }
-
-                return $actions;
-            })(),
+    return $actions;
+})(),
         ];
     });
 
