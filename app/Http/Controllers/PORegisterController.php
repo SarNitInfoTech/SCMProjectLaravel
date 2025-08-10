@@ -157,81 +157,41 @@ class PORegisterController extends Controller
             compact('indent_id', 'departmentHeads', 'department_id', 'department_name', 'statusList', 'projectList', 'items')
         );
     }
-    public function createInvoiceById(Request $request)
+    public function createInvoiceById(Request $request,int $id)
     {
-        $indent_id = $request->get('indent_id');
-        $department_id = $request->get('department_id');
-
-        $departmentHeads = DepartmentHead::where('department_id', $department_id)->get();
-        $projectList = Vendor::all();
-        $statusList = POStatus::values();
-        $department_name = Department::find($department_id)?->name ?? '';
-
-        // 1) Fetch indent with full items (array of objects)
-        $indent = DB::table('indent_registers')
-            ->where('indent_id', $indent_id)
-            ->where('indent_department', $department_id)
-            ->first();
-
-        $itemsFromIndent = collect();
-        if ($indent && $indent->items_description) {
-            $decoded = json_decode($indent->items_description, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                // Ensure it's a collection of item objects
-                $itemsFromIndent = collect($decoded)->filter(fn($it) => is_array($it));
-            }
-        }
-
-        // 2) Gather ALL item_description values already used in POs for this indent
-        //    (adjust the where() if you also want to scope by department)
-        $poItemsRaw = DB::table('po_registers')
-            ->where('indent_id', $indent_id)
-            // ->where('department_id', $department_id) // uncomment if needed
-            ->pluck('item_description');
-
-        // 3) Normalize PO items to a lowercase set of description strings
-        $alreadyCreatedSet = collect($poItemsRaw)
-            ->flatMap(function ($val) {
-                // Expect JSON: ["Printer","Mouse"] OR [{"description":"Printer"},...]
-                if (is_string($val)) {
-                    $decoded = json_decode($val, true);
-                    if (json_last_error() === JSON_ERROR_NONE) {
-                        if (is_array($decoded)) {
-                            return collect($decoded)->map(function ($entry) {
-                                if (is_array($entry) && isset($entry['description'])) {
-                                    return $entry['description'];
-                                }
-                                if (is_string($entry)) {
-                                    return $entry;
-                                }
-                                return null;
-                            })->filter();
-                        }
-                    }
-                    // Fallback: comma/pipe separated string
-                    return collect(preg_split('/[,|]/', $val))->map(fn($s) => trim($s))->filter();
-                }
-                return [];
-            })
-            ->map(fn($s) => mb_strtolower(trim($s)))
-            ->unique()
-            ->values();
-
-        // 4) Keep only indent items whose description is NOT already created
-        $items = $itemsFromIndent
-            ->filter(function ($item) use ($alreadyCreatedSet) {
-                $desc = mb_strtolower(trim((string) ($item['description'] ?? '')));
-                return $desc !== '' && !$alreadyCreatedSet->contains($desc);
-            })
-            ->values()
-            ->all();
-
-        // Now $items contains ONLY the not-yet-created options (with full object: description, unit, quantities, etc.)
+       $po = DB::table('po_registers')->where('id', $id)->firstOrFail();
         return view(
-            'pages.indent.indentPOForm.addInvoiceIndentPOForm.addInvoiceIndentPOForm',
-            compact('indent_id', 'departmentHeads', 'department_id', 'department_name', 'statusList', 'projectList', 'items')
-        );
+            'pages.indent.indentPOForm.addInvoiceIndentPOForm.addInvoiceIndentPOForm',[
+        'po'            => $po,
+    ]);
     }
+    public function updateInvoice(Request $request, int $id)
+{
+    $validated = $request->validate([
+        'invoice_date'   => 'nullable|date',
+        'receiving_date' => 'nullable|date',
+        'delay_in_days'  => 'nullable|integer|min:0',
+        'store_indent_no'=> 'nullable|string|max:255',
+    ]);
+
+    $fmt = fn($k) => $request->filled($k)
+        ? Carbon::parse($request->input($k))->format('Y-m-d')
+        : null;
+
+    $data = ['updated_at' => now()];
+
+    if ($request->has('invoice_date'))   $data['invoice_date']   = $fmt('invoice_date');
+    if ($request->has('receiving_date')) $data['receiving_date'] = $fmt('receiving_date');
+    if ($request->has('delay_in_days'))  $data['delay_in_days']  = $request->input('delay_in_days');
+    if ($request->has('store_indent_no'))$data['store_indent_no']= $request->input('store_indent_no');
+
+    $affected = DB::table('po_registers')->where('id', $id)->update($data);
+
+    return back()->with(
+        $affected ? 'success' : 'warning',
+        $affected ? 'Invoice info updated.' : 'No changes applied.'
+    );
+}
 
     public function edit(int $id)
     {
@@ -473,7 +433,7 @@ class PORegisterController extends Controller
                 'indent_registers.indent_id as indent_ticket_no',
                 'indent_registers.indent_date as indent_date',
                 'indent_registers.items_description',
-                'projects.name as project_name',
+                'indent_registers.indent_project as project_name',
             )
             ->where('po_registers.indent_id', $indent_id)
             ->where('po_registers.department_id', $department_id)

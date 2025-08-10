@@ -94,6 +94,8 @@ Route::middleware(['auth'])->group(function () {
     // -----------------------
     Route::resource('po-register', PORegisterController::class);
     Route::get('/indents/po/index', [PORegisterController::class, 'index'])->name('indentroview.index');
+    Route::get('/indents/po/{id}/addinvoice', [PORegisterController::class, 'createInvoiceById'])
+    ->name('indentroview.createInvoiceById');
     Route::get('po-register/indent/{indent_id}/department/{department_id}', [PORegisterController::class, 'viewByIndent'])->name('po-register.viewByIndent');
     Route::get('/po/export/excel/{indent_id}/{department_id}', [PORegisterController::class, 'downloadPORegisterExcel'])->name('po.export.excel');
     Route::get('/po/export/pdf/{indent_id}/{department_id}', [PORegisterController::class, 'downloadPORegisterPDF'])->name('po.export.pdf');
@@ -102,6 +104,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/po-register/status-close', [PORegisterController::class, 'statusClose'])->name('po-register.statusClose');
     Route::post('/po-register/status-cancel', [PORegisterController::class, 'statusCancel'])->name('po-register.statusCancel');
     Route::put('/po-register/{id}', [PORegisterController::class, 'updatePObyId'])->name('po-register.updatePObyId');
+    Route::put('/po-register/{id}', [PORegisterController::class, 'updateInvoice'])->name('po-register.updateInvoice');
+
 
     // -----------------------
     // 🧑‍💼 Department Heads

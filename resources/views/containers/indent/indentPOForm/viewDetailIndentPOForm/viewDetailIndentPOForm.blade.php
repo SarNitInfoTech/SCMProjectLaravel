@@ -1,7 +1,11 @@
 <div>
 
     {{-- Section 1: Indent Summary --}}
-    <div class="bg-white border border-gray-400 shadow-sm rounded-[4px] p-6 mb-10">
+    <div class="{{ $po->status === 'Pending'
+    ? 'bg-white border-gray-400'
+    : ($po->status === 'Close'
+        ? 'bg-green-50 border-green-800'
+        : 'bg-red-100 border-red-800') }} border shadow-sm rounded-[4px] p-6 mb-10">
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-2xl font-bold text-gray-900 tracking-tight">Indent Summary</h3>
             <div class="flex items-center gap-1">
@@ -203,7 +207,11 @@
 
 
 
-        <div class="bg-white border border-gray-400 shadow-sm rounded-[4px] p-6 mb-6 hover:shadow-md transition">
+        <div class="{{ $po->status === 'Pending'
+    ? 'bg-white border-gray-400'
+    : ($po->status === 'Close'
+        ? 'bg-green-50 border-green-800'
+        : 'bg-red-100 border-red-800') }} border shadow-sm rounded-[4px] p-6 mb-6 hover:shadow-md transition">
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div class="space-y-2">
                     <div class="flex flex-wrap items-center gap-2">
@@ -310,17 +318,23 @@
 
                 {{-- Quick meta stack on the right --}}
                 <div class="flex flex-col items-start md:items-end gap-2 text-sm">
-                  <form action="{{ route('po-register.edit', $row->id) }}" method="GET" class="inline">
+                    @if ($po->status==="pending" || $po->status==="Pending")
+                         <form action="{{ route('po-register.edit', $row->id) }}" method="GET" class="inline">
   <button type="submit" class="ti-btn ti-btn-success-full label-ti-btn me-[0.375rem]">
     <i class="ri-settings-4-line label-ti-btn-icon me-2"></i>
     Update P.O.
   </button>
 </form>
+<a href="{{ route('indentroview.createInvoiceById', $row->id) }}"
+   class="ti-btn ti-btn-primary-full label-ti-btn me-[0.375rem] inline-flex items-center">
+  <i class="ri-settings-4-line label-ti-btn-icon me-2"></i>
+{{ $row->invoice_date ? 'Update Invoice' : 'File Invoice' }}
 
-                    <button class="ti-btn ti-btn-primary-full label-ti-btn  me-[0.375rem]">
-                        <i class="ri-settings-4-line label-ti-btn-icon me-2"></i>
-                        File Invoice
-                    </button>
+</a>
+                    @endif
+                 
+
+
                 </div>
             </div>@php
                 $remarksText = $row->remarks ?? 'No remarks available.';

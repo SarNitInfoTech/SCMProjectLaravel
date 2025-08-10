@@ -21,8 +21,10 @@ class IndentController extends Controller
     $columns = [
         ['key' => 'indent_id', 'label' => 'Indent ID'],
         ['key' => 'department_name', 'label' => 'Department'],
+        ['key' => 'project', 'label' => 'Project'],
         ['key' => 'item_description', 'label' => 'Description'], // Will hold comma-separated items
         ['key' => 'status', 'label' => 'Status', 'type' => 'status'],
+        ['key' => 'date', 'label' => 'Created Date'],
         ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
     ];
 
@@ -34,6 +36,8 @@ class IndentController extends Controller
             'indent_registers.indent_id',
             'departments.name as department_name',
             'indent_registers.items_description',
+            'indent_registers.indent_project as project',
+            'indent_registers.indent_date as date',
             'indent_registers.indent_department as department_id',
             'indent_registers.status',
             'indent_registers.created_at',
@@ -51,6 +55,8 @@ class IndentController extends Controller
             'indent_id' => $reg->indent_id,
             'department_name' => $reg->department_name,
             'department_id' => $reg->department_id,
+            'project' => $reg->project,
+            'date' => $reg->date,
             'item_description' => $itemDescriptions ?: '-',
             'status' => ucfirst($reg->status ?? 'Pending'),
 
