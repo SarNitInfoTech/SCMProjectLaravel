@@ -33,10 +33,12 @@
 							stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
 						</svg>
-						<span class="side-menu__label">Indent Generate</span>
+						<span class="side-menu__label">Generate Token</span>
 					</a>
 				</li>
-
+				<li class="slide__category">
+					<span class="category-name">All Lists</span>
+				</li>
 				<!-- Indent Register List -->
 				<li class="slide">
 					<a href="{{ route('indent.index') }}" class="side-menu__item">
@@ -59,6 +61,33 @@
 						<span class="side-menu__label">Purchase Order List</span>
 					</a>
 				</li>
+
+				<li class="slide__category">
+					<span class="category-name">All Reports</span>
+				</li>
+				<!-- Indent Register List -->
+				<li class="slide">
+					<a href="{{ route('report.viewAllIndent') }}" class="side-menu__item">
+						<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
+							stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+						</svg>
+						<span class="side-menu__label">Indent Report</span>
+					</a>
+				</li>
+
+				<!-- Purchase Order List -->
+				<li class="slide">
+					<a href="{{ route('reports.indentspos.index') }}" class="side-menu__item">
+						<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" fill="none" viewBox="0 0 24 24"
+							stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+								d="M3 10h18M3 6h18M3 14h9m-6 4h6" />
+						</svg>
+						<span class="side-menu__label">Purchase Order Report</span>
+					</a>
+				</li>
+				
 
 
 

@@ -158,8 +158,21 @@ Route::middleware(['auth'])->group(function () {
     // -----------------------
     Route::prefix('report')->name('report.')->group(function () {
         Route::get('/view', [ReportController::class, 'viewReport'])->name('view');
+        Route::get('/view-all-indent', [ReportController::class, 'viewAllIndent'])->name('viewAllIndent');
         Route::get('/export-excel', [ReportController::class, 'exportExcel'])->name('export.excel');
     });
+
+    // routes/web.php
+    Route::get('/reports/indents/filter', [ReportController::class, 'filterAllIndentAjax'])
+    ->name('reports.indents.filter');
+    Route::get('/reports/all/indents/filter', [ReportController::class, 'allIndentAndPOlist'])
+    ->name('reports.all.indents.filter');
+    Route::get('/reports/indents-po',          [ReportController::class, 'allIndentAndPOlist'])->name('reports.indentspo.index');
+Route::get('/reports/indents-pos',        [ReportController::class, 'allIndentAndPOlist'])
+    ->name('reports.indentspos.index');
+
+Route::get('/reports/indents-pos/filter', [ReportController::class, 'filterAllIndentPOAjax'])
+    ->name('reports.indentspos.filter');
 
     // -----------------------
     // 🚫 Fallback

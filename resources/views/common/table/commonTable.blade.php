@@ -93,6 +93,8 @@
         $editUrl = is_array($value) ? ($value['edit'] ?? null) : $value;
         $filePoUrl = is_array($value) ? ($value['file_po'] ?? null) : null;
         $viewPageUrl = is_array($value) ? ($value['viewPage'] ?? null) : null;
+        $viewTitle =   $viewBtnTitle ?? 'View';
+
         $closeData = is_array($value) ? ($value['close'] ?? null) : null;
         $cancelData = is_array($value) ? ($value['cancel'] ?? null) : null;
         $pendingData = is_array($value) ? ($value['pending'] ?? null) : null;
@@ -119,7 +121,7 @@
         @if ($viewPageUrl)
             <a href="{{ $viewPageUrl }}"
                class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md shadow-sm transition-all duration-150">
-                <i class="bi bi-file-text text-sm"></i> View
+                <i class="bi bi-file-text text-sm"></i> {{$viewTitle}}
             </a>
         @endif
          {{-- Pending (Re-Open) --}}

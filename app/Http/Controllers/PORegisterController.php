@@ -23,14 +23,15 @@ class PORegisterController extends Controller
     public function index()
     {
         $title = 'PO Register List';
+        $viewBtnTitle="File Invoice";
 
         $columns = [
-            ['key' => 'po_date', 'label' => 'PO Date'],
             ['key' => 'indent_id', 'label' => 'Indent ID'],
             ['key' => 'department_name', 'label' => 'Department'],
             ['key' => 'party_name', 'label' => 'Party'],
             ['key' => 'po_amount', 'label' => 'Amount'],
             ['key' => 'status', 'label' => 'Status', 'type' => 'status'],
+            ['key' => 'po_date', 'label' => 'PO Date'],
             // ['key' => 'created_at', 'label' => 'Created At'],
             ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
         ];
@@ -46,32 +47,73 @@ class PORegisterController extends Controller
                 $join->on('po_registers.id', '=', 'latest_pos.id');
             })
             ->leftJoin('departments', 'departments.id', '=', 'po_registers.department_id')
-            ->select('po_registers.*', 'departments.name as department_name')
+            ->select('po_registers.*', 'department_id as department_name')
             ->orderByDesc('po_registers.created_at')
             ->paginate(10);
 
-        $rows = $poRegisters->map(function ($po) {
-            $action = [
-                'viewPage' => route('po-register.viewByIndent', [
-                    'indent_id' => $po->indent_id,
-                    'department_id' => $po->department_id,
-                ]),
-            ];
+       $rows = $poRegisters->map(function ($po) {
+    // start with actions (plural)
+    $actions = [
+        'viewPage' => route('po-register.viewByIndent', [
+            'indent_id'     => $po->indent_id,
+            'department_id' => $po->department_id,
+            
+        ]),
+    ];
 
-            $action['close'] = route('po-register.edit', ['po_register' => $po->id, 'action' => 'close']);
-            $action['cancel'] = route('po-register.edit', ['po_register' => $po->id, 'action' => 'cancel']);
+    $status = strtolower($po->status ?? 'pending');
 
-            return [
-                'po_date' => Carbon::parse($po->po_date)->format('d-m-Y'),
-                'indent_id' => $po->indent_id,
-                'department_name' => $po->department_name ?? '-',
-                'party_name' => $po->party_name,
-                'po_amount' => number_format($po->po_amount, 2),
-                'status' => $po->status,
-                // 'created_at' => Carbon::parse($po->created_at)->format('d-m-Y'),
-                'action' => $action,
-            ];
-        });
+    $baseParams = [
+        'indent_id'     => $po->indent_id,
+        'department_id' => $po->department_id,
+    ];
+
+    if ($status === 'pending') {
+        // pending -> edit/file + cancel/close
+        $actions['file_po'] = route('po-register.create', $baseParams);
+
+        $actions['cancel'] = [
+            'route'  => route('po-register.statusCancel'),
+            'params' => $baseParams,
+        ];
+        $actions['close'] = [
+            'route'  => route('po-register.statusClose'),
+            'params' => $baseParams,
+        ];
+    } elseif ($status === 'close') {
+        // close -> pending + cancel
+        $actions['pending'] = [
+            'route'  => route('po-register.statusPending'),
+            'params' => $baseParams,
+        ];
+        $actions['cancel'] = [
+            'route'  => route('po-register.statusCancel'),
+            'params' => $baseParams,
+        ];
+    } elseif ($status === 'cancel') {
+        // cancel -> close + pending
+        $actions['close'] = [
+            'route'  => route('po-register.statusClose'),
+            'params' => $baseParams,
+        ];
+        $actions['pending'] = [
+            'route'  => route('po-register.statusPending'),
+            'params' => $baseParams,
+        ];
+    }
+
+    return [
+        'po_date'         => $po->po_date ? \Carbon\Carbon::parse($po->po_date)->format('d-m-Y') : '-',
+        'indent_id'       => $po->indent_id,
+        'department_name' => $po->department_id ?? '-',
+        'party_name'      => $po->party_name,
+        'po_amount'       => number_format((float) $po->po_amount, 2),
+        'status'          => $po->status,
+        'action'          => $actions, // <- return the correct array
+    ];
+});
+
+
 
         return view('pages.indent.indentPOForm.listIndentPOForm.listIndentPOForm', [
             'title' => $title,
@@ -80,6 +122,7 @@ class PORegisterController extends Controller
             'pagination' => $poRegisters,
             'searchPlaceholder' => 'Search PO records...',
             'customButton' => null,
+            'viewBtnTitle'=>$viewBtnTitle
         ]);
     }
     public function create(Request $request)
@@ -106,9 +149,6 @@ class PORegisterController extends Controller
                 $itemsFromIndent = collect($decoded)->filter(fn($it) => is_array($it));
             }
         }
-
-        // 2) Gather ALL item_description values already used in POs for this indent
-        //    (adjust the where() if you also want to scope by department)
         $poItemsRaw = DB::table('po_registers')
             ->where('indent_id', $indent_id)
             // ->where('department_id', $department_id) // uncomment if needed
