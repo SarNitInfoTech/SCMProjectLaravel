@@ -154,7 +154,7 @@
         <div
             class="bg-white/90 backdrop-blur border shadow-sm rounded-2xl p-4 flex flex-wrap justify-between items-center">
             <h4 class="text-xl font-bold text-gray-900">All Purchase Orders</h4>
-            <div class="flex gap-3">
+            {{-- <div class="flex gap-3">
                 <a href="{{ route('po.export.excel', ['indent_id' => $indent_id, 'department_id' => $department_id]) }}"
                     style="background:green;"
                     class="inline-flex items-center px-4 py-2 rounded-[4px] text-sm font-medium bg-green-600 text-white shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition">
@@ -164,7 +164,7 @@
                     </svg> Export Excel
                 </a>
 
-            </div>
+            </div> --}}
         </div>
     </div>
 
@@ -321,13 +321,14 @@
                     @if ($po->status==="pending" || $po->status==="Pending")
                          <form action="{{ route('po-register.edit', $row->id) }}" method="GET" class="inline">
   <button type="submit" class="ti-btn ti-btn-success-full label-ti-btn me-[0.375rem]">
-    <i class="ri-settings-4-line label-ti-btn-icon me-2"></i>
+<i class="ri-receipt-line label-ti-btn-icon me-2"></i>
     Update P.O.
   </button>
 </form>
 <a href="{{ route('indentroview.createInvoiceById', $row->id) }}"
    class="ti-btn ti-btn-primary-full label-ti-btn me-[0.375rem] inline-flex items-center">
-  <i class="ri-settings-4-line label-ti-btn-icon me-2"></i>
+  <i class="ri-file-list-3-line label-ti-btn-icon me-2"></i>
+
 {{ $row->invoice_date ? 'Update Invoice' : 'File Invoice' }}
 
 </a>

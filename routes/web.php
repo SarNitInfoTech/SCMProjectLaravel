@@ -105,9 +105,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/po-register/status-pending', [PORegisterController::class, 'statusPending'])->name('po-register.statusPending');
     Route::post('/po-register/status-close', [PORegisterController::class, 'statusClose'])->name('po-register.statusClose');
     Route::post('/po-register/status-cancel', [PORegisterController::class, 'statusCancel'])->name('po-register.statusCancel');
-    Route::put('/po-register/{id}', [PORegisterController::class, 'updatePObyId'])->name('po-register.updatePObyId');
     Route::put('/po-register/{id}', [PORegisterController::class, 'updateInvoice'])->name('po-register.updateInvoice');
-
+    Route::patch('/po-register/{id}', [PORegisterController::class, 'updateById'])
+    ->name('po-register.updatePObyId');
 
     // -----------------------
     // 🧑‍💼 Department Heads

@@ -28,7 +28,7 @@
       </div>
 
       <div class="col-span-1">
-        <label for="store_indent_no" class="form-label text-black block mb-1">Store Indent No</label>
+        <label for="store_indent_no" class="form-label text-black block mb-1">Invoice No.</label>
         <input type="text" name="store_indent_no" id="store_indent_no" class="form-control w-full"
                value="{{ old('store_indent_no', $po->store_indent_no) }}">
       </div>

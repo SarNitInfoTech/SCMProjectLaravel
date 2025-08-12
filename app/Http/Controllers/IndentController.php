@@ -140,45 +140,90 @@ class IndentController extends Controller
 }
 
 
-    public function create()
-    {
-        $title = 'Draft List';
-        $departments = Department::all();
-        $items = Item::all();
+    // public function create()
+    // {
+    //     $title = 'Draft List';
+    //     $departments = Department::all();
+    //     $items = Item::all();
 
 
-        $rows = DB::table('indent_tickets')
-            ->leftJoin('indent_registers', function ($join) {
-                $join
-                    ->on('indent_tickets.indent_id', '=', 'indent_registers.indent_id')
-                    ->whereColumn('indent_tickets.department_id', '=', 'indent_registers.indent_department');
-            })
-            ->join('departments', 'departments.id', '=', 'indent_tickets.department_id')
-            ->whereNull('indent_registers.id')  // Only unmatched entries
-            ->select(
-                'indent_tickets.indent_id',
-                'indent_tickets.department_id',
-                'departments.name as department_name'
-            )
-            ->get();
+    //     $rows = DB::table('indent_tickets')
+    //         ->leftJoin('indent_registers', function ($join) {
+    //             $join
+    //                 ->on('indent_tickets.indent_id', '=', 'indent_registers.indent_id')
+    //                 ->whereColumn('indent_tickets.department_id', '=', 'indent_registers.indent_department');
+    //         })
+    //         ->join('departments', 'departments.id', '=', 'indent_tickets.department_id')
+    //         ->whereNull('indent_registers.id')  // Only unmatched entries
+    //         ->select(
+    //             'indent_tickets.indent_id',
+    //             'indent_tickets.department_id',
+    //             'departments.name as department_name'
+    //         )
+    //         ->get();
 
-        $columns = [
-            ['key' => 'indent_id', 'label' => 'Indent ID'],
-            ['key' => 'department_name', 'label' => 'Department Name'],
-            ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
-        ];
+    //     $columns = [
+    //         ['key' => 'indent_id', 'label' => 'Indent ID'],
+    //         ['key' => 'department_name', 'label' => 'Department Name'],
+    //         ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
+    //     ];
 
-        $rows = $rows->map(function ($row) {
-            $row = (array) $row;
-            $row['action'] = route('indent.create.form', [
-                'indent_id' => $row['indent_id'],
-                'department_id' => $row['department_id']
-            ]);
-            return $row;
-        });
+    //     $rows = $rows->map(function ($row) {
+    //         $row = (array) $row;
+    //         $row['action'] = route('indent.create.form', [
+    //             'indent_id' => $row['indent_id'],
+    //             'department_id' => $row['department_id']
+    //         ]);
+    //         return $row;
+    //     });
 
-        return view('pages.indent.generateIndent.generateIndent', compact('departments','items', 'title', 'columns', 'rows'));
-    }
+    //     return view('pages.indent.generateIndent.generateIndent', compact('departments','items', 'title', 'columns', 'rows'));
+    // }
+    
+public function create()
+{
+    $title = 'Draft List';
+    $departments = Department::all();
+    $items = Item::all();
+
+    // it = indent_tickets, d = departments, ir = indent_registers
+    $rows = DB::table('indent_tickets as it')
+        // 1) Get department name from departments.id
+        ->join('departments as d', 'd.id', '=', 'it.department_id')
+        // 2) Left join to indent_registers by indent_id + department_name (stored as indent_department)
+        ->leftJoin('indent_registers as ir', function ($join) {
+            $join->on('ir.indent_id', '=', 'it.indent_id')
+                 ->on('ir.indent_department', '=', 'd.name'); // compare to department NAME
+        })
+        // 3) Keep only tickets not yet present in indent_registers
+        ->whereNull('ir.id')
+        ->select([
+            'it.indent_id',
+            'it.department_id',           // numeric id
+            'd.name as department_name',  // resolved name
+        ])
+        ->get();
+
+    $columns = [
+        ['key' => 'indent_id', 'label' => 'Indent ID'],
+        ['key' => 'department_name', 'label' => 'Department Name'],
+        ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
+    ];
+
+    // Build action URL (passes both id and name if you want to use either)
+    $rows = $rows->map(function ($row) {
+        $row = (array) $row;
+        $row['action'] = route('indent.create.form', [
+            'indent_id'       => $row['indent_id'],
+            'department_id'   => $row['department_id'],   // numeric
+            'department_name' => $row['department_name'], // optional convenience
+        ]);
+        return $row;
+    });
+
+    return view('pages.indent.generateIndent.generateIndent',
+        compact('departments', 'items', 'title', 'columns', 'rows'));
+}
 
     public function store(Request $request)
     {
