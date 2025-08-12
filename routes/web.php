@@ -38,6 +38,8 @@ Route::middleware(['auth'])->group(function () {
     // -----------------------
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::resource('dashboard', DashboardController::class)->only(['index']);
+    Route::get('/stats/filter', [DashboardController::class, 'filter'])
+    ->name('stats.filter');
 
     // -----------------------
     // 🙍‍♂️ Profile

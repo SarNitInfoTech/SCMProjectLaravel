@@ -10,7 +10,9 @@
   src: url("../fonts/bootstrap-icons.woff2") format("woff2"),
 url("../fonts/bootstrap-icons.woff") format("woff");
 }
-
+ body{
+        background: whitesmoke !important;
+    }
 .bi::before,
 [class^="bi-"]::before,
 [class*=" bi-"]::before {

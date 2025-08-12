@@ -6,32 +6,37 @@
 
         <div class="sticky top-0 z-10 bg-white grid grid-cols-12 gap-4 border-b pb-4 mb-6">
             <div class="col-span-3">
-                <label class="form-label text-black block mb-1">Indent Ticket ID</label>
-                <input type="text" class="form-control w-full bg-gray-100" value="{{ $indent->indent_id }}" readonly disabled>
+                <label class="form-label text-black block mb-1">Indent Ticket ID <span
+                        class="text-red-500">*</span></label>
+                <input type="text" class="form-control w-full bg-gray-100" value="{{ $indent->indent_id }}" readonly
+                    disabled>
                 <input type="hidden" name="indent_id" value="{{ $indent->indent_id }}">
             </div>
             <div class="col-span-3">
-                <label class="form-label text-black block mb-1">Department</label>
-                <input type="text" class="form-control w-full bg-gray-100" value="{{ $department_id }}" readonly disabled>
+                <label class="form-label text-black block mb-1">Department <span class="text-red-500">*</span></label>
+                <input type="text" class="form-control w-full bg-gray-100" value="{{ $department_id }}" readonly
+                    disabled>
                 <input type="hidden" name="indent_department" value="{{ $indent->indent_department }}">
             </div>
             <div class="col-span-3">
-                <label for="indent_date" class="form-label text-black block mb-1">Indent Date</label>
-                <input type="date" name="indent_date" id="indent_date" class="form-control w-full" value="{{ $indent->indent_date }}" required>
+                <label for="indent_date" class="form-label text-black block mb-1">Indent Date <span
+                        class="text-red-500">*</span></label>
+                <input type="date" name="indent_date" id="indent_date" class="form-control w-full"
+                    value="{{ $indent->indent_date }}" required>
             </div>
             <div class="col-span-3">
-               <label for="indent_project" class="form-label text-black block mb-1">Indent Project</label>
-<select name="indent_project" id="indent_project" class="form-control choices-js w-full" required>
-    <option value="">-- Select Project --</option>
-    @foreach($projects as $project)
-        @php
-            $current = old('indent_project', $indent->indent_project ?? null);
-        @endphp
-        <option value="{{ $project->name }}" {{ $current === $project->name ? 'selected' : '' }}>
-            {{ $project->name }}
-        </option>
-    @endforeach
-</select>
+                <label for="indent_project" class="form-label text-black block mb-1">Indent Project</label>
+                <select name="indent_project" id="indent_project" class="form-control choices-js w-full">
+                    <option value="">-- Select Project --</option>
+                    @foreach($projects as $project)
+                        @php
+                            $current = old('indent_project', $indent->indent_project ?? null);
+                        @endphp
+                        <option value="{{ $project->name }}" {{ $current === $project->name ? 'selected' : '' }}>
+                            {{ $project->name }}
+                        </option>
+                    @endforeach
+                </select>
 
             </div>
         </div>
@@ -40,39 +45,44 @@
         <div id="items-container" class="space-y-4">
             @php $itemsDecoded = json_decode($indent->items_description, true); @endphp
             @foreach($itemsDecoded as $i => $item)
-            <div class="item-row grid grid-cols-12 gap-4 bg-gray-50 p-4 rounded relative">
-                <div class="col-span-4">
-                    <label class="form-label block mb-1">Item Description</label>
-                    <select name="items[{{ $i }}][description]" class="form-control choices-js" required>
-                        <option value="">-- Select Item --</option>
-                        @foreach($items as $it)
-                            <option value="{{ $it->name }}" {{ $item['description'] == $it->name ? 'selected' : '' }}>{{ $it->name }}</option>
-                        @endforeach
-                    </select>
+                <div class="item-row grid grid-cols-12 gap-4 bg-gray-50 p-4 rounded relative">
+                    <div class="col-span-4">
+                        <label class="form-label block mb-1">Item Description <span class="text-red-500">*</span></label>
+                        <select name="items[{{ $i }}][description]" class="form-control choices-js" required>
+                            <option value="">-- Select Item --</option>
+                            @foreach($items as $it)
+                                <option value="{{ $it->name }}" {{ $item['description'] == $it->name ? 'selected' : '' }}>
+                                    {{ $it->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="form-label block mb-1">Unit <span class="text-red-500">*</span></label>
+                        <select name="items[{{ $i }}][unit]" class="form-control w-full" required>
+                            <option value="">-- Select Unit --</option>
+                            @foreach($units as $unit)
+                                <option value="{{ $unit->id }}" {{ $item['unit'] == $unit->id ? 'selected' : '' }}>
+                                    {{ $unit->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="form-label block mb-1">Quantity Required <span class="text-red-500">*</span></label>
+                        <input type="number" name="items[{{ $i }}][required]" class="form-control qty-required w-full"
+                            value="{{ $item['quantity_required'] ?? 0 }}" min="0" required>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="form-label block mb-1">Quantity Received</label>
+                        <input type="number" name="items[{{ $i }}][received]" class="form-control qty-received w-full"
+                            value="{{ $item['quantity_received'] ?? 0 }}" min="0">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="form-label block mb-1">Quantity Balance</label>
+                        <input type="number" name="items[{{ $i }}][balance]" class="form-control qty-balance w-full"
+                            value="{{ $item['quantity_balance'] ?? 0 }}" readonly>
+                    </div>
+                    <button type="button" class="absolute top-2 right-2 text-red-500 remove-row">✖</button>
                 </div>
-                <div class="col-span-2">
-                    <label class="form-label block mb-1">Unit</label>
-                    <select name="items[{{ $i }}][unit]" class="form-control w-full" required>
-                        <option value="">-- Select Unit --</option>
-                        @foreach($units as $unit)
-                            <option value="{{ $unit->id }}" {{ $item['unit'] == $unit->id ? 'selected' : '' }}>{{ $unit->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-span-2">
-                    <label class="form-label block mb-1">Quantity Required</label>
-                    <input type="number" name="items[{{ $i }}][required]" class="form-control qty-required w-full" value="{{ $item['quantity_required'] ?? 0 }}" min="0" required>
-                </div>
-                <div class="col-span-2">
-                    <label class="form-label block mb-1">Quantity Received</label>
-                    <input type="number" name="items[{{ $i }}][received]" class="form-control qty-received w-full" value="{{ $item['quantity_received'] ?? 0 }}" min="0" required>
-                </div>
-                <div class="col-span-2">
-                    <label class="form-label block mb-1">Quantity Balance</label>
-                    <input type="number" name="items[{{ $i }}][balance]" class="form-control qty-balance w-full" value="{{ $item['quantity_balance'] ?? 0 }}" readonly>
-                </div>
-                <button type="button" class="absolute top-2 right-2 text-red-500 remove-row">✖</button>
-            </div>
             @endforeach
         </div>
 
@@ -92,7 +102,7 @@
 <template id="item-template">
     <div class="item-row grid grid-cols-12 gap-4 bg-gray-50 p-4 rounded relative">
         <div class="col-span-4">
-            <label class="form-label block mb-1">Item Description</label>
+            <label class="form-label block mb-1">Item Description <span class="text-red-500">*</span></label>
             <select name="items[__index__][description]" class="form-control choices-js" required>
                 <option value="">-- Select Item --</option>
                 @foreach($items as $item)
@@ -101,7 +111,7 @@
             </select>
         </div>
         <div class="col-span-2">
-            <label class="form-label block mb-1">Unit</label>
+            <label class="form-label block mb-1">Unit <span class="text-red-500">*</span></label>
             <select name="items[__index__][unit]" class="form-control w-full" required>
                 <option value="">-- Select Unit --</option>
                 @foreach($units as $unit)
@@ -110,16 +120,19 @@
             </select>
         </div>
         <div class="col-span-2">
-            <label class="form-label block mb-1">Quantity Required</label>
-            <input type="number" name="items[__index__][required]" class="form-control qty-required w-full" value="0" min="0" required>
+            <label class="form-label block mb-1">Quantity Required <span class="text-red-500">*</span></label>
+            <input type="number" name="items[__index__][required]" class="form-control qty-required w-full" value="0"
+                min="0" required>
         </div>
         <div class="col-span-2">
             <label class="form-label block mb-1">Quantity Received</label>
-            <input type="number" name="items[__index__][received]" class="form-control qty-received w-full" value="0" min="0" required>
+            <input type="number" name="items[__index__][received]" class="form-control qty-received w-full" value="0"
+                min="0">
         </div>
         <div class="col-span-2">
             <label class="form-label block mb-1">Quantity Balance</label>
-            <input type="number" name="items[__index__][balance]" class="form-control qty-balance w-full" value="0" readonly>
+            <input type="number" name="items[__index__][balance]" class="form-control qty-balance w-full" value="0"
+                readonly>
         </div>
         <button type="button" class="absolute top-2 right-2 text-red-500 remove-row">✖</button>
     </div>
@@ -196,9 +209,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.choices-js').forEach(el => {
-    new Choices(el, { searchEnabled: true, itemSelectText: '' });
-  });
-});
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.choices-js').forEach(el => {
+            new Choices(el, { searchEnabled: true, itemSelectText: '' });
+        });
+    });
 </script>

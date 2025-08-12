@@ -1,38 +1,41 @@
 <div class="w-full px-4 py-6 bg-white shadow rounded relative">
     <!-- Top Header Section -->
-      <form method="POST" action="{{ route('indent-register.store') }}" class="grid gap-6">
+    <form method="POST" action="{{ route('indent-register.store') }}" class="grid gap-6">
         @csrf
-    <div class="sticky top-0 z-10 bg-white grid grid-cols-12 gap-4 border-b pb-4 mb-6">
-        <div class="col-span-3">
-            <label class="form-label text-black block mb-1">Indent Ticket ID <span class="text-red-500">*</span></label>
-            <input type="text" class="form-control w-full bg-gray-100" value="{{ $indent_id }}" readonly disabled>
-        </div>
-        <div class="col-span-3">
-            <label class="form-label text-black block mb-1">Department <span class="text-red-500">*</span></label>
-            <input type="text" class="form-control w-full bg-gray-100" value="{{ $department_name }}" readonly disabled>
-        </div>
-        <div class="col-span-3">
-            <label for="indent_date" class="form-label text-black block mb-1">Indent Date <span class="text-red-500">*</span></label>
-            <input type="date" name="indent_date" id="indent_date" class="form-control w-full" required>
-        </div>
-        <div class="col-span-3">
-           <label for="indent_project" class="form-label block mb-1">
-  Indent Project <span class="text-red-500">*</span>
-</label>
-<select name="indent_project" id="indent_project" class="form-control choices-js w-full" required>
-    <option value="">-- Select Project --</option>
-    @foreach($projects as $project)
-        <option value="{{ $project->id }}" {{ old('indent_project') == $project->id ? 'selected' : '' }}>
-            {{ $project->name }}
-        </option>
-    @endforeach
-</select>
+        <div class="sticky top-0 z-10 bg-white grid grid-cols-12 gap-4 border-b pb-4 mb-6">
+            <div class="col-span-3">
+                <label class="form-label text-black block mb-1">Indent Ticket ID <span
+                        class="text-red-500">*</span></label>
+                <input type="text" class="form-control w-full bg-gray-100" value="{{ $indent_id }}" readonly disabled>
+            </div>
+            <div class="col-span-3">
+                <label class="form-label text-black block mb-1">Department <span class="text-red-500">*</span></label>
+                <input type="text" class="form-control w-full bg-gray-100" value="{{ $department_name }}" readonly
+                    disabled>
+            </div>
+            <div class="col-span-3">
+                <label for="indent_date" class="form-label text-black block mb-1">Indent Date <span
+                        class="text-red-500">*</span></label>
+                <input type="date" name="indent_date" id="indent_date" class="form-control w-full" required>
+            </div>
+            <div class="col-span-3">
+                <label for="indent_project" class="form-label block mb-1">
+                    Indent Project
+                </label>
+                <select name="indent_project" id="indent_project" class="form-control choices-js w-full">
+                    <option value="">-- Select Project --</option>
+                    @foreach($projects as $project)
+                        <option value="{{ $project->name }}" {{ old('indent_project') == $project->name ? 'selected' : '' }}>
+                            {{ $project->name }}
+                        </option>
+                    @endforeach
+                </select>
 
+            </div>
         </div>
-    </div>
 
-    <!-- Form Start -->
-  
+        <!-- Form Start -->
+
         <input type="hidden" name="indent_id" value="{{ $indent_id }}">
         <input type="hidden" name="indent_department" value="{{ $department_name }}">
 
@@ -59,15 +62,18 @@
                 </div>
                 <div class="col-span-2">
                     <label class="form-label block mb-1">Quantity Required <span class="text-red-500">*</span></label>
-                    <input type="number" name="items[0][required]" class="form-control qty-required w-full" value="0" min="0" required>
+                    <input type="number" name="items[0][required]" class="form-control qty-required w-full" value="0"
+                        min="0" required>
                 </div>
                 <div class="col-span-2">
                     <label class="form-label block mb-1">Quantity Received</label>
-                    <input type="number" name="items[0][received]" class="form-control qty-received w-full" value="0" min="0" required>
+                    <input type="number" name="items[0][received]" class="form-control qty-received w-full" value="0"
+                        min="0" required>
                 </div>
                 <div class="col-span-2">
                     <label class="form-label block mb-1">Quantity Balance</label>
-                    <input type="number" name="items[0][balance]" class="form-control qty-balance w-full" value="0" readonly>
+                    <input type="number" name="items[0][balance]" class="form-control qty-balance w-full" value="0"
+                        readonly>
                 </div>
                 <button type="button" class="absolute top-2 right-2 text-red-500 remove-row">✖</button>
             </div>
@@ -108,15 +114,18 @@
         </div>
         <div class="col-span-2">
             <label class="form-label block mb-1">Quantity Required <span class="text-red-500">*</span></label>
-            <input type="number" name="items[__index__][required]" class="form-control qty-required w-full" value="0" min="0" required>
+            <input type="number" name="items[__index__][required]" class="form-control qty-required w-full" value="0"
+                min="0" required>
         </div>
         <div class="col-span-2">
             <label class="form-label block mb-1">Quantity Received</label>
-            <input type="number" name="items[__index__][received]" class="form-control qty-received w-full" value="0" min="0" required>
+            <input type="number" name="items[__index__][received]" class="form-control qty-received w-full" value="0"
+                min="0" required>
         </div>
         <div class="col-span-2">
             <label class="form-label block mb-1">Quantity Balance</label>
-            <input type="number" name="items[__index__][balance]" class="form-control qty-balance w-full" value="0" readonly>
+            <input type="number" name="items[__index__][balance]" class="form-control qty-balance w-full" value="0"
+                readonly>
         </div>
         <button type="button" class="absolute top-2 right-2 text-red-500 remove-row">✖</button>
     </div>
@@ -193,9 +202,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.choices-js').forEach(el => {
-    new Choices(el, { searchEnabled: true, itemSelectText: '' });
-  });
-});
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.choices-js').forEach(el => {
+            new Choices(el, { searchEnabled: true, itemSelectText: '' });
+        });
+    });
 </script>
