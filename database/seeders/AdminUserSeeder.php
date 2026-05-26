@@ -14,7 +14,7 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'admin@nitratextile.org'],
+            ['email' => 'info@nitratextile.org'],
             [
                 'name' => 'Nitesh Kumar',
                 'email_verified_at' => now(),
