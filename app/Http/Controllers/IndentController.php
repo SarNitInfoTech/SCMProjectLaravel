@@ -14,24 +14,22 @@ use Illuminate\Validation\Rule;
 
 class IndentController extends Controller
 {
-  public function index()
-{
+  public function index(Request $request)
+  {
     $title = 'Indent Register List';
+    $query = DB::table('indent_registers')
+        ->join('departments', 'departments.name', '=', 'indent_registers.indent_department');
 
-    $columns = [
-        ['key' => 'indent_id', 'label' => 'Indent ID'],
-        ['key' => 'department_name', 'label' => 'Department'],
-        ['key' => 'project', 'label' => 'Project'],
-        ['key' => 'item_description', 'label' => 'Description'], // Will hold comma-separated items
-        ['key' => 'status', 'label' => 'Status', 'type' => 'status'],
-        ['key' => 'date', 'label' => 'Created Date'],
-        ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
-    ];
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('indent_registers.indent_id', 'like', "%{$search}%")
+              ->orWhere('departments.name', 'like', "%{$search}%")
+              ->orWhere('indent_registers.indent_project', 'like', "%{$search}%");
+        });
+    }
 
-    // Join with departments for department name
-    $registers = DB::table('indent_registers')
-        ->join('departments', 'departments.name', '=', 'indent_registers.indent_department')
-        ->select(
+    $registers = $query->select(
             'indent_registers.id',
             'indent_registers.indent_id',
             'departments.name as department_name',
@@ -49,9 +47,10 @@ class IndentController extends Controller
     // Format rows
     $rows = $registers->map(function ($reg) {
         $items = json_decode($reg->items_description, true) ?? [];
-        $itemDescriptions = collect($items)->pluck('description')->filter()->implode(', '); // ✅
+        $itemDescriptions = collect($items)->pluck('description')->filter()->implode(', ');
 
         return [
+            'id' => $reg->id,
             'indent_id' => $reg->indent_id,
             'department_name' => $reg->department_name,
             'department_id' => $reg->department_id,
@@ -59,85 +58,51 @@ class IndentController extends Controller
             'date' => $reg->date,
             'item_description' => $itemDescriptions ?: '-',
             'status' => ucfirst($reg->status ?? 'Pending'),
-
             'action' => (function () use ($reg) {
-    $status = strtolower($reg->status ?? 'pending');
-    $actions = [];
+                $status = strtolower($reg->status ?? 'pending');
+                $actions = [];
+                $baseParams = [
+                    'indent_id'     => $reg->indent_id,
+                    'department_id' => $reg->department_id,
+                ];
 
-    $baseParams = [
-        'indent_id'     => $reg->indent_id,
-        'department_id' => $reg->department_id,
-    ];
-
-    if ($status === 'pending') {
-        // usual pending actions
-        $actions['edit']    = route('indent-register.edit', $reg->id);
-        $actions['file_po'] = route('po-register.create', $baseParams);
-
-        // show Cancel and Close
-        $actions['cancel'] = [
-            'route'  => route('po-register.statusCancel'),
-            'params' => $baseParams,
-        ];
-        $actions['close'] = [
-            'route'  => route('po-register.statusClose'),
-            'params' => $baseParams,
-        ];
-    } elseif ($status === 'close') {
-        // when closed, only allow reverting to Pending
-        $actions['pending'] = [
-            'route'  => route('po-register.statusPending'),
-            'params' => $baseParams,
-        ];
-        $actions['cancel'] = [
-            'route'  => route('po-register.statusCancel'),
-            'params' => $baseParams,
-        ];
-    }elseif ($status === 'cancel') {
-        // when closed, only allow reverting to Pending
-        $actions['close'] = [
-            'route'  => route('po-register.statusClose'),
-            'params' => $baseParams,
-        ];
-        $actions['pending'] = [
-            'route'  => route('po-register.statusPending'),
-            'params' => $baseParams,
-        ];
-    } else {
-        // status is "cancel" (or anything else) → no actions
-        // If you want to allow reopen from cancel, uncomment below:
-        /*
-        $actions['pending'] = [
-            'route'  => route('po-register.statusPending'),
-            'params' => $baseParams,
-        ];
-        */
-    }
-
-    return $actions;
-})(),
+                if ($status === 'pending') {
+                    $actions['edit']    = route('indent-register.edit', $reg->id);
+                    $actions['file_po'] = route('po-register.create', $baseParams);
+                    $actions['cancel'] = [
+                        'route'  => route('po-register.statusCancel'),
+                        'params' => $baseParams,
+                    ];
+                    $actions['close'] = [
+                        'route'  => route('po-register.statusClose'),
+                        'params' => $baseParams,
+                    ];
+                } elseif ($status === 'close') {
+                    $actions['pending'] = [
+                        'route'  => route('po-register.statusPending'),
+                        'params' => $baseParams,
+                    ];
+                    $actions['cancel'] = [
+                        'route'  => route('po-register.statusCancel'),
+                        'params' => $baseParams,
+                    ];
+                } elseif ($status === 'cancel') {
+                    $actions['close'] = [
+                        'route'  => route('po-register.statusClose'),
+                        'params' => $baseParams,
+                    ];
+                    $actions['pending'] = [
+                        'route'  => route('po-register.statusPending'),
+                        'params' => $baseParams,
+                    ];
+                }
+                return $actions;
+            })(),
         ];
     });
 
-    $searchPlaceholder = 'Search indent records...';
-    $redirectUrl = route('indent.create');
-
-    $customButton = <<<HTML
-        <a href="{$redirectUrl}" class="ti-btn ti-btn-primary-full">
-            <i class="bi bi-plus-lg"></i>
-            Add New Indent
-        </a>
-    HTML;
-
-    return view('pages.indent.indentForm.viewIndentForm.viewIndentForm', [
-        'title' => $title,
-        'columns' => $columns,
-        'rows' => $rows,
-        'searchPlaceholder' => $searchPlaceholder,
-        'customButton' => $customButton,
-        'pagination' => $registers,
-    ]);
-}
+    return view('pages.indent.indentForm.viewIndentForm.viewIndentForm', compact('title', 'rows', 'registers'));
+  }
 
 
     // public function create()
@@ -227,18 +192,23 @@ public function create()
 
     public function store(Request $request)
     {
-        // ✅ Validate required fields and unique indent_id per department
+        // ✅ Validate required fields
         $request->validate([
             'department_id' => 'required|exists:departments,id',
-            'indent_id' => [
-                'required',
-                Rule::unique('indent_registers', 'indent_id')
-                    ->where(fn($query) => $query->where('indent_department', $request->department_id)),
-            ],
+            'indent_id' => 'required',
         ]);
 
         // ✅ Fetch department safely
         $department = Department::findOrFail($request->department_id);
+
+        // ✅ Check uniqueness against indent_registers (indent_department stores department NAME)
+        $alreadyInRegister = IndentRegister::where('indent_id', $request->indent_id)
+            ->where('indent_department', $department->name)
+            ->exists();
+
+        if ($alreadyInRegister) {
+            return redirect()->route('indent.create')->with('warning', "Indent ID {$request->indent_id} is already registered for department {$department->name}.");
+        }
 
         // ✅ Check for already registered indent (defensive redundancy)
         $alreadyRegistered = IndentTicket::where('indent_id', $request->indent_id)
@@ -312,9 +282,9 @@ public function create()
         $items = Item::all();
 
 
-        $departmentId = $indent->indent_department;
-        $department = Department::find($departmentId);
-        $departmentName = $department ? $department->name : null;
+        $departmentName = $indent->indent_department; // This IS the name already
+        $department = Department::where('name', $departmentName)->first();
+        $departmentId = $department ? $department->id : null;
 
         return view('pages.indent.indentForm.editIndentForm.editIndentForm', [
             'indent' => $indent,

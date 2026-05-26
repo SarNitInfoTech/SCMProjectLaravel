@@ -55,7 +55,26 @@ class User extends Authenticatable
     }
 
     public function department()
-{
-    return $this->belongsTo(Department::class);
-}
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function roleModel()
+    {
+        return $this->belongsTo(Role::class, 'role', 'name');
+    }
+
+    public function hasPermission($permissionName)
+    {
+        if ($this->role === 'super_admin') {
+            return true;
+        }
+
+        $role = $this->roleModel;
+        if (!$role) {
+            return false;
+        }
+
+        return $role->permissions()->where('name', $permissionName)->exists();
+    }
 }

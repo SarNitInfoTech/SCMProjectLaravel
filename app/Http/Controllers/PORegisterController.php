@@ -17,116 +17,106 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Gate;
 
 class PORegisterController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        Gate::authorize('pos.view');
         $title = 'PO Register List';
         $viewBtnTitle="File Invoice";
-
-        $columns = [
-            ['key' => 'indent_id', 'label' => 'Indent ID'],
-            ['key' => 'department_name', 'label' => 'Department'],
-            ['key' => 'party_name', 'label' => 'Party'],
-            ['key' => 'po_amount', 'label' => 'Amount'],
-            ['key' => 'status', 'label' => 'Status', 'type' => 'status'],
-            ['key' => 'po_date', 'label' => 'PO Date'],
-            // ['key' => 'created_at', 'label' => 'Created At'],
-            ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
-        ];
 
         // Subquery to get latest PO ID per indent_id
         $latestPoIds = DB::table('po_registers')
             ->select(DB::raw('MAX(id) as id'))
             ->groupBy('indent_id');
 
-        // Main query using those latest PO IDs
-        $poRegisters = DB::table('po_registers')
+        $query = DB::table('po_registers')
             ->joinSub($latestPoIds, 'latest_pos', function ($join) {
                 $join->on('po_registers.id', '=', 'latest_pos.id');
             })
-            ->leftJoin('departments', 'departments.id', '=', 'po_registers.department_id')
-            ->select('po_registers.*', 'department_id as department_name')
+            ->leftJoin('departments', 'departments.id', '=', 'po_registers.department_id');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('po_registers.indent_id', 'like', "%{$search}%")
+                  ->orWhere('departments.name', 'like', "%{$search}%")
+                  ->orWhere('po_registers.party_name', 'like', "%{$search}%");
+            });
+        }
+
+        $poRegisters = $query->select('po_registers.*', 'departments.name as department_name')
             ->orderByDesc('po_registers.created_at')
             ->paginate(10);
 
-       $rows = $poRegisters->map(function ($po) {
-    // start with actions (plural)
-    $actions = [
-        'viewPage' => route('po-register.viewByIndent', [
-            'indent_id'     => $po->indent_id,
-            'department_id' => $po->department_id,
-            
-        ]),
-    ];
+        $rows = $poRegisters->map(function ($po) {
+            $actions = [
+                'viewPage' => route('po-register.viewByIndent', [
+                    'indent_id'     => $po->indent_id,
+                    'department_id' => $po->department_id,
+                ]),
+            ];
 
-    $status = strtolower($po->status ?? 'pending');
+            $status = strtolower($po->status ?? 'pending');
 
-    $baseParams = [
-        'indent_id'     => $po->indent_id,
-        'department_id' => $po->department_id,
-    ];
+            $baseParams = [
+                'indent_id'     => $po->indent_id,
+                'department_id' => $po->department_id,
+            ];
 
-    if ($status === 'pending') {
-        // pending -> edit/file + cancel/close
-        $actions['file_po'] = route('po-register.create', $baseParams);
+            if ($status === 'pending') {
+                $actions['file_po'] = route('po-register.create', $baseParams);
+                $actions['cancel'] = [
+                    'route'  => route('po-register.statusCancel'),
+                    'params' => $baseParams,
+                ];
+                $actions['close'] = [
+                    'route'  => route('po-register.statusClose'),
+                    'params' => $baseParams,
+                ];
+            } elseif ($status === 'close') {
+                $actions['pending'] = [
+                    'route'  => route('po-register.statusPending'),
+                    'params' => $baseParams,
+                ];
+                $actions['cancel'] = [
+                    'route'  => route('po-register.statusCancel'),
+                    'params' => $baseParams,
+                ];
+            } elseif ($status === 'cancel') {
+                $actions['close'] = [
+                    'route'  => route('po-register.statusClose'),
+                    'params' => $baseParams,
+                ];
+                $actions['pending'] = [
+                    'route'  => route('po-register.statusPending'),
+                    'params' => $baseParams,
+                ];
+            }
 
-        $actions['cancel'] = [
-            'route'  => route('po-register.statusCancel'),
-            'params' => $baseParams,
-        ];
-        $actions['close'] = [
-            'route'  => route('po-register.statusClose'),
-            'params' => $baseParams,
-        ];
-    } elseif ($status === 'close') {
-        // close -> pending + cancel
-        $actions['pending'] = [
-            'route'  => route('po-register.statusPending'),
-            'params' => $baseParams,
-        ];
-        $actions['cancel'] = [
-            'route'  => route('po-register.statusCancel'),
-            'params' => $baseParams,
-        ];
-    } elseif ($status === 'cancel') {
-        // cancel -> close + pending
-        $actions['close'] = [
-            'route'  => route('po-register.statusClose'),
-            'params' => $baseParams,
-        ];
-        $actions['pending'] = [
-            'route'  => route('po-register.statusPending'),
-            'params' => $baseParams,
-        ];
-    }
-
-    return [
-        'po_date'         => $po->po_date ? \Carbon\Carbon::parse($po->po_date)->format('d-m-Y') : '-',
-        'indent_id'       => $po->indent_id,
-        'department_name' => $po->department_id ?? '-',
-        'party_name'      => $po->party_name,
-        'po_amount'       => number_format((float) $po->po_amount, 2),
-        'status'          => $po->status,
-        'action'          => $actions, // <- return the correct array
-    ];
-});
-
-
+            return [
+                'po_date'         => $po->po_date ? \Carbon\Carbon::parse($po->po_date)->format('d-m-Y') : '-',
+                'indent_id'       => $po->indent_id,
+                'department_name' => $po->department_name ?? '-',
+                'party_name'      => $po->party_name,
+                'po_amount'       => number_format((float) $po->po_amount, 2),
+                'status'          => $po->status,
+                'action'          => $actions,
+            ];
+        });
 
         return view('pages.indent.indentPOForm.listIndentPOForm.listIndentPOForm', [
             'title' => $title,
-            'columns' => $columns,
             'rows' => $rows,
             'pagination' => $poRegisters,
-            'searchPlaceholder' => 'Search PO records...',
-            'customButton' => null,
-            'viewBtnTitle'=>$viewBtnTitle
+            'viewBtnTitle' => $viewBtnTitle
         ]);
     }
     public function create(Request $request)
     {
+        Gate::authorize('pos.create');
         $indent_id = $request->get('indent_id');
         $department_id = $request->get('department_id');
 
@@ -135,10 +125,12 @@ class PORegisterController extends Controller
         $statusList = POStatus::values();
         $department_name = Department::find($department_id)?->name ?? '';
 
-        // 1) Fetch indent with full items (array of objects)
+        // indent_registers stores department NAME, not ID — resolve it
+        $department_name_resolved = Department::find($department_id)?->name ?? $department_id;
+
         $indent = DB::table('indent_registers')
             ->where('indent_id', $indent_id)
-            ->where('indent_department', $department_id)
+            ->where('indent_department', $department_name_resolved)
             ->first();
 
         $itemsFromIndent = collect();
@@ -199,6 +191,7 @@ class PORegisterController extends Controller
     }
     public function createInvoiceById(Request $request,int $id)
     {
+        Gate::authorize('pos.edit');
        $po = DB::table('po_registers')->where('id', $id)->firstOrFail();
         return view(
             'pages.indent.indentPOForm.addInvoiceIndentPOForm.addInvoiceIndentPOForm',[
@@ -207,6 +200,7 @@ class PORegisterController extends Controller
     }
     public function updateInvoice(Request $request, int $id)
 {
+    Gate::authorize('pos.edit');
     $validated = $request->validate([
         'invoice_date'   => 'nullable|date',
         'receiving_date' => 'nullable|date',
@@ -235,6 +229,7 @@ class PORegisterController extends Controller
 
     public function edit(int $id)
     {
+        Gate::authorize('pos.edit');
         $po = DB::table('po_registers')->where('id', $id)->first();
         if (!$po) {
             abort(404, 'PO not found.');
@@ -249,10 +244,12 @@ class PORegisterController extends Controller
         $statusList = POStatus::values();
         $department_name = Department::find($department_id)?->name ?? '';
 
-        // 1) Fetch indent with full items (array of objects)
+        // 1) Fetch indent with full items — indent_department stores NAME, not ID
+        $department_name_resolved = Department::find($department_id)?->name ?? $department_id;
+
         $indent = DB::table('indent_registers')
             ->where('indent_id', $indent_id)
-            ->where('indent_department', $department_id)
+            ->where('indent_department', $department_name_resolved)
             ->first();
 
         $itemsFromIndent = collect();
@@ -345,6 +342,7 @@ class PORegisterController extends Controller
     }
     public function store(Request $request)
     {
+        Gate::authorize('pos.create');
         $validated = $request->validate([
             'indent_id' => 'nullable|integer',
             'department_id' => 'nullable|string',
@@ -405,6 +403,7 @@ class PORegisterController extends Controller
     }
     public function poEditForm($id)
     {
+        Gate::authorize('pos.edit');
         $po = DB::table('po_registers')->where('id', $id)->first();
 
         if (!$po) {
@@ -420,6 +419,7 @@ class PORegisterController extends Controller
     }
     public function poFormUpdate(Request $request, $id)
     {
+        Gate::authorize('pos.edit');
         $validated = $request->validate([
             'po_date' => 'required|date',
             'status' => 'required|string',
@@ -461,11 +461,14 @@ class PORegisterController extends Controller
     }
     public function viewByIndent($indent_id, $department_id)
     {
+        Gate::authorize('pos.view');
         $title = "PO Records for Indent #$indent_id - Department";
 
         $allPos = DB::table('po_registers')
             ->leftJoin('departments', 'departments.id', '=', 'po_registers.department_id')
-            ->leftJoin('indent_registers', 'indent_registers.id', '=', 'po_registers.indent_id')
+            ->leftJoin('indent_registers', function ($join) {
+                $join->on(DB::raw('CAST(indent_registers.indent_id AS CHAR)'), '=', DB::raw('CAST(po_registers.indent_id AS CHAR)'));
+            })
             ->leftJoin('projects', 'projects.id', '=', 'indent_registers.indent_project')
             ->select(
                 'po_registers.*',
@@ -498,6 +501,7 @@ class PORegisterController extends Controller
     }
     public function downloadPORegisterExcel($indent_id, $department_id)
     {
+        Gate::authorize('pos.view');
         return Excel::download(
             new PORegisterExport($indent_id, $department_id),
             'PO_Indent_' . $indent_id . '_Dept_' . $department_id . '.xlsx'
@@ -505,8 +509,11 @@ class PORegisterController extends Controller
     }
     public function downloadPORegisterPDF($indent_id, $department_id)
     {
+        Gate::authorize('pos.view');
         $allPos = DB::table('po_registers')
-            ->leftJoin('indent_registers', 'indent_registers.id', '=', 'po_registers.indent_id')
+            ->leftJoin('indent_registers', function ($join) {
+                $join->on(DB::raw('CAST(indent_registers.indent_id AS CHAR)'), '=', DB::raw('CAST(po_registers.indent_id AS CHAR)'));
+            })
             ->leftJoin('departments', 'departments.id', '=', 'po_registers.department_id')
             ->leftJoin('projects', 'projects.id', '=', 'indent_registers.indent_project')
             ->leftJoin('units', 'units.id', '=', 'indent_registers.unit')  // if unit is ID
@@ -538,7 +545,7 @@ class PORegisterController extends Controller
                 'indent_registers.indent_department',
                 'indent_registers.indent_project',
                 'projects.name as project_name',
-                'indent_registers.item_description as indent_item_description',
+                'indent_registers.items_description as indent_item_description',
                 'indent_registers.unit as unit_id',
                 'units.name as unit_name',
                 'indent_registers.quantity_required',
@@ -560,6 +567,7 @@ class PORegisterController extends Controller
     }
     public function updatePObyId(Request $request, int $id)
     {
+        Gate::authorize('pos.edit');
         // Same validation rules as store(), all nullable so you can send partial updates
         $validated = $request->validate([
             'indent_id' => 'nullable|integer',
@@ -652,6 +660,7 @@ class PORegisterController extends Controller
     }
     public function updateStatus(Request $request)
     {
+        Gate::authorize('pos.edit');
         // Expect: id (indent_id), department (department_id), action
         $data = $request->validate([
             'id' => ['required', 'integer'],  // indent_id
@@ -699,29 +708,32 @@ class PORegisterController extends Controller
     }
     public function statusClose(Request $request)
     {
+        Gate::authorize('pos.edit');
         $data = $request->validate([
             'indent_id' => ['required', 'integer'],  // indent_id (numeric in your flow)
             'department_id' => ['required', 'string'],  // department code like "NTC"
         ]);
 
         $indentId = (int) $data['indent_id'];
-        $departmentId = (string) $data['department_id'];
+        $departmentId = is_numeric($data['department_id']) ? (int)$data['department_id'] : $data['department_id'];
 
         [$poRows, $indentRows] = DB::transaction(function () use ($indentId, $departmentId) {
-            // po_registers
+            // po_registers uses numeric department_id
             $poRows = DB::update(
                 'UPDATE `po_registers`
-             SET `status` = ?, `updated_at` = NOW()
+             SET `status` = ?, `updated_at` = ?
              WHERE `indent_id` = ? AND `department_id` = ?',
-                ['Close', $indentId, $departmentId]
+                ['Close', now(), $indentId, $departmentId]
             );
 
-            // indent_registers (note: indent_id is varchar here, so bind as string)
+            // indent_registers stores department NAME — resolve it
+            $deptName = Department::find($departmentId)?->name ?? $departmentId;
+
             $indentRows = DB::update(
                 'UPDATE `indent_registers`
-             SET `status` = ?, `updated_at` = NOW()
+             SET `status` = ?, `updated_at` = ?
              WHERE `indent_id` = ? AND `indent_department` = ?',
-                ['Close', (string) $indentId, $departmentId]
+                ['Close', now(), (string) $indentId, $deptName]
             );
 
             return [$poRows, $indentRows];
@@ -738,27 +750,31 @@ class PORegisterController extends Controller
     }
     public function statusPending(Request $request)
     {
+        Gate::authorize('pos.edit');
         $data = $request->validate([
             'indent_id' => ['required', 'integer'],
             'department_id' => ['required', 'string'],
         ]);
 
         $indentId = (int) $data['indent_id'];
-        $departmentId = (string) $data['department_id'];
+        $departmentId = is_numeric($data['department_id']) ? (int)$data['department_id'] : $data['department_id'];
 
         [$poRows, $indentRows] = DB::transaction(function () use ($indentId, $departmentId) {
             $poRows = DB::update(
                 'UPDATE `po_registers`
-             SET `status` = ?, `updated_at` = NOW()
+             SET `status` = ?, `updated_at` = ?
              WHERE `indent_id` = ? AND `department_id` = ?',
-                ['Pending', $indentId, $departmentId]
+                ['Pending', now(), $indentId, $departmentId]
             );
+
+            // indent_registers stores department NAME — resolve it
+            $deptName = Department::find($departmentId)?->name ?? $departmentId;
 
             $indentRows = DB::update(
                 'UPDATE `indent_registers`
-             SET `status` = ?, `updated_at` = NOW()
+             SET `status` = ?, `updated_at` = ?
              WHERE `indent_id` = ? AND `indent_department` = ?',
-                ['Pending', (string) $indentId, $departmentId]
+                ['Pending', now(), (string) $indentId, $deptName]
             );
 
             return [$poRows, $indentRows];
@@ -775,27 +791,31 @@ class PORegisterController extends Controller
     }
     public function statusCancel(Request $request)
     {
+        Gate::authorize('pos.edit');
         $data = $request->validate([
             'indent_id' => ['required', 'integer'],
             'department_id' => ['required', 'string'],
         ]);
 
         $indentId = (int) $data['indent_id'];
-        $departmentId = (string) $data['department_id'];
+        $departmentId = is_numeric($data['department_id']) ? (int)$data['department_id'] : $data['department_id'];
 
         [$poRows, $indentRows] = DB::transaction(function () use ($indentId, $departmentId) {
             $poRows = DB::update(
                 'UPDATE `po_registers`
-             SET `status` = ?, `updated_at` = NOW()
+             SET `status` = ?, `updated_at` = ?
              WHERE `indent_id` = ? AND `department_id` = ?',
-                ['Cancel', $indentId, $departmentId]
+                ['Cancel', now(), $indentId, $departmentId]
             );
+
+            // indent_registers stores department NAME — resolve it
+            $deptName = Department::find($departmentId)?->name ?? $departmentId;
 
             $indentRows = DB::update(
                 'UPDATE `indent_registers`
-             SET `status` = ?, `updated_at` = NOW()
+             SET `status` = ?, `updated_at` = ?
              WHERE `indent_id` = ? AND `indent_department` = ?',
-                ['Cancel', (string) $indentId, $departmentId]
+                ['Cancel', now(), (string) $indentId, $deptName]
             );
 
             return [$poRows, $indentRows];

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Department;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -11,60 +12,27 @@ use Illuminate\Validation\Rules;
 class UserController extends Controller
 {
    
-    public function index()
-{
-    $title = 'User List';
+    public function index(Request $request)
+    {
+        $title = 'User List';
+        $query = User::with('department:id,name');
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        $users = $query->paginate(10);
 
-    $columns = [
-        ['key' => 'name', 'label' => 'Name'],
-        ['key' => 'email', 'label' => 'Email'],
-        ['key' => 'role', 'label' => 'Role'],
-        ['key' => 'department', 'label' => 'Department'],
-        ['key' => 'created_at', 'label' => 'Created At'],
-        ['key' => 'updated_at', 'label' => 'Updated At'],
-        ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
-    ];
-
-    $Users = \App\Models\User::with('department:id,name')
-        ->select('id', 'name', 'email', 'role', 'department_id', 'created_at', 'updated_at')
-        ->paginate(10);
-
-    $rows = $Users->map(function ($user) {
-        return [
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => ucfirst($user->role),
-            'department' => optional($user->department)->name ?? '—',
-            'created_at' => $user->created_at->format('d-m-Y'),
-            'updated_at' => $user->updated_at->format('d-m-Y'),
-            'action' => route('users.edit', $user->id),
-        ];
-    });
-
-    $searchPlaceholder = 'Search Users...';
-    $redirectUrl = route('users.create');
-
-    $customButton = <<<HTML
-<a href="{$redirectUrl}" class="ti-btn ti-btn-primary-full">
-    <i class="bi bi-plus-lg"></i>
-    Add New User
-</a>
-HTML;
-
-    return view('pages.user.listUser.listUser', [
-        'title' => $title,
-        'columns' => $columns,
-        'rows' => $rows,
-        'searchPlaceholder' => $searchPlaceholder,
-        'customButton' => $customButton,
-        'pagination' => $Users,
-    ]);
-}
+        return view('pages.user.listUser.listUser', compact('title', 'users'));
+    }
 
     public function create()
     {
         $departments = Department::all();
-        return view('pages.user.addUser.addUser', compact('departments'));
+        $roles = Role::all();
+        return view('pages.user.addUser.addUser', compact('departments', 'roles'));
     }
 
    
@@ -102,7 +70,8 @@ public function edit($id)
 {
     $user = User::findOrFail($id);
     $departments = Department::all();
-    return view('pages.user.editUser.editUser', compact('user', 'departments'));
+    $roles = Role::all();
+    return view('pages.user.editUser.editUser', compact('user', 'departments', 'roles'));
 }
 
 public function update(Request $request, $id)

@@ -20,7 +20,9 @@ class PORegisterExport implements FromView
     public function view(): View
     {
         $query = DB::table('po_registers')
-            ->leftJoin('indent_registers', 'indent_registers.id', '=', 'po_registers.indent_id')
+            ->leftJoin('indent_registers', function ($join) {
+                $join->on(DB::raw('CAST(indent_registers.indent_id AS CHAR)'), '=', DB::raw('CAST(po_registers.indent_id AS CHAR)'));
+            })
             ->leftJoin('departments', 'departments.id', '=', 'po_registers.department_id')
             ->leftJoin('projects', 'projects.id', '=', 'indent_registers.indent_project')
             ->leftJoin('units', 'units.id', '=', 'indent_registers.unit')

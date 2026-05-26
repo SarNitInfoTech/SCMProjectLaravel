@@ -15,12 +15,20 @@ use App\Http\Controllers\{
     VendorController,
     ItemController,
     NotificationController,
-    UnitController
+    UnitController,
+    RolePermissionController
 };
 
 // =======================
 // 🔓 Public Routes
 // =======================
+// Root redirect — unauthenticated users go to login, authenticated go to dashboard
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard.index')
+        : redirect()->route('login');
+});
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
@@ -37,7 +45,6 @@ Route::middleware(['auth'])->group(function () {
     // 📊 Dashboard
     // -----------------------
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
-    Route::resource('dashboard', DashboardController::class)->only(['index']);
     Route::get('/stats/filter', [DashboardController::class, 'filter'])
     ->name('stats.filter');
 
@@ -79,7 +86,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/indent/form', [IndentController::class, 'createForm'])->name('indent.create.form');
     Route::get('/indent', [IndentController::class, 'index'])->name('indent.index');
-    Route::post('/indent/fill', [IndentController::class, 'redirectToForm'])->name('indent.redirect.to.form');
 
     // Indent Register Routes
     Route::prefix('indent-register')->name('indent-register.')->group(function () {
@@ -89,12 +95,12 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [IndentController::class, 'indentRegisterUpdate'])->name('indentRegisterUpdate');
     });
 
-    Route::post('/check-indent-exists', [IndentController::class, 'checkIndentExists'])->name('indent.check');
+
 
     // -----------------------
     // 🧾 PO Register
     // -----------------------
-    Route::resource('po-register', PORegisterController::class);
+    Route::resource('po-register', PORegisterController::class)->except(['update']);
     Route::get('/indents/po/index', [PORegisterController::class, 'index'])->name('indentroview.index');
     Route::get('/indents/po/{id}/addinvoice', [PORegisterController::class, 'createInvoiceById'])
     ->name('indentroview.createInvoiceById');
@@ -126,6 +132,11 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
 
     // -----------------------
+    // 🔐 Roles & Permissions
+    // -----------------------
+    Route::resource('roles', RolePermissionController::class);
+
+    // -----------------------
     // 🏪 Vendors
     // -----------------------
     Route::get('/vendors/list', [VendorController::class, 'index'])->name('vendors.list');
@@ -138,7 +149,6 @@ Route::middleware(['auth'])->group(function () {
     // -----------------------
     // 🏪 Vendors
     // -----------------------
-    Route::get('/items/list', [ItemController::class, 'index'])->name('items.list');
     Route::get('/items/list', [ItemController::class, 'index'])->name('items.index');
     Route::get('/items/create', [ItemController::class, 'create'])->name('items.create');
     Route::post('/items', [ItemController::class, 'store'])->name('items.store');
@@ -163,6 +173,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/view-all-indent', [ReportController::class, 'viewAllIndent'])->name('viewAllIndent');
         Route::get('/export-excel', [ReportController::class, 'exportExcel'])->name('export.excel');
     });
+    Route::get('/report/view', [ReportController::class, 'viewReport'])->name('reports.po');
 
     // routes/web.php
     Route::get('/reports/indents/filter', [ReportController::class, 'filterAllIndentAjax'])
@@ -175,6 +186,11 @@ Route::get('/reports/indents-pos',        [ReportController::class, 'allIndentAn
 
 Route::get('/reports/indents-pos/filter', [ReportController::class, 'filterAllIndentPOAjax'])
     ->name('reports.indentspos.filter');
+
+    // -----------------------
+    // 📦 Inventory Management
+    // -----------------------
+    require __DIR__.'/inventory.php';
 
     // -----------------------
     // 🚫 Fallback

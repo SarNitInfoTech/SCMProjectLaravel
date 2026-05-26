@@ -3,7 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ $title ?? 'Nitra Textiles - Indent Register' }}</title>
 
     {{-- Favicon --}}
     <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
@@ -18,6 +20,11 @@
     <link rel="stylesheet" href="{{ asset('css/simplebar.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/nano.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/jsvectormap.min.css') }}">
+
+    {{-- Excel & PDF Export Utilities (SheetJS, jsPDF, AutoTable) --}}
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 </head>
 
 <body>

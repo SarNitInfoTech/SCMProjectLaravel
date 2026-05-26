@@ -42,8 +42,9 @@
         <div>
             <label for="role" class="block text-left mb-1 text-gray-700 font-semibold">Role <span class="text-red-500">*</span></label>
             <select name="role" id="role" class="form-control w-full text-black font-normal rounded border border-gray-300 p-2" required>
-                <option value="user" {{ old('role', $user->role) === 'user' ? 'selected' : '' }}>User</option>
-                <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>Admin</option>
+                @foreach($roles as $r)
+                    <option value="{{ $r->name }}" {{ old('role', $user->role) === $r->name ? 'selected' : '' }}>{{ $r->label }}</option>
+                @endforeach
             </select>
             @error('role') <small class="text-red-600">{{ $message }}</small> @enderror
         </div>

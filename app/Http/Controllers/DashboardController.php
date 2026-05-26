@@ -37,8 +37,7 @@ class DashboardController extends Controller
         ];
 
         // Indent Recent List
-        $title = 'Recent Indent List';
-
+        $tableTitle = 'Recent Indent List';
         $columns = [
             ['key' => 'indent_id', 'label' => 'Indent ID'],
             ['key' => 'department_name', 'label' => 'Department'],
@@ -152,7 +151,7 @@ class DashboardController extends Controller
         // Indent Recent List
 
         return view('pages.dashboard.dashboard', [
-        'title' => $title,
+        'title' => $tableTitle,
         'columns' => $columns,
         'rows' => $rows,
         'searchPlaceholder' => $searchPlaceholder,
