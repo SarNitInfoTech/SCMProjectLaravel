@@ -18,7 +18,7 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'Nitesh Kumar',
                 'email_verified_at' => now(),
-                'password' => Hash::make('Nitra@Admin'),
+                'password' => Hash::make('Admin@1234'),
                 'role' => 'admin',
                 'is_active' => true,
                 'bio' => 'System Administrator for NITRA platform.',
