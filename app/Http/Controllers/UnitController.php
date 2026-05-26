@@ -9,48 +9,17 @@ class UnitController extends Controller
 {
 
 
-public function index()
-{
-    $title = 'Unit List';
+    public function index(Request $request)
+    {
+        $title = 'Unit List';
+        $query = Unit::query();
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+        $units = $query->orderBy('name')->paginate(10);
 
-    $columns = [
-        ['key' => 'name', 'label' => 'Unit Name'],
-        ['key' => 'created_at', 'label' => 'Created At'],
-        ['key' => 'updated_at', 'label' => 'Updated At'],
-        ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
-    ];
-
-    // Use paginate instead of get
-    $Units = Unit::select('id', 'name', 'created_at', 'updated_at')->paginate(10);
-
-    $rows = $Units->map(function ($dept) {
-        return [
-            'name' => $dept->name,
-            'created_at' => $dept->created_at->format('d-m-Y'),
-            'updated_at' => $dept->updated_at->format('d-m-Y'),
-            'action' => route('units.edit', $dept->id),
-        ];
-    });
-
-    $searchPlaceholder = 'Search Units...';
-    $redirectUrl = route('units.create');
-
-    $customButton = <<<HTML
-<a href="{$redirectUrl}" class="ti-btn ti-btn-primary-full">
-    <i class="bi bi-plus-lg"></i>
-    Add New Unit
-</a>
-HTML;
-
-    return view('pages.units.listUnits.listUnits', [
-        'title' => $title,
-        'columns' => $columns,
-        'rows' => $rows,
-        'searchPlaceholder' => $searchPlaceholder,
-        'customButton' => $customButton,
-        'pagination' => $Units, // Add this line
-    ]);
-}
+        return view('pages.units.listUnits.listUnits', compact('title', 'units'));
+    }
 
 public function create()
 {

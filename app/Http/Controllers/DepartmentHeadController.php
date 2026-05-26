@@ -8,50 +8,22 @@ use Illuminate\Http\Request;
 
 class DepartmentHeadController extends Controller
 {
-    public function show()
+    public function show(Request $request)
     {
         $title = 'Department Head List';
+        $query = DepartmentHead::with('department:id,name');
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('department_head', 'like', "%{$search}%")
+                  ->orWhereHas('department', function($dq) use ($search) {
+                      $dq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+        $departmentHeads = $query->paginate(10);
 
-        $columns = [
-            ['key' => 'department_name', 'label' => 'Department'],
-            ['key' => 'department_head', 'label' => 'Head Name'],
-            ['key' => 'created_at', 'label' => 'Created At'],
-            ['key' => 'updated_at', 'label' => 'Updated At'],
-            ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
-        ];
-
-        $departmentHeads = DepartmentHead::with('department:id,name')
-            ->select('id', 'department_id', 'department_head', 'created_at', 'updated_at')
-            ->paginate(10);
-
-        $rows = $departmentHeads->map(function ($dh) {
-            return [
-                'department_name' => $dh->department?->name ?? 'N/A',
-                'department_head' => $dh->department_head,
-                'created_at' => $dh->created_at->format('d-m-Y'),
-                'updated_at' => $dh->updated_at->format('d-m-Y'),
-                'action' => route('department-head.edit', $dh->id),
-            ];
-        });
-
-        $searchPlaceholder = 'Search department heads...';
-        $redirectUrl = route('departmentHead.create');
-
-        $customButton = <<<HTML
-            <a href="{$redirectUrl}" class="ti-btn ti-btn-primary-full">
-                <i class="bi bi-plus-lg"></i>
-                Add Department Head
-            </a>
-            HTML;
-
-        return view('pages.departmentHeads.listDepartmentHeads.listDepartmentHeads', [
-            'title' => $title,
-            'columns' => $columns,
-            'rows' => $rows,
-            'searchPlaceholder' => $searchPlaceholder,
-            'customButton' => $customButton,
-            'pagination' => $departmentHeads,
-        ]);
+        return view('pages.departmentHeads.listDepartmentHeads.listDepartmentHeads', compact('title', 'departmentHeads'));
     }
 
     public function create()

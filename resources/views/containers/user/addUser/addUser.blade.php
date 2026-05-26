@@ -54,8 +54,9 @@
             <select name="role" id="role"
                     class="form-control w-full text-black font-normal rounded border border-gray-300 p-2"
                     required>
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
+                @foreach($roles as $r)
+                    <option value="{{ $r->name }}">{{ $r->label }}</option>
+                @endforeach
             </select>
             @error('role') <small class="text-red-600">{{ $message }}</small> @enderror
         </div>

@@ -15,7 +15,9 @@ class ReportController extends Controller
     public function viewReport(Request $request)
     {
         $query = DB::table('po_registers')
-            ->leftJoin('indent_registers', 'indent_registers.id', '=', 'po_registers.indent_id')
+            ->leftJoin('indent_registers', function ($join) {
+                $join->on(DB::raw('CAST(indent_registers.indent_id AS CHAR)'), '=', DB::raw('CAST(po_registers.indent_id AS CHAR)'));
+            })
             ->leftJoin('departments', 'departments.id', '=', 'po_registers.department_id')
             ->leftJoin('projects', 'projects.id', '=', 'indent_registers.indent_project')
             ->leftJoin('units', 'units.id', '=', 'indent_registers.unit')
@@ -43,7 +45,7 @@ class ReportController extends Controller
                 'indent_registers.indent_id as indent_ticket_no',
                 'indent_registers.indent_date',
                 'projects.name as project_name',
-                'indent_registers.item_description as indent_item_description',
+                'indent_registers.items_description as indent_item_description',
                 'units.name as unit_name',
                 'indent_registers.quantity_required',
                 'indent_registers.purchased_order',
@@ -235,7 +237,6 @@ class ReportController extends Controller
             ->join('indent_registers as ir', function ($join) {
                 // ir.indent_id (varchar) == po.indent_id (bigint)  -> cast PO to CHAR for join
                 $join->on('ir.indent_id', '=', DB::raw('CAST(po.indent_id AS CHAR)'));
-                $join->on('ir.indent_department', '=', 'po.department_id');
             })
             ->whereNotNull('po.indent_id')
             ->whereNotNull('po.department_id')
@@ -314,7 +315,7 @@ class ReportController extends Controller
                     ? '-'
                     : collect(is_string($r->total_description) ? json_decode($r->total_description, true) : $r->total_description)
                         ->map(fn($i) => sprintf(
-                            '%s (%s)',
+                            '%s (%s) [Req:%s, Rcvd:%s, Bal:%s]',
                             $i['description'] ?? '-',
                             $i['unit'] ?? '-',
                             $i['quantity_required'] ?? 0,
@@ -371,7 +372,6 @@ class ReportController extends Controller
             ->join('indent_registers as ir', function ($join) {
                 // ir.indent_id (varchar) == po.indent_id (bigint)  -> cast PO to CHAR for join
                 $join->on('ir.indent_id', '=', DB::raw('CAST(po.indent_id AS CHAR)'));
-                $join->on('ir.indent_department', '=', 'po.department_id');
             })
             ->whereNotNull('po.indent_id')
             ->whereNotNull('po.department_id');
@@ -462,7 +462,7 @@ class ReportController extends Controller
                     if (is_array($items)) {
                         $totalDescription = collect($items)
                             ->map(fn($i) => sprintf(
-                                '%s (%s)',
+                                '%s (%s) [Req:%s, Rcvd:%s, Bal:%s]',
                                 $i['description'] ?? '-',
                                 $i['unit'] ?? '-',
                                 $i['quantity_required'] ?? 0,
