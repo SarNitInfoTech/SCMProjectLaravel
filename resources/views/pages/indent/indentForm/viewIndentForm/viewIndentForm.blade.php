@@ -7,6 +7,9 @@
         <p class="-mt-[0.2rem] mb-0 text-textmuted">Track, edit and transition status of indent requests</p>
     </div>
     <div class="flex items-center gap-2">
+        <a href="{{ route('bulk-upload.index', ['module' => 'indents']) }}" class="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded shadow transition-all flex items-center gap-1.5">
+            <i class="bi bi-file-earmark-arrow-up"></i> Bulk Import
+        </a>
         <a href="{{ route('indent.create') }}" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow transition-all">
             <i class="bi bi-plus-lg"></i> Add New Indent
         </a>

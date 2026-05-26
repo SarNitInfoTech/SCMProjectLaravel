@@ -16,7 +16,8 @@ use App\Http\Controllers\{
     ItemController,
     NotificationController,
     UnitController,
-    RolePermissionController
+    RolePermissionController,
+    BulkUploadController
 };
 
 // =======================
@@ -186,6 +187,13 @@ Route::get('/reports/indents-pos',        [ReportController::class, 'allIndentAn
 
 Route::get('/reports/indents-pos/filter', [ReportController::class, 'filterAllIndentPOAjax'])
     ->name('reports.indentspos.filter');
+
+    // -----------------------
+    // 📤 Bulk Data Upload
+    // -----------------------
+    Route::get('/bulk-upload', [BulkUploadController::class, 'index'])->name('bulk-upload.index');
+    Route::post('/bulk-upload', [BulkUploadController::class, 'store'])->name('bulk-upload.store');
+    Route::get('/bulk-upload/template/{module}', [BulkUploadController::class, 'downloadTemplate'])->name('bulk-upload.template');
 
     // -----------------------
     // 📦 Inventory Management

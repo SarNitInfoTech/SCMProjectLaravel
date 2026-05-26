@@ -6,6 +6,11 @@
         <h4 class="mb-0 text-defaulttextcolor font-medium">{{ $title }}</h4>
         <p class="-mt-[0.2rem] mb-0 text-textmuted">Manage and update purchase orders</p>
     </div>
+    <div class="flex items-center gap-2">
+        <a href="{{ route('bulk-upload.index', ['module' => 'po-registers']) }}" class="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded shadow transition-all flex items-center gap-1.5">
+            <i class="bi bi-file-earmark-arrow-up"></i> Bulk Import
+        </a>
+    </div>
 </div>
 
 @if (session('success'))
