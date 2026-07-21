@@ -7,6 +7,9 @@
         <p class="-mt-[0.2rem] mb-0 text-textmuted">Manage measurement and packaging units</p>
     </div>
     <div class="flex items-center gap-2">
+        <a href="{{ route('bulk-upload.index', ['module' => 'units']) }}" class="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded shadow transition-all flex items-center gap-1.5">
+            <i class="bi bi-file-earmark-arrow-up"></i> Bulk Import
+        </a>
         <a href="{{ route('units.create') }}" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow transition-all">
             <i class="bi bi-plus-lg"></i> Add New Unit
         </a>
@@ -63,6 +66,13 @@
                             <a href="{{ route('units.edit', $unit->id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-all">
                                 <i class="bi bi-pencil-square"></i> Edit
                             </a>
+                            <form action="{{ route('units.destroy', $unit->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this unit?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded transition-all">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 @empty
