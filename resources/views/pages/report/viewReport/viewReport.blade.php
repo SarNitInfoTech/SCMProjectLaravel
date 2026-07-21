@@ -224,7 +224,7 @@
         doc.setFont("helvetica", "bold");
         doc.setFontSize(18);
         doc.setTextColor(79, 70, 229); // Indigo
-        doc.text("Nitra Textile SCM System", 14, 20);
+        doc.text("Nitra Purchase Management System", 14, 20);
         
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
