@@ -317,92 +317,112 @@
 
     function exportToPDF() {
         const { jsPDF } = window.jspdf;
-        // 18 columns: Landscape A4 is mandatory
-        const doc = new jsPDF('l', 'mm', 'a4');
-        
+        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape A4 (18 cols)
+        const pw = doc.internal.pageSize.getWidth();
+        const ph = doc.internal.pageSize.getHeight();
+
+        // ── Header Banner ──────────────────────────────────────────────
+        doc.setFillColor(37, 99, 235);
+        doc.rect(0, 0, pw, 26, 'F');
+        doc.setFillColor(99, 102, 241);
+        doc.rect(0, 22, pw, 4, 'F');
+
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        doc.setTextColor(79, 70, 229); // Indigo
-        doc.text("Nitra Purchase Management System", 14, 15);
-        
+        doc.setFontSize(15);
+        doc.setTextColor(255, 255, 255);
+        doc.text("Nitra Purchase Management System", 8, 12);
+
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.setTextColor(100, 116, 139); // Slate
-        doc.text("Combined Indents & Purchase Orders Report", 14, 21);
-        doc.text("Generated: " + new Date().toLocaleString(), 14, 26);
-        
-        doc.setDrawColor(226, 232, 240);
-        doc.line(14, 30, 283, 30);
-        
+        doc.setFontSize(8);
+        doc.setTextColor(191, 219, 254);
+        doc.text("Combined Indents & Purchase Orders Report  |  Confidential", 8, 19);
+        doc.text("Generated: " + new Date().toLocaleString(), pw - 8, 12, { align: 'right' });
+        doc.text("inventory.nitratextile.org", pw - 8, 19, { align: 'right' });
+
+        // ── Metadata row ───────────────────────────────────────────────
+        doc.setFillColor(241, 245, 249);
+        doc.rect(0, 26, pw, 8, 'F');
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7.5);
+        doc.setTextColor(71, 85, 105);
+        doc.text("REPORT:", 8, 32);
+        doc.setFont("helvetica", "normal");
+        doc.text("Combined Indents & PO List — All Departments, All Projects", 25, 32);
+
+        // ── Table ──────────────────────────────────────────────────────
         const headers = [
-            "Indent ID", "Indent Date", "Dept", "Project", "Indent Item Description", 
-            "Party Name", "PO Date", "PO/WO No", "PO Item Description", "PO Amount", 
-            "Status", "Expected Days", "Expected Date", "Invoice No.", "Invoice Date", 
-            "Receiving Date", "Delay", "Remarks"
+            "Indent ID", "Indent Date", "Dept", "Project", "Indent Description",
+            "Party Name", "PO Date", "PO/WO No", "PO Description", "PO Amount",
+            "Status", "Exp. Days", "Exp. Date", "Invoice No.", "Invoice Date",
+            "Recv. Date", "Delay", "Remarks"
         ];
         const rows = [];
-        
         document.querySelectorAll("#combinedTableBody tr").forEach(tr => {
             const cells = tr.querySelectorAll("td");
             if (cells.length >= 18) {
-                rows.push([
-                    cells[0].innerText.trim(),
-                    cells[1].innerText.trim(),
-                    cells[2].innerText.trim(),
-                    cells[3].innerText.trim(),
-                    cells[4].innerText.trim(),
-                    cells[5].innerText.trim(),
-                    cells[6].innerText.trim(),
-                    cells[7].innerText.trim(),
-                    cells[8].innerText.trim(),
-                    cells[9].innerText.trim(),
-                    cells[10].innerText.trim(),
-                    cells[11].innerText.trim(),
-                    cells[12].innerText.trim(),
-                    cells[13].innerText.trim(),
-                    cells[14].innerText.trim(),
-                    cells[15].innerText.trim(),
-                    cells[16].innerText.trim(),
-                    cells[17].innerText.trim()
-                ]);
+                rows.push(Array.from({length: 18}, (_, i) => cells[i].innerText.trim()));
             }
         });
-        
+
         doc.autoTable({
             head: [headers],
             body: rows,
-            startY: 33,
-            theme: 'striped',
+            startY: 36,
+            theme: 'grid',
             headStyles: {
-                fillColor: [79, 70, 229],
+                fillColor: [37, 99, 235],
                 textColor: [255, 255, 255],
                 fontStyle: 'bold',
-                fontSize: 6.5
+                fontSize: 6,
+                cellPadding: 2,
+                halign: 'center',
+                valign: 'middle'
             },
             bodyStyles: {
-                fontSize: 6,
-                textColor: [30, 41, 59]
+                fontSize: 5.5,
+                textColor: [30, 41, 59],
+                cellPadding: 1.5
             },
             columnStyles: {
-                4: { cellWidth: 26 }, // Indent item descriptions
-                8: { cellWidth: 22 }, // PO item descriptions
-                17: { cellWidth: 16 } // Remarks
+                0:  { halign: 'center', cellWidth: 14 },
+                1:  { halign: 'center', cellWidth: 16 },
+                2:  { cellWidth: 14 },
+                3:  { cellWidth: 16 },
+                4:  { cellWidth: 24 },
+                5:  { cellWidth: 18 },
+                6:  { halign: 'center', cellWidth: 14 },
+                7:  { halign: 'center', cellWidth: 16 },
+                8:  { cellWidth: 20 },
+                9:  { halign: 'right',  cellWidth: 14 },
+                10: { halign: 'center', cellWidth: 14 },
+                11: { halign: 'center', cellWidth: 12 },
+                12: { halign: 'center', cellWidth: 16 },
+                13: { halign: 'center', cellWidth: 16 },
+                14: { halign: 'center', cellWidth: 16 },
+                15: { halign: 'center', cellWidth: 16 },
+                16: { halign: 'center', cellWidth: 10 },
+                17: { cellWidth: 16 }
             },
-            alternateRowStyles: {
-                fillColor: [248, 250, 252]
-            },
+            alternateRowStyles: { fillColor: [239, 246, 255] },
+            tableLineColor: [203, 213, 225],
+            tableLineWidth: 0.15,
             margin: { left: 8, right: 8 },
             didDrawPage: function (data) {
-                const pageCount = doc.internal.getNumberOfPages();
+                const y = ph - 12;
+                doc.setDrawColor(203, 213, 225);
+                doc.setLineWidth(0.3);
+                doc.line(8, y, pw - 8, y);
                 doc.setFont("helvetica", "normal");
-                doc.setFontSize(7);
+                doc.setFontSize(6.5);
                 doc.setTextColor(148, 163, 184);
-                
-                doc.text("Page " + doc.internal.getCurrentPageInfo().pageNumber + " of " + pageCount, 283, doc.internal.pageSize.height - 10, { align: 'right' });
-                doc.text("NITRA Supply Chain Management - CONFIDENTIAL", 8, doc.internal.pageSize.height - 10);
+                doc.text("Nitra Purchase Management System  •  inventory.nitratextile.org  •  CONFIDENTIAL", 8, ph - 7);
+                doc.text(
+                    "Page " + doc.internal.getCurrentPageInfo().pageNumber + " of " + doc.internal.getNumberOfPages(),
+                    pw - 8, ph - 7, { align: 'right' }
+                );
             }
         });
-        
+
         doc.save("Combined_Indent_PO_Report_" + new Date().toISOString().slice(0, 10) + ".pdf");
     }
 

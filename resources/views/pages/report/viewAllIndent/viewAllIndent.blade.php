@@ -278,71 +278,95 @@
 
     function exportToPDF() {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4'); // Portrait
-        
+        const doc = new jsPDF('p', 'mm', 'a4'); // Portrait A4
+        const pw = doc.internal.pageSize.getWidth();
+        const ph = doc.internal.pageSize.getHeight();
+
+        // ── Header Banner ──────────────────────────────────────────────
+        doc.setFillColor(37, 99, 235);
+        doc.rect(0, 0, pw, 28, 'F');
+        doc.setFillColor(99, 102, 241);
+        doc.rect(0, 24, pw, 4, 'F');
+
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-        doc.setTextColor(79, 70, 229); // Indigo
-        doc.text("Nitra Purchase Management System", 14, 20);
-        
+        doc.setFontSize(16);
+        doc.setTextColor(255, 255, 255);
+        doc.text("Nitra Purchase Management System", 14, 13);
+
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.setTextColor(100, 116, 139); // Slate
-        doc.text("Report: All Indents Registered", 14, 26);
-        doc.text("Generated On: " + new Date().toLocaleString(), 14, 31);
-        
-        doc.setDrawColor(226, 232, 240);
-        doc.line(14, 35, 196, 35);
-        
+        doc.setFontSize(8);
+        doc.setTextColor(191, 219, 254);
+        doc.text("All Indents Report  |  Confidential", 14, 20);
+        doc.text("Generated: " + new Date().toLocaleString(), pw - 14, 13, { align: 'right' });
+        doc.text("inventory.nitratextile.org", pw - 14, 20, { align: 'right' });
+
+        // ── Metadata row ───────────────────────────────────────────────
+        doc.setFillColor(241, 245, 249);
+        doc.rect(0, 28, pw, 10, 'F');
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(71, 85, 105);
+        doc.text("REPORT:", 14, 35);
+        doc.setFont("helvetica", "normal");
+        doc.text("All Indents Registered — Complete List", 32, 35);
+
+        // ── Table ──────────────────────────────────────────────────────
         const headers = ["Indent ID", "Department", "Project", "Items Description", "Status", "Indent Date"];
         const rows = [];
-        
         document.querySelectorAll("#indentTableBody tr").forEach(tr => {
             const cells = tr.querySelectorAll("td");
             if (cells.length >= 6) {
                 rows.push([
-                    cells[0].innerText.trim(),
-                    cells[1].innerText.trim(),
-                    cells[2].innerText.trim(),
-                    cells[3].innerText.trim(),
-                    cells[4].innerText.trim(),
-                    cells[5].innerText.trim()
+                    cells[0].innerText.trim(), cells[1].innerText.trim(),
+                    cells[2].innerText.trim(), cells[3].innerText.trim(),
+                    cells[4].innerText.trim(), cells[5].innerText.trim()
                 ]);
             }
         });
-        
+
         doc.autoTable({
             head: [headers],
             body: rows,
             startY: 40,
-            theme: 'striped',
+            theme: 'grid',
             headStyles: {
-                fillColor: [79, 70, 229],
+                fillColor: [37, 99, 235],
                 textColor: [255, 255, 255],
                 fontStyle: 'bold',
-                fontSize: 9
+                fontSize: 9,
+                cellPadding: 3,
+                halign: 'center'
             },
             bodyStyles: {
                 fontSize: 8.5,
-                textColor: [30, 41, 59]
+                textColor: [30, 41, 59],
+                cellPadding: 2.5
             },
             columnStyles: {
-                3: { cellWidth: 55 } // Wrap Items description elegantly
+                0: { halign: 'center', cellWidth: 22 },
+                3: { cellWidth: 58 },
+                4: { halign: 'center', cellWidth: 22 },
+                5: { halign: 'center', cellWidth: 24 }
             },
-            alternateRowStyles: {
-                fillColor: [248, 250, 252]
-            },
+            alternateRowStyles: { fillColor: [239, 246, 255] },
+            tableLineColor: [203, 213, 225],
+            tableLineWidth: 0.2,
             didDrawPage: function (data) {
-                const pageCount = doc.internal.getNumberOfPages();
+                const y = ph - 14;
+                doc.setDrawColor(203, 213, 225);
+                doc.setLineWidth(0.3);
+                doc.line(14, y, pw - 14, y);
                 doc.setFont("helvetica", "normal");
-                doc.setFontSize(8);
+                doc.setFontSize(7);
                 doc.setTextColor(148, 163, 184);
-                
-                doc.text("Page " + doc.internal.getCurrentPageInfo().pageNumber + " of " + pageCount, 196, doc.internal.pageSize.height - 10, { align: 'right' });
-                doc.text("NITRA Supply Chain Management - CONFIDENTIAL", 14, doc.internal.pageSize.height - 10);
+                doc.text("Nitra Purchase Management System  •  inventory.nitratextile.org  •  CONFIDENTIAL", 14, ph - 9);
+                doc.text(
+                    "Page " + doc.internal.getCurrentPageInfo().pageNumber + " of " + doc.internal.getNumberOfPages(),
+                    pw - 14, ph - 9, { align: 'right' }
+                );
             }
         });
-        
+
         doc.save("Indent_Report_" + new Date().toISOString().slice(0, 10) + ".pdf");
     }
 

@@ -218,71 +218,110 @@
 
     function exportToPDF() {
         const { jsPDF } = window.jspdf;
-        // PO by Indent has 8 columns; landscape is much better to avoid compression
-        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
-        
+        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+        const pw = doc.internal.pageSize.getWidth();
+        const ph = doc.internal.pageSize.getHeight();
+
+        // ── Header Banner ──────────────────────────────────────────────
+        doc.setFillColor(37, 99, 235);          // Blue-600
+        doc.rect(0, 0, pw, 28, 'F');
+
+        // Accent bar
+        doc.setFillColor(99, 102, 241);         // Indigo-500
+        doc.rect(0, 24, pw, 4, 'F');
+
+        // Company name
         doc.setFont("helvetica", "bold");
         doc.setFontSize(18);
-        doc.setTextColor(79, 70, 229); // Indigo
-        doc.text("Nitra Purchase Management System", 14, 20);
-        
+        doc.setTextColor(255, 255, 255);
+        doc.text("Nitra Purchase Management System", 14, 14);
+
+        // Report subtitle
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.setTextColor(100, 116, 139); // Slate
-        doc.text("Report: PO Report by Indent", 14, 26);
-        doc.text("Generated On: " + new Date().toLocaleString(), 14, 31);
-        
-        doc.setDrawColor(226, 232, 240);
-        doc.line(14, 35, 283, 35); // wider line for landscape
-        
+        doc.setFontSize(9);
+        doc.setTextColor(191, 219, 254);         // Blue-200
+        doc.text("PO Report by Indent  |  Confidential", 14, 21);
+
+        // Date right-aligned in header
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(191, 219, 254);
+        doc.text("Generated: " + new Date().toLocaleString(), pw - 14, 14, { align: 'right' });
+        doc.text("inventory.nitratextile.org", pw - 14, 21, { align: 'right' });
+
+        // ── Metadata row ───────────────────────────────────────────────
+        doc.setFillColor(241, 245, 249);         // Slate-100
+        doc.rect(0, 28, pw, 10, 'F');
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(71, 85, 105);            // Slate-600
+        doc.text("REPORT:", 14, 35);
+        doc.setFont("helvetica", "normal");
+        doc.text("PO Report by Indent — All Departments", 32, 35);
+
+        // ── Table ──────────────────────────────────────────────────────
         const headers = ["Indent Ticket", "Department", "Project", "Party Name", "PO No.", "PO Amount", "Status", "Created On"];
         const rows = [];
-        
         document.querySelectorAll("#po-report-table tbody tr").forEach(tr => {
             const cells = tr.querySelectorAll("td");
             if (cells.length >= 8) {
                 rows.push([
-                    cells[0].innerText.trim(),
-                    cells[1].innerText.trim(),
-                    cells[2].innerText.trim(),
-                    cells[3].innerText.trim(),
-                    cells[4].innerText.trim(),
-                    cells[5].innerText.trim(),
-                    cells[6].innerText.trim(),
-                    cells[7].innerText.trim()
+                    cells[0].innerText.trim(), cells[1].innerText.trim(),
+                    cells[2].innerText.trim(), cells[3].innerText.trim(),
+                    cells[4].innerText.trim(), cells[5].innerText.trim(),
+                    cells[6].innerText.trim(), cells[7].innerText.trim()
                 ]);
             }
         });
-        
+
         doc.autoTable({
             head: [headers],
             body: rows,
             startY: 40,
-            theme: 'striped',
+            theme: 'grid',
             headStyles: {
-                fillColor: [79, 70, 229],
+                fillColor: [37, 99, 235],
                 textColor: [255, 255, 255],
                 fontStyle: 'bold',
-                fontSize: 9.5
+                fontSize: 9,
+                cellPadding: 3,
+                halign: 'center'
             },
             bodyStyles: {
-                fontSize: 9,
-                textColor: [30, 41, 59]
+                fontSize: 8.5,
+                textColor: [30, 41, 59],
+                cellPadding: 2.5
             },
             alternateRowStyles: {
-                fillColor: [248, 250, 252]
+                fillColor: [239, 246, 255]    // Blue-50
             },
+            columnStyles: {
+                4: { halign: 'center' },
+                5: { halign: 'right' },
+                6: { halign: 'center' },
+                7: { halign: 'center' }
+            },
+            tableLineColor: [203, 213, 225],
+            tableLineWidth: 0.2,
             didDrawPage: function (data) {
-                const pageCount = doc.internal.getNumberOfPages();
+                // Footer line
+                const y = ph - 14;
+                doc.setDrawColor(203, 213, 225);
+                doc.setLineWidth(0.3);
+                doc.line(14, y, pw - 14, y);
+
+                // Footer text
                 doc.setFont("helvetica", "normal");
-                doc.setFontSize(8);
+                doc.setFontSize(7);
                 doc.setTextColor(148, 163, 184);
-                
-                doc.text("Page " + doc.internal.getCurrentPageInfo().pageNumber + " of " + pageCount, 283, doc.internal.pageSize.height - 10, { align: 'right' });
-                doc.text("NITRA Supply Chain Management - CONFIDENTIAL", 14, doc.internal.pageSize.height - 10);
+                doc.text("Nitra Purchase Management System  •  inventory.nitratextile.org  •  CONFIDENTIAL", 14, ph - 9);
+                doc.text(
+                    "Page " + doc.internal.getCurrentPageInfo().pageNumber + " of " + doc.internal.getNumberOfPages(),
+                    pw - 14, ph - 9, { align: 'right' }
+                );
             }
         });
-        
+
         doc.save("PO_Report_by_Indent_" + new Date().toISOString().slice(0, 10) + ".pdf");
     }
 
