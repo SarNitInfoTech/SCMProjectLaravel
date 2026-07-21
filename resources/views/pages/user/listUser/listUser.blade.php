@@ -76,6 +76,15 @@
                             <a href="{{ route('users.edit', $user->id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-all">
                                 <i class="bi bi-pencil-square"></i> Edit
                             </a>
+                            @if(auth()->id() !== $user->id)
+                            <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete user {{ $user->name }}?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded transition-all">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
+                            @endif
                         </td>
                     </tr>
                 @empty

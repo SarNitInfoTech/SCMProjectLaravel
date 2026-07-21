@@ -18,12 +18,12 @@ class UnitController extends Controller
         }
         $units = $query->orderBy('name')->paginate(10);
 
-        return view('pages.units.listUnits.listUnits', compact('title', 'units'));
+        return view('pages.Units.listUnits.listUnits', compact('title', 'units'));
     }
 
 public function create()
 {
-    return view('pages.units.addUnits.addUnits');
+    return view('pages.Units.addUnits.addUnits');
 }
 
 public function store(Request $request)
@@ -54,7 +54,7 @@ public function store(Request $request)
 public function edit($id)
 {
     $Unit = Unit::findOrFail($id);
-    return view('pages.units.editUnits.editUnits', compact('Unit'));
+    return view('pages.Units.editUnits.editUnits', compact('Unit'));
 }
 
 public function update(Request $request, $id)

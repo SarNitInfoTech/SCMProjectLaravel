@@ -68,6 +68,13 @@
                             <a href="{{ route('department-head.edit', $dh->id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-all">
                                 <i class="bi bi-pencil-square"></i> Edit
                             </a>
+                            <form action="{{ route('department-head.destroy', $dh->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this department head?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded transition-all">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 @empty

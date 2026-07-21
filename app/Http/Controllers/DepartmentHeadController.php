@@ -75,4 +75,12 @@ class DepartmentHeadController extends Controller
 
     return redirect()->route('departmentHead.list')->with('success', 'Department Head added successfully.');
 }
+
+public function destroy($id)
+{
+    $departmentHead = DepartmentHead::findOrFail($id);
+    $departmentHead->delete();
+
+    return redirect()->route('departmentHead.list')->with('success', 'Department Head deleted successfully.');
+}
 }
