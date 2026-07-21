@@ -8,7 +8,10 @@
     <title>{{ $title ?? 'Nitra Purchase Management System' }}</title>
 
     {{-- Favicon --}}
+    <link rel="icon" type="image/x-icon" href="{{ asset('images/favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
 
     {{-- Main JS --}}
     <script src="{{ asset('js/main.js') }}"></script>
