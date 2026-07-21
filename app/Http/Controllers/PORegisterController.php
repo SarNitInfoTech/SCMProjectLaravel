@@ -219,13 +219,15 @@ class PORegisterController extends Controller
     if ($request->has('delay_in_days'))  $data['delay_in_days']  = $request->input('delay_in_days');
     if ($request->has('store_indent_no'))$data['store_indent_no']= $request->input('store_indent_no');
 
-    $affected = DB::table('po_registers')->where('id', $id)->update($data);
+    DB::table('po_registers')->where('id', $id)->update($data);
 
-    if ($affected) {
-        return redirect()->route('indentroview.index')->with('success', 'Invoice info updated.');
-    }
+    // Fetch the PO to get indent_id and department_id for redirect back to detail page
+    $po = DB::table('po_registers')->where('id', $id)->first();
 
-    return redirect()->route('indentroview.index')->with('warning', 'No changes applied.');
+    return redirect()->route('po-register.viewByIndent', [
+        'indent_id'     => $po->indent_id,
+        'department_id' => $po->department_id,
+    ])->with('success', 'Invoice info saved successfully.');
 }
 
     public function edit(int $id)
