@@ -71,6 +71,13 @@ public function update(Request $request, $id)
     return redirect()->route('units.index')->with('success', 'Unit updated successfully.');
 }
 
+public function destroy($id)
+{
+    $unit = Unit::findOrFail($id);
+    $unit->delete();
 
+    return redirect()->route('units.index')->with('success', 'Unit deleted successfully.');
 }
 
+
+}

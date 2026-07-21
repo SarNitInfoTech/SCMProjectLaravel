@@ -221,10 +221,11 @@ class PORegisterController extends Controller
 
     $affected = DB::table('po_registers')->where('id', $id)->update($data);
 
-    return back()->with(
-        $affected ? 'success' : 'warning',
-        $affected ? 'Invoice info updated.' : 'No changes applied.'
-    );
+    if ($affected) {
+        return redirect()->route('indentroview.index')->with('success', 'Invoice info updated.');
+    }
+
+    return redirect()->route('indentroview.index')->with('warning', 'No changes applied.');
 }
 
     public function edit(int $id)

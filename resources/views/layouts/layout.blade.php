@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Nitra Textiles - Indent Register' }}</title>
+    <title>{{ $title ?? 'Nitra Purchase Management System' }}</title>
 
     {{-- Favicon --}}
     <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
