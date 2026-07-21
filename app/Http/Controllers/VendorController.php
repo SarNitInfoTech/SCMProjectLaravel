@@ -87,7 +87,7 @@ class VendorController extends Controller
     {
         $vendor->delete();
 
-        return back()->with('success', 'Vendor deleted successfully.');
+        return redirect()->route('vendors.list')->with('success', 'Vendor deleted successfully.');
     }
 
     public function show(Vendor $vendor)
