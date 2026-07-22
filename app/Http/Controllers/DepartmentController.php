@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class DepartmentController extends Controller
 {
@@ -28,11 +29,11 @@ public function create()
 public function store(Request $request)
 {
     $request->validate([
-        'name' => 'required|string|max:255',
+        'name' => 'required|string|max:255|unique:departments,name',
     ]);
 
     Department::create([
-        'name' => $request->name,
+        'name' => trim($request->name),
     ]);
 
     return redirect()->route('departments.index')->with('success', 'Department created successfully!');
@@ -45,13 +46,14 @@ public function edit($id)
 
 public function update(Request $request, $id)
 {
+    $department = Department::findOrFail($id);
+
     $request->validate([
-        'name' => 'required|string|max:255',
+        'name' => ['required', 'string', 'max:255', Rule::unique('departments', 'name')->ignore($department->id)],
     ]);
 
-    $department = Department::findOrFail($id);
     $department->update([
-        'name' => $request->name,
+        'name' => trim($request->name),
     ]);
 
     return redirect()->route('departments.index')->with('success', 'Department updated successfully.');

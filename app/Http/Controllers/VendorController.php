@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Vendor;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class VendorController extends Controller
 {
@@ -32,7 +33,7 @@ class VendorController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:vendors,name',
             'email' => 'nullable|email',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
@@ -45,6 +46,7 @@ class VendorController extends Controller
             'ifsc_code' => 'nullable|string|max:20',
         ]);
 
+        $validated['name'] = trim($validated['name']);
         $validated['is_active'] = $request->has('is_active');
 
         Vendor::create($validated);
@@ -60,7 +62,7 @@ class VendorController extends Controller
     public function update(Request $request, Vendor $vendor)
 {
     $validated = $request->validate([
-        'name' => 'required|string|max:255',
+        'name' => ['required', 'string', 'max:255', Rule::unique('vendors', 'name')->ignore($vendor->id)],
         'email' => 'nullable|email',
         'phone' => 'nullable|string|max:20',
         'address' => 'nullable|string',
@@ -73,6 +75,7 @@ class VendorController extends Controller
         'ifsc_code' => 'nullable|string|max:20',
     ]);
 
+    $validated['name'] = trim($validated['name']);
     // Handle toggle (checkbox) manually
     $validated['is_active'] = $request->has('is_active');
 

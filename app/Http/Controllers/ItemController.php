@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ItemController extends Controller
 {
@@ -28,11 +29,11 @@ class ItemController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:items,name',
         ]);
 
         $item = Item::create([
-            'name' => $request->name,
+            'name' => trim($request->name),
             'is_active' => $request->has('is_active'),
         ]);
 
@@ -55,13 +56,14 @@ class ItemController extends Controller
 
     public function update(Request $request, $id)
     {
+        $item = Item::findOrFail($id);
+
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', Rule::unique('items', 'name')->ignore($item->id)],
         ]);
 
-        $item = Item::findOrFail($id);
         $item->update([
-            'name' => $request->name,
+            'name' => trim($request->name),
             'is_active' => $request->has('is_active'),
         ]);
 

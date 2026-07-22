@@ -5,6 +5,7 @@ use App\Models\Department;
 use App\Models\Notification;
 use App\Models\DepartmentHead;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class DepartmentHeadController extends Controller
 {
@@ -42,13 +43,24 @@ class DepartmentHeadController extends Controller
 
     public function update(Request $request, $id)
     {
+        $departmentHead = DepartmentHead::findOrFail($id);
+
         $request->validate([
             'department_id' => 'required|exists:departments,id',
-            'department_head' => 'required|string|max:255',
+            'department_head' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('department_heads', 'department_head')
+                    ->where('department_id', $request->department_id)
+                    ->ignore($departmentHead->id)
+            ],
         ]);
 
-        $departmentHead = DepartmentHead::findOrFail($id);
-        $departmentHead->update($request->only('department_id', 'department_head'));
+        $departmentHead->update([
+            'department_id' => $request->department_id,
+            'department_head' => trim($request->department_head),
+        ]);
 
         return redirect()->route('departmentHead.list')->with('success', 'Department Head updated successfully.');
     }
@@ -57,11 +69,20 @@ class DepartmentHeadController extends Controller
 {
     $request->validate([
         'department_id' => 'required|exists:departments,id',
-        'department_head' => 'required|string|max:255',
+        'department_head' => [
+            'required',
+            'string',
+            'max:255',
+            Rule::unique('department_heads', 'department_head')
+                ->where('department_id', $request->department_id)
+        ],
     ]);
 
     // Create the Department Head entry
-    $head = DepartmentHead::create($request->only('department_id', 'department_head'));
+    $head = DepartmentHead::create([
+        'department_id' => $request->department_id,
+        'department_head' => trim($request->department_head),
+    ]);
 
     // Create a notification
     Notification::create([

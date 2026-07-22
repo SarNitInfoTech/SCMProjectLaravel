@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
 {
@@ -29,12 +30,12 @@ class ProjectController extends Controller
 {
     // ✅ Validate project input
     $request->validate([
-        'name' => 'required|string|max:255',
+        'name' => 'required|string|max:255|unique:projects,name',
     ]);
 
     // ✅ Create the project
     $project = Project::create([
-        'name' => $request->name,
+        'name' => trim($request->name),
     ]);
 
     // ✅ Create a notification
@@ -58,13 +59,14 @@ class ProjectController extends Controller
 
     public function update(Request $request, $id)
     {
+        $project = Project::findOrFail($id);
+
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', Rule::unique('projects', 'name')->ignore($project->id)],
         ]);
 
-        $project = Project::findOrFail($id);
         $project->update([
-            'name' => $request->name,
+            'name' => trim($request->name),
         ]);
 
         return redirect()->route('projects.index')->with('success', 'Project updated successfully.');

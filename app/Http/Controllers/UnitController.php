@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Unit;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UnitController extends Controller
 {
@@ -30,12 +31,12 @@ public function store(Request $request)
 {
     // ✅ Validate input
     $request->validate([
-        'name' => 'required|string|max:255',
+        'name' => 'required|string|max:255|unique:units,name',
     ]);
 
     // ✅ Create the Unit
     $unit = Unit::create([
-        'name' => $request->name,
+        'name' => trim($request->name),
     ]);
 
     // ✅ Create Notification
@@ -59,13 +60,14 @@ public function edit($id)
 
 public function update(Request $request, $id)
 {
+    $Unit = Unit::findOrFail($id);
+
     $request->validate([
-        'name' => 'required|string|max:255',
+        'name' => ['required', 'string', 'max:255', Rule::unique('units', 'name')->ignore($Unit->id)],
     ]);
 
-    $Unit = Unit::findOrFail($id);
     $Unit->update([
-        'name' => $request->name,
+        'name' => trim($request->name),
     ]);
 
     return redirect()->route('units.index')->with('success', 'Unit updated successfully.');
