@@ -41,7 +41,7 @@ public function store(Request $request)
 public function edit($id)
 {
     $department = Department::findOrFail($id);
-    return view('pages.departments.editdepartments.editdepartments', compact('department'));
+    return view('pages.departments.editDepartments.editDepartments', compact('department'));
 }
 
 public function update(Request $request, $id)
