@@ -52,6 +52,7 @@
                     <th scope="col" class="text-start">Party Name</th>
                     <th scope="col" class="text-start">Item Description</th>
                     <th scope="col" class="text-start">Amount</th>
+                    <th scope="col" class="text-start">Remarks</th>
                     <th scope="col" class="text-start">Status</th>
                     <th scope="col" class="text-start">PO Date</th>
                     <th scope="col" class="text-center">Action</th>
@@ -75,6 +76,7 @@
                         <td>{{ $row['party_name'] }}</td>
                         <td class="max-w-xs truncate" title="{{ $row['item_description'] }}">{{ $row['item_description'] }}</td>
                         <td>₹{{ $row['po_amount'] }}</td>
+                        <td class="max-w-xs truncate" title="{{ $row['remarks'] ?? '-' }}">{{ $row['remarks'] ?? '-' }}</td>
                         <td>
                             <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $badgeClass }}">
                                 {{ $status }}

@@ -91,6 +91,11 @@
             <button type="button" id="add-item" class="ti-btn ti-btn-secondary">+ Add Item</button>
         </div>
 
+        <div>
+            <label for="remarks" class="form-label text-black block mb-1">Remarks</label>
+            <textarea name="remarks" id="remarks" rows="2" class="form-control w-full" placeholder="Enter remarks (optional)...">{{ old('remarks', $indent->remarks) }}</textarea>
+        </div>
+
         <!-- Submit -->
         <div class="flex justify-end">
             <button type="submit" class="ti-btn ti-btn-primary-full">Update Indent</button>

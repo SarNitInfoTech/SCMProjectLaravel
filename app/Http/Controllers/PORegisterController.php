@@ -117,6 +117,7 @@ class PORegisterController extends Controller
                 'party_name'       => $po->party_name,
                 'item_description' => $itemDescriptions ?: '-',
                 'po_amount'        => number_format((float) $po->po_amount, 2),
+                'remarks'          => $po->remarks ?? '-',
                 'status'           => $po->status,
                 'action'           => $actions,
             ];

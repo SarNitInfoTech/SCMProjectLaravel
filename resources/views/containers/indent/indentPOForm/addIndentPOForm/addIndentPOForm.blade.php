@@ -97,6 +97,10 @@
                 <input type="text" id="expected_days" class="form-control w-full bg-gray-100" readonly disabled>
                 <input type="hidden" name="expected_days" id="expected_days_hidden">
             </div>
+            <div class="w-full col-span-1">
+                <label for="remarks" class="form-label text-black block mb-1">Remarks</label>
+                <textarea name="remarks" id="remarks" rows="1" class="form-control w-full" placeholder="Enter PO remarks (optional)...">{{ old('remarks') }}</textarea>
+            </div>
         </div>
 
         @if(!empty($items) && count($items) > 0)

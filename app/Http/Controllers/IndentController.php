@@ -39,6 +39,7 @@ class IndentController extends Controller
             'indent_registers.indent_date as date',
             'indent_registers.indent_department as department_id',
             'indent_registers.status',
+            'indent_registers.remarks',
             'indent_registers.created_at',
             'indent_registers.updated_at'
         )
@@ -58,6 +59,7 @@ class IndentController extends Controller
             'project' => $reg->project,
             'date' => $reg->date,
             'item_description' => $itemDescriptions ?: '-',
+            'remarks' => $reg->remarks ?? '-',
             'status' => ucfirst($reg->status ?? 'Pending'),
             'action' => (function () use ($reg) {
                 $status = strtolower($reg->status ?? 'pending');
@@ -356,6 +358,7 @@ public function create()
         'indent_project'     => $request->indent_project,
         'items_description'  => json_encode($items), // store as JSON
         'status'             => 'Pending',
+        'remarks'            => $request->input('remarks'),
     ]);
 
     // Notification
@@ -402,6 +405,7 @@ public function create()
     $indent->indent_date        = $request->indent_date;
     $indent->indent_project     = $request->indent_project;
     $indent->items_description  = json_encode($processedItems); // ✅ Save all items as JSON
+    $indent->remarks            = $request->input('remarks');
     $indent->save();
 
     return redirect()->route('indent.index')->with('success', 'Indent updated successfully!');
