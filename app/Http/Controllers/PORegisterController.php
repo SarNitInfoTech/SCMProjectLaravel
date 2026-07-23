@@ -467,6 +467,36 @@ class PORegisterController extends Controller
             ? Carbon::parse($request->input($k))->format('Y-m-d')
             : null;
 
+        $poItems = [];
+        if ($request->has('po_items') && is_array($request->input('po_items'))) {
+            foreach ($request->input('po_items') as $it) {
+                if (!empty($it['selected'])) {
+                    $req = (int)($it['quantity_required'] ?? 1);
+                    $filingQty = (int)($it['po_quantity'] ?? $req);
+                    $rec = (int)($it['quantity_received'] ?? 0);
+                    $bal = max(0, $req - ($rec + $filingQty));
+                    $poItems[] = [
+                        'description'       => $it['description'] ?? '',
+                        'unit'              => $it['unit'] ?? '',
+                        'quantity'          => $filingQty,
+                        'quantity_required' => $req,
+                        'quantity_received' => $rec,
+                        'quantity_balance'  => $bal,
+                    ];
+                }
+            }
+        }
+
+        if (empty($poItems) && $request->has('item_description')) {
+            $rawDescs = (array) $request->input('item_description');
+            foreach ($rawDescs as $d) {
+                $poItems[] = [
+                    'description' => $d,
+                    'quantity'    => 1,
+                ];
+            }
+        }
+
         DB::table('po_registers')->insert([
             'indent_id' => $request->input('indent_id'),
             'department_id' => $request->input('department_id'),
@@ -477,9 +507,7 @@ class PORegisterController extends Controller
             'po_wo_no' => $request->input('po_wo_no'),
             'po_amount' => $request->input('po_amount'),
             'debit_head' => $request->input('debit_head'),
-            'item_description' => $request->has('item_description')
-                ? json_encode($request->input('item_description'))
-                : null,
+            'item_description' => !empty($poItems) ? json_encode($poItems) : null,
             'expected_days' => $request->has('expected_days')
                 ? (string) $request->input('expected_days')  // column is varchar
                 : null,
@@ -493,6 +521,41 @@ class PORegisterController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        // Sync item counts to indent_registers
+        $indentId = $request->input('indent_id');
+        if ($indentId && !empty($poItems)) {
+            $indent = DB::table('indent_registers')->where('indent_id', $indentId)->first();
+            if ($indent && !empty($indent->items_description)) {
+                $existingItems = json_decode($indent->items_description, true) ?? [];
+                $updatedIndentItems = [];
+                foreach ($existingItems as $ex) {
+                    $desc = $ex['description'] ?? '';
+                    $poMatch = null;
+                    foreach ($poItems as $p) {
+                        if (mb_strtolower(trim($p['description'])) === mb_strtolower(trim($desc))) {
+                            $poMatch = $p;
+                            break;
+                        }
+                    }
+                    $req = (int)($ex['quantity_required'] ?? ($poMatch['quantity_required'] ?? 0));
+                    $rec = (int)($ex['quantity_received'] ?? 0);
+                    $bal = $poMatch ? ($poMatch['quantity_balance'] ?? max(0, $req - $rec)) : max(0, $req - $rec);
+
+                    $updatedIndentItems[] = [
+                        'description'       => $desc,
+                        'unit'              => $ex['unit'] ?? ($poMatch['unit'] ?? ''),
+                        'quantity_required' => $req,
+                        'quantity_received' => $rec,
+                        'quantity_balance'  => $bal,
+                    ];
+                }
+                DB::table('indent_registers')->where('id', $indent->id)->update([
+                    'items_description' => json_encode($updatedIndentItems),
+                    'updated_at'        => now(),
+                ]);
+            }
+        }
 
         return redirect()
             ->route('po-register.index')

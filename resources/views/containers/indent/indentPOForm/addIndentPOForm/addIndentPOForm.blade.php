@@ -99,6 +99,67 @@
             </div>
         </div>
 
+        @if(!empty($items) && count($items) > 0)
+        <div class="w-full col-span-full border rounded p-4 bg-gray-50">
+            <label class="form-label text-black block mb-2 font-semibold text-base">
+                Item Description & Filing Quantity (Count) Breakdown <span class="text-red-500 required-asterisk">*</span>
+            </label>
+            <div class="overflow-x-auto">
+                <table class="table min-w-full bg-white border text-sm">
+                    <thead>
+                        <tr class="bg-gray-100 border-b text-gray-700">
+                            <th class="p-2 text-center w-12">Select</th>
+                            <th class="p-2 text-start">Item Description</th>
+                            <th class="p-2 text-center">Unit</th>
+                            <th class="p-2 text-center">Qty Required</th>
+                            <th class="p-2 text-center">Qty Received</th>
+                            <th class="p-2 text-center w-36">Filing PO Qty (Count)</th>
+                            <th class="p-2 text-center">Remaining Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($items as $idx => $item)
+                            @php
+                                $req = (int)($item['quantity_required'] ?? 1);
+                                $rec = (int)($item['quantity_received'] ?? 0);
+                                $rem = isset($item['quantity_balance']) ? (int)$item['quantity_balance'] : max(0, $req - $rec);
+                                $defaultFiling = $rem > 0 ? $rem : $req;
+                            @endphp
+                            <tr class="border-b po-item-row">
+                                <td class="p-2 text-center">
+                                    <input type="checkbox" name="po_items[{{ $idx }}][selected]" value="1" class="form-checkbox h-4 w-4 text-indigo-600 po-item-check" checked>
+                                </td>
+                                <td class="p-2 font-medium">
+                                    {{ $item['description'] }}
+                                    <input type="hidden" name="po_items[{{ $idx }}][description]" value="{{ $item['description'] }}">
+                                    <input type="hidden" name="po_items[{{ $idx }}][unit]" value="{{ $item['unit'] ?? '' }}">
+                                    <input type="hidden" name="po_items[{{ $idx }}][quantity_required]" value="{{ $req }}" class="js-po-req">
+                                    <input type="hidden" name="po_items[{{ $idx }}][quantity_received]" value="{{ $rec }}" class="js-po-rec">
+                                </td>
+                                <td class="p-2 text-center">{{ $item['unit'] ?? '-' }}</td>
+                                <td class="p-2 text-center font-semibold">{{ $req }}</td>
+                                <td class="p-2 text-center">{{ $rec }}</td>
+                                <td class="p-2 text-center">
+                                    <input type="number" 
+                                           name="po_items[{{ $idx }}][po_quantity]" 
+                                           value="{{ $defaultFiling }}" 
+                                           min="1" 
+                                           max="{{ $req }}"
+                                           class="form-control text-center js-po-qty w-full po-required-field" required>
+                                </td>
+                                <td class="p-2 text-center">
+                                    <span class="js-po-rem font-bold {{ max(0, $req - ($rec + $defaultFiling)) > 0 ? 'text-orange-600' : 'text-green-600' }}">
+                                        {{ max(0, $req - ($rec + $defaultFiling)) > 0 ? max(0, $req - ($rec + $defaultFiling)) . ' remaining' : '0 (Fully Filed)' }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
         <div class="flex justify-end">
             <button type="submit" class="ti-btn ti-btn-primary-full">Submit PO</button>
         </div>
@@ -154,6 +215,30 @@
         });
 
         receivingDateInput?.addEventListener('change', calculateDelayDays);
+
+        // Live calculation of PO item remaining balance
+        document.querySelectorAll('.po-item-row').forEach(row => {
+            const req = parseInt(row.querySelector('.js-po-req')?.value || 0, 10);
+            const rec = parseInt(row.querySelector('.js-po-rec')?.value || 0, 10);
+            const qtyInput = row.querySelector('.js-po-qty');
+            const remSpan = row.querySelector('.js-po-rem');
+
+            function updateRem() {
+                const filing = parseInt(qtyInput?.value || 0, 10);
+                const rem = Math.max(0, req - (rec + filing));
+                if (remSpan) {
+                    if (rem > 0) {
+                        remSpan.textContent = rem + ' remaining';
+                        remSpan.className = 'js-po-rem font-bold text-orange-600';
+                    } else {
+                        remSpan.textContent = '0 (Fully Filed)';
+                        remSpan.className = 'js-po-rem font-bold text-green-600';
+                    }
+                }
+            }
+
+            qtyInput?.addEventListener('input', updateRem);
+        });
 
         // Toggle Mandatory / Non-Mandatory requirement fields
         const mandatorySelect = document.getElementById('is_mandatory');
