@@ -25,7 +25,8 @@ class IndentController extends Controller
         $query->where(function($q) use ($search) {
             $q->where('indent_registers.indent_id', 'like', "%{$search}%")
               ->orWhere('departments.name', 'like', "%{$search}%")
-              ->orWhere('indent_registers.indent_project', 'like', "%{$search}%");
+              ->orWhere('indent_registers.indent_project', 'like', "%{$search}%")
+              ->orWhere('indent_registers.items_description', 'like', "%{$search}%");
         });
     }
 

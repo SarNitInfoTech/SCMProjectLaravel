@@ -21,22 +21,30 @@
       </div>
 
       <div class="w-full col-span-1">
-        <label for="status_show" class="form-label text-black block mb-1">Status</label>
-        <input id="status_show" type="text" class="form-control w-full bg-gray-100 cursor-not-allowed"
-               value="{{ $po->status }}" readonly disabled>
+        <label for="is_mandatory" class="form-label text-black block mb-1">Requirement Type <span class="text-red-500">*</span></label>
+        <select name="is_mandatory" id="is_mandatory" class="form-control w-full">
+            <option value="Mandatory" {{ old('is_mandatory', $po->is_mandatory ?? 'Mandatory') === 'Mandatory' ? 'selected' : '' }}>Mandatory</option>
+            <option value="Non-Mandatory" {{ old('is_mandatory', $po->is_mandatory ?? 'Mandatory') === 'Non-Mandatory' ? 'selected' : '' }}>Non-Mandatory</option>
+        </select>
       </div>
 
       <div class="w-full col-span-1">
-        <label for="po_date" class="form-label text-black block mb-1">PO Date <span class="text-red-500">*</span></label>
-        <input type="date" name="po_date" id="po_date" class="form-control w-full"
-               value="{{ old('po_date', $po->po_date) }}" required>
+        <label for="status_show" class="form-label text-black block mb-1">Status</label>
+        <input id="status_show" type="text" class="form-control w-full bg-gray-100 cursor-not-allowed"
+               value="{{ $po->status }}" readonly disabled>
       </div>
     </div>
 
     <div class="grid grid-cols-4 gap-6">
       <div class="w-full col-span-1">
-        <label for="party_name" class="form-label text-black block mb-1">Party Name <span class="text-red-500">*</span></label>
-        <select name="party_name" id="party_name" class="form-control w-full" required>
+        <label for="po_date" class="form-label text-black block mb-1">PO Date <span class="text-red-500 required-asterisk">*</span></label>
+        <input type="date" name="po_date" id="po_date" class="form-control w-full po-required-field"
+               value="{{ old('po_date', $po->po_date) }}" required>
+      </div>
+
+      <div class="w-full col-span-1">
+        <label for="party_name" class="form-label text-black block mb-1">Party Name <span class="text-red-500 required-asterisk">*</span></label>
+        <select name="party_name" id="party_name" class="form-control w-full po-required-field" required>
           <option value="">Select party</option>
           @foreach ($projectList as $vendor)
             <option value="{{ $vendor->name }}"
@@ -51,18 +59,18 @@
       </div>
 
       <div class="w-full col-span-1">
-        <label for="po_wo_no" class="form-label text-black block mb-1">PO/WO No. <span class="text-red-500">*</span></label>
-        <input type="text" name="po_wo_no" id="po_wo_no" class="form-control w-full"
+        <label for="po_wo_no" class="form-label text-black block mb-1">PO/WO No. <span class="text-red-500 required-asterisk">*</span></label>
+        <input type="text" name="po_wo_no" id="po_wo_no" class="form-control w-full po-required-field"
                value="{{ old('po_wo_no', $po->po_wo_no) }}" required>
       </div>
 
       <div class="w-full col-span-1">
-        <label for="po_amount" class="form-label text-black block mb-1">PO Amount <span class="text-red-500">*</span></label>
+        <label for="po_amount" class="form-label text-black block mb-1">PO Amount <span class="text-red-500 required-asterisk">*</span></label>
         <input
           type="number"
           name="po_amount"
           id="po_amount"
-          class="form-control w-full"
+          class="form-control w-full po-required-field"
           step="0.01"
           min="0"
           inputmode="decimal"
@@ -79,7 +87,9 @@
           "
         />
       </div>
-      @php
+    </div>
+
+    @php
       // $selectedItems: array of item objects (from controller)
       // $itemsRemaining: array of item objects
       $selected = collect($selectedItems ?? [])->map(fn($i) => (string)($i['description'] ?? ''))->filter()->unique()->values();
@@ -87,12 +97,12 @@
                     ->reject(fn($d) => $selected->contains($d))->unique()->values();
     @endphp
 
-  
+    <div class="grid grid-cols-4 gap-6">
       <div class="w-full col-span-1">
         <label for="item_description" class="form-label text-black block mb-1">
-          Item Description <span class="text-red-500">*</span>
+          Item Description <span class="text-red-500 required-asterisk">*</span>
         </label>
-        <select class="ti-form-select rounded-sm !py-2 !px-3 choices-multiple-remove"
+        <select class="ti-form-select rounded-sm !py-2 !px-3 choices-multiple-remove po-required-field"
                 name="item_description[]" id="item_description" multiple required>
           {{-- Preselected items --}}
           @foreach ($selected as $desc)
@@ -104,16 +114,10 @@
           @endforeach
         </select>
       </div>
-    </div>
 
-    {{-- Items --}}
-    
-    
-
-    <div class="grid grid-cols-4 gap-6">
       <div class="w-full col-span-1">
-        <label for="expected_date" class="form-label text-black block mb-1">Expected Date <span class="text-red-500">*</span></label>
-        <input type="date" name="expected_date" id="expected_date" class="form-control w-full"
+        <label for="expected_date" class="form-label text-black block mb-1">Expected Date <span class="text-red-500 required-asterisk">*</span></label>
+        <input type="date" name="expected_date" id="expected_date" class="form-control w-full po-required-field"
                value="{{ old('expected_date', $po->expected_date) }}" required>
       </div>
 
@@ -159,6 +163,36 @@ document.addEventListener('DOMContentLoaded', function () {
     placeholderValue: 'Select item(s)',
     searchPlaceholderValue: 'Search items...',
   });
+
+  // Toggle Mandatory / Non-Mandatory requirement fields
+  const mandatorySelect = document.getElementById('is_mandatory');
+
+  function updateRequiredState() {
+    const isMandatory = mandatorySelect ? mandatorySelect.value === 'Mandatory' : true;
+    const requiredFields = document.querySelectorAll('.po-required-field');
+    const asterisks = document.querySelectorAll('.required-asterisk');
+
+    requiredFields.forEach(field => {
+      if (isMandatory) {
+        field.setAttribute('required', 'required');
+      } else {
+        field.removeAttribute('required');
+      }
+    });
+
+    asterisks.forEach(asterisk => {
+      if (isMandatory) {
+        asterisk.style.display = 'inline';
+      } else {
+        asterisk.style.display = 'none';
+      }
+    });
+  }
+
+  if (mandatorySelect) {
+    mandatorySelect.addEventListener('change', updateRequiredState);
+    updateRequiredState();
+  }
 });
 </script>
 

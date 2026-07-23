@@ -13,6 +13,7 @@ protected $fillable = [
     'indent_id',
     'department_id',
     'status',
+    'is_mandatory',
     'invoice',
     'po_date',
     'party_name',

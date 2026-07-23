@@ -31,7 +31,7 @@
                     type="text"
                     name="search"
                     value="{{ request('search') }}"
-                    placeholder="Search ID, department, project..."
+                    placeholder="Search ID, department, project, item..."
                     class="form-input rounded border px-3 py-1.5 text-sm w-64 bg-gray-50"
                 >
                 <button type="submit" class="px-4 py-1.5 text-sm bg-gray-800 hover:bg-gray-900 text-white rounded">

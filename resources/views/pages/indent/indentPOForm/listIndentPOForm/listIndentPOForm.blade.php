@@ -28,7 +28,7 @@
                     type="text"
                     name="search"
                     value="{{ request('search') }}"
-                    placeholder="Search ID, department, party..."
+                    placeholder="Search ID, department, party, item..."
                     class="form-input rounded border px-3 py-1.5 text-sm w-64 bg-gray-50"
                 >
                 <button type="submit" class="px-4 py-1.5 text-sm bg-gray-800 hover:bg-gray-900 text-white rounded">
@@ -50,6 +50,7 @@
                     <th scope="col" class="text-start">Indent ID</th>
                     <th scope="col" class="text-start">Department</th>
                     <th scope="col" class="text-start">Party Name</th>
+                    <th scope="col" class="text-start">Item Description</th>
                     <th scope="col" class="text-start">Amount</th>
                     <th scope="col" class="text-start">Status</th>
                     <th scope="col" class="text-start">PO Date</th>
@@ -72,6 +73,7 @@
                         <td class="font-medium text-gray-900">{{ $row['indent_id'] }}</td>
                         <td>{{ $row['department_name'] }}</td>
                         <td>{{ $row['party_name'] }}</td>
+                        <td class="max-w-xs truncate" title="{{ $row['item_description'] }}">{{ $row['item_description'] }}</td>
                         <td>₹{{ $row['po_amount'] }}</td>
                         <td>
                             <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $badgeClass }}">

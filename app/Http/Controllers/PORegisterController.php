@@ -43,7 +43,8 @@ class PORegisterController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('po_registers.indent_id', 'like', "%{$search}%")
                   ->orWhere('departments.name', 'like', "%{$search}%")
-                  ->orWhere('po_registers.party_name', 'like', "%{$search}%");
+                  ->orWhere('po_registers.party_name', 'like', "%{$search}%")
+                  ->orWhere('po_registers.item_description', 'like', "%{$search}%");
             });
         }
 
@@ -96,14 +97,28 @@ class PORegisterController extends Controller
                 ];
             }
 
+            $items = [];
+            if (!empty($po->item_description) && is_string($po->item_description)) {
+                $decoded = json_decode($po->item_description, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $items = collect($decoded)->map(function ($it) {
+                        return is_array($it) ? (string) ($it['description'] ?? '') : (string) $it;
+                    })->filter()->values()->all();
+                } else {
+                    $items = [ $po->item_description ];
+                }
+            }
+            $itemDescriptions = implode(', ', $items);
+
             return [
-                'po_date'         => $po->po_date ? \Carbon\Carbon::parse($po->po_date)->format('d-m-Y') : '-',
-                'indent_id'       => $po->indent_id,
-                'department_name' => $po->department_name ?? '-',
-                'party_name'      => $po->party_name,
-                'po_amount'       => number_format((float) $po->po_amount, 2),
-                'status'          => $po->status,
-                'action'          => $actions,
+                'po_date'          => $po->po_date ? \Carbon\Carbon::parse($po->po_date)->format('d-m-Y') : '-',
+                'indent_id'        => $po->indent_id,
+                'department_name'  => $po->department_name ?? '-',
+                'party_name'       => $po->party_name,
+                'item_description' => $itemDescriptions ?: '-',
+                'po_amount'        => number_format((float) $po->po_amount, 2),
+                'status'           => $po->status,
+                'action'           => $actions,
             ];
         });
 
@@ -174,61 +189,138 @@ class PORegisterController extends Controller
             ->unique()
             ->values();
 
-        // 4) Keep only indent items whose description is NOT already created
+        // 4) Keep indent items with remaining balance (>0) or not yet created
         $items = $itemsFromIndent
             ->filter(function ($item) use ($alreadyCreatedSet) {
                 $desc = mb_strtolower(trim((string) ($item['description'] ?? '')));
-                return $desc !== '' && !$alreadyCreatedSet->contains($desc);
+                if ($desc === '') return false;
+                $req = (int)($item['quantity_required'] ?? 1);
+                $rec = (int)($item['quantity_received'] ?? 0);
+                $bal = isset($item['quantity_balance']) ? (int)$item['quantity_balance'] : max(0, $req - $rec);
+                return $bal > 0 || !$alreadyCreatedSet->contains($desc);
             })
             ->values()
             ->all();
 
-        // Now $items contains ONLY the not-yet-created options (with full object: description, unit, quantities, etc.)
+        // Now $items contains ONLY options with remaining balance or not yet created
         return view(
             'pages.indent.indentPOForm.addIndentPOForm.addIndentPOForm',
             compact('indent_id', 'departmentHeads', 'department_id', 'department_name', 'statusList', 'projectList', 'items')
         );
     }
-    public function createInvoiceById(Request $request,int $id)
+
+    public function createInvoiceById(Request $request, int $id)
     {
         Gate::authorize('pos.edit');
-       $po = DB::table('po_registers')->where('id', $id)->firstOrFail();
+        $po = DB::table('po_registers')->where('id', $id)->firstOrFail();
+
+        $indent = DB::table('indent_registers')
+            ->where('indent_id', $po->indent_id)
+            ->first();
+
+        $indentItems = [];
+        if ($indent && !empty($indent->items_description)) {
+            $decoded = json_decode($indent->items_description, true);
+            if (is_array($decoded)) {
+                $indentItems = $decoded;
+            }
+        }
+
         return view(
-            'pages.indent.indentPOForm.addInvoiceIndentPOForm.addInvoiceIndentPOForm',[
-        'po'            => $po,
-    ]);
+            'pages.indent.indentPOForm.addInvoiceIndentPOForm.addInvoiceIndentPOForm', [
+                'po'          => $po,
+                'indent'      => $indent,
+                'indentItems' => $indentItems,
+            ]
+        );
     }
+
     public function updateInvoice(Request $request, int $id)
-{
-    Gate::authorize('pos.edit');
-    $validated = $request->validate([
-        'invoice_date'   => 'nullable|date',
-        'receiving_date' => 'nullable|date',
-        'delay_in_days'  => 'nullable|integer|min:0',
-        'store_indent_no'=> 'nullable|string|max:255',
-    ]);
+    {
+        Gate::authorize('pos.edit');
+        $validated = $request->validate([
+            'invoice_date'   => 'nullable|date',
+            'receiving_date' => 'nullable|date',
+            'delay_in_days'  => 'nullable|integer|min:0',
+            'store_indent_no'=> 'nullable|string|max:255',
+            'items'          => 'nullable|array',
+        ]);
 
-    $fmt = fn($k) => $request->filled($k)
-        ? Carbon::parse($request->input($k))->format('Y-m-d')
-        : null;
+        $fmt = fn($k) => $request->filled($k)
+            ? Carbon::parse($request->input($k))->format('Y-m-d')
+            : null;
 
-    $data = ['updated_at' => now()];
+        $data = ['updated_at' => now()];
 
-    if ($request->has('invoice_date'))   $data['invoice_date']   = $fmt('invoice_date');
-    if ($request->has('receiving_date')) $data['receiving_date'] = $fmt('receiving_date');
-    if ($request->has('delay_in_days'))  $data['delay_in_days']  = $request->input('delay_in_days');
-    if ($request->has('store_indent_no'))$data['store_indent_no']= $request->input('store_indent_no');
+        if ($request->has('invoice_date'))   $data['invoice_date']   = $fmt('invoice_date');
+        if ($request->has('receiving_date')) $data['receiving_date'] = $fmt('receiving_date');
+        if ($request->has('delay_in_days'))  $data['delay_in_days']  = $request->input('delay_in_days');
+        if ($request->has('store_indent_no'))$data['store_indent_no']= $request->input('store_indent_no');
 
-    DB::table('po_registers')->where('id', $id)->update($data);
+        DB::table('po_registers')->where('id', $id)->update($data);
 
-    // Fetch the PO to get indent_id and department_id for redirect back to detail page
-    $po = DB::table('po_registers')->where('id', $id)->first();
+        // Fetch the PO to get indent_id and department_id
+        $po = DB::table('po_registers')->where('id', $id)->first();
 
-    return redirect()->route('po-register.viewByIndent', [
-        'indent_id'     => $po->indent_id,
-        'department_id' => $po->department_id,
-    ])->with('success', 'Invoice info saved successfully.');
-}
+        // Sync item received quantities to indent_registers
+        if ($po && $po->indent_id && $request->has('items') && is_array($request->input('items'))) {
+            $indent = DB::table('indent_registers')
+                ->where('indent_id', $po->indent_id)
+                ->first();
+
+            if ($indent && !empty($indent->items_description)) {
+                $existingItems = json_decode($indent->items_description, true) ?? [];
+                $submittedItems = $request->input('items');
+
+                $updatedItems = [];
+                $allCompleted = true;
+
+                foreach ($existingItems as $ex) {
+                    $desc = $ex['description'] ?? '';
+                    $foundMatch = null;
+                    foreach ($submittedItems as $sub) {
+                        if (isset($sub['description']) && mb_strtolower(trim($sub['description'])) === mb_strtolower(trim($desc))) {
+                            $foundMatch = $sub;
+                            break;
+                        }
+                    }
+
+                    $req = (int)($ex['quantity_required'] ?? ($foundMatch['required'] ?? 0));
+                    $rec = $foundMatch ? (int)($foundMatch['received'] ?? 0) : (int)($ex['quantity_received'] ?? 0);
+                    $bal = max(0, $req - $rec);
+
+                    if ($bal > 0) {
+                        $allCompleted = false;
+                    }
+
+                    $updatedItems[] = [
+                        'description'       => $desc,
+                        'unit'              => $ex['unit'] ?? ($foundMatch['unit'] ?? ''),
+                        'quantity_required' => $req,
+                        'quantity_received' => $rec,
+                        'quantity_balance'  => $bal,
+                    ];
+                }
+
+                $indentData = [
+                    'items_description' => json_encode($updatedItems),
+                    'updated_at'        => now()
+                ];
+
+                if ($allCompleted && count($updatedItems) > 0) {
+                    $indentData['status'] = 'Close';
+                    DB::table('po_registers')->where('indent_id', $po->indent_id)->update(['status' => 'Close']);
+                }
+
+                DB::table('indent_registers')->where('id', $indent->id)->update($indentData);
+            }
+        }
+
+        return redirect()->route('po-register.viewByIndent', [
+            'indent_id'     => $po->indent_id,
+            'department_id' => $po->department_id,
+        ])->with('success', 'Invoice & Item receiving info saved successfully.');
+    }
 
     public function edit(int $id)
     {
@@ -317,11 +409,15 @@ class PORegisterController extends Controller
             ->unique()
             ->values();
 
-        // 4) Remaining indent items NOT used by other POs (you can still keep current PO's items separate)
+        // 4) Remaining indent items with remaining balance (>0) or not used by other POs
         $itemsRemaining = $itemsFromIndent
             ->filter(function ($item) use ($alreadyCreatedSet) {
                 $desc = mb_strtolower(trim((string) ($item['description'] ?? '')));
-                return $desc !== '' && !$alreadyCreatedSet->contains($desc);
+                if ($desc === '') return false;
+                $req = (int)($item['quantity_required'] ?? 1);
+                $rec = (int)($item['quantity_received'] ?? 0);
+                $bal = isset($item['quantity_balance']) ? (int)$item['quantity_balance'] : max(0, $req - $rec);
+                return $bal > 0 || !$alreadyCreatedSet->contains($desc);
             })
             ->values()
             ->all();
@@ -364,6 +460,7 @@ class PORegisterController extends Controller
             'delay_in_days' => 'nullable|integer',
             'store_indent_no' => 'nullable|string',
             'remarks' => 'nullable|string',
+            'is_mandatory' => 'nullable|string',
         ]);
 
         $fmt = fn($k) => $request->filled($k)
@@ -374,6 +471,7 @@ class PORegisterController extends Controller
             'indent_id' => $request->input('indent_id'),
             'department_id' => $request->input('department_id'),
             'status' => 'Pending',
+            'is_mandatory' => $request->input('is_mandatory', 'Mandatory'),
             'po_date' => $fmt('po_date'),
             'party_name' => $request->input('party_name'),
             'po_wo_no' => $request->input('po_wo_no'),
@@ -590,6 +688,7 @@ class PORegisterController extends Controller
             'delay_in_days' => 'nullable|integer',
             'store_indent_no' => 'nullable|string',
             'remarks' => 'nullable|string',
+            'is_mandatory' => 'nullable|string',
         ]);
 
         // Helper to format YYYY-MM-DD if present
@@ -603,7 +702,7 @@ class PORegisterController extends Controller
         foreach ([
             'indent_id', 'department_id', 'party_name', 'po_wo_no',
             'po_amount', 'debit_head', 'invoice', 'delay_in_days',
-            'store_indent_no', 'remarks'
+            'store_indent_no', 'remarks', 'is_mandatory'
         ] as $k) {
             if ($request->has($k)) {
                 $data[$k] = $request->input($k);

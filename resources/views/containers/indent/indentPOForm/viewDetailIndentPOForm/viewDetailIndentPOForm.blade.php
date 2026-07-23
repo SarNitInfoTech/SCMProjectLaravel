@@ -142,7 +142,13 @@
                 class="group rounded-[4px] border border-gray-400 p-4 hover:bg-gray-50 transition flex items-center justify-between gap-3">
                 <span class="font-[400] text-gray-900">Items:</span>
                 <span class="text-sm text-gray-900 font-bold">
-                    {{ collect($po->items ?? [])->map(fn($item) => ($item['description'] ?? '-') . ' — Qty: ' . ($item['quantity_required'] ?? '-'))->implode(', ') }}
+                    {{ collect($po->items ?? [])->map(function($item) {
+                        $desc = $item['description'] ?? '-';
+                        $req = $item['quantity_required'] ?? '-';
+                        $rec = $item['quantity_received'] ?? 0;
+                        $bal = $item['quantity_balance'] ?? (is_numeric($req) ? max(0, (int)$req - (int)$rec) : 0);
+                        return "{$desc} (Req: {$req}, Rec: {$rec}, Rem: {$bal})";
+                    })->implode(' | ') }}
                 </span>
             </div>
 
