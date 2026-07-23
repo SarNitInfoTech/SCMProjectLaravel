@@ -160,17 +160,12 @@
         <div
             class="bg-white/90 backdrop-blur border shadow-sm rounded-2xl p-4 flex flex-wrap justify-between items-center">
             <h4 class="text-xl font-bold text-gray-900">All Purchase Orders</h4>
-            {{-- <div class="flex gap-3">
-                <a href="{{ route('po.export.excel', ['indent_id' => $indent_id, 'department_id' => $department_id]) }}"
-                    style="background:green;"
-                    class="inline-flex items-center px-4 py-2 rounded-[4px] text-sm font-medium bg-green-600 text-white shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" fill="currentColor"
-                        viewBox="0 0 24 24">
-                        <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h4l2 2h8a2 2 0 012 2v10a2 2 0 01-2 2z" />
-                    </svg> Export Excel
+            <div class="flex gap-3">
+                <a href="{{ route('po-register.create', ['indent_id' => $indent_id, 'department_id' => $department_id]) }}"
+                    class="inline-flex items-center px-4 py-2 rounded-[4px] text-sm font-medium bg-orange-500 text-white shadow hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition">
+                    <i class="bi bi-file-earmark-plus mr-1.5"></i> File PO / Remaining Items
                 </a>
-
-            </div> --}}
+            </div>
         </div>
     </div>
 

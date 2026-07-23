@@ -158,47 +158,52 @@ class PORegisterController extends Controller
         }
         $poItemsRaw = DB::table('po_registers')
             ->where('indent_id', $indent_id)
-            // ->where('department_id', $department_id) // uncomment if needed
             ->pluck('item_description');
 
-        // 3) Normalize PO items to a lowercase set of description strings
-        $alreadyCreatedSet = collect($poItemsRaw)
-            ->flatMap(function ($val) {
-                // Expect JSON: ["Printer","Mouse"] OR [{"description":"Printer"},...]
-                if (is_string($val)) {
-                    $decoded = json_decode($val, true);
-                    if (json_last_error() === JSON_ERROR_NONE) {
-                        if (is_array($decoded)) {
-                            return collect($decoded)->map(function ($entry) {
-                                if (is_array($entry) && isset($entry['description'])) {
-                                    return $entry['description'];
-                                }
-                                if (is_string($entry)) {
-                                    return $entry;
-                                }
-                                return null;
-                            })->filter();
+        $filedQtyMap = [];
+        foreach ($poItemsRaw as $rawJson) {
+            if (!empty($rawJson) && is_string($rawJson)) {
+                $decoded = json_decode($rawJson, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    foreach ($decoded as $entry) {
+                        if (is_array($entry) && isset($entry['description'])) {
+                            $descKey = mb_strtolower(trim($entry['description']));
+                            $qty = (int)($entry['quantity'] ?? $entry['po_quantity'] ?? 1);
+                            $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + $qty;
+                        } elseif (is_string($entry)) {
+                            $descKey = mb_strtolower(trim($entry));
+                            $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + 1;
                         }
                     }
-                    // Fallback: comma/pipe separated string
-                    return collect(preg_split('/[,|]/', $val))->map(fn($s) => trim($s))->filter();
+                } else {
+                    foreach (preg_split('/[,|]/', $rawJson) as $p) {
+                        $descKey = mb_strtolower(trim($p));
+                        if ($descKey !== '') {
+                            $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + 1;
+                        }
+                    }
                 }
-                return [];
-            })
-            ->map(fn($s) => mb_strtolower(trim($s)))
-            ->unique()
-            ->values();
+            }
+        }
 
-        // 4) Keep indent items with remaining balance (>0) or not yet created
+        // Keep indent items that still have remaining quantity to file (>0)
         $items = $itemsFromIndent
-            ->filter(function ($item) use ($alreadyCreatedSet) {
-                $desc = mb_strtolower(trim((string) ($item['description'] ?? '')));
-                if ($desc === '') return false;
+            ->map(function ($item) use ($filedQtyMap) {
+                $descKey = mb_strtolower(trim((string) ($item['description'] ?? '')));
+                if ($descKey === '') return null;
+
                 $req = (int)($item['quantity_required'] ?? 1);
                 $rec = (int)($item['quantity_received'] ?? 0);
-                $bal = isset($item['quantity_balance']) ? (int)$item['quantity_balance'] : max(0, $req - $rec);
-                return $bal > 0 || !$alreadyCreatedSet->contains($desc);
+                $alreadyFiled = (int)($filedQtyMap[$descKey] ?? 0);
+                $remainingToFile = max(0, $req - $alreadyFiled);
+
+                $item['already_filed'] = $alreadyFiled;
+                $item['remaining_to_file'] = $remainingToFile;
+                $item['quantity_balance'] = max(0, $req - $rec);
+
+                return $remainingToFile > 0 ? $item : null;
             })
+            ->filter()
             ->values()
             ->all();
 

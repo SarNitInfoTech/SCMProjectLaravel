@@ -79,10 +79,10 @@
                     id="item_description" multiple required>
                     @foreach ($items as $item)
                         @php
-                            $req = $item['quantity_required'] ?? 0;
-                            $rec = $item['quantity_received'] ?? 0;
-                            $bal = $item['quantity_balance'] ?? max(0, $req - $rec);
-                            $label = $item['description'] . ($req > 0 ? " (Req: {$req}, Rec: {$rec}, Rem: {$bal})" : '');
+                            $req = (int)($item['quantity_required'] ?? 0);
+                            $filed = (int)($item['already_filed'] ?? 0);
+                            $rem = (int)($item['remaining_to_file'] ?? max(0, $req - $filed));
+                            $label = $item['description'] . ($req > 0 ? " (Req: {$req}, Filed: {$filed}, Rem: {$rem})" : '');
                         @endphp
                         <option value="{{ $item['description'] }}">{{ $label }}</option>
                     @endforeach
@@ -112,9 +112,9 @@
                             <th class="p-2 text-start">Item Description</th>
                             <th class="p-2 text-center">Unit</th>
                             <th class="p-2 text-center">Qty Required</th>
-                            <th class="p-2 text-center">Qty Received</th>
+                            <th class="p-2 text-center">Previously Filed</th>
                             <th class="p-2 text-center w-36">Filing PO Qty (Count)</th>
-                            <th class="p-2 text-center">Remaining Balance</th>
+                            <th class="p-2 text-center">Remaining to File</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -122,7 +122,8 @@
                             @php
                                 $req = (int)($item['quantity_required'] ?? 1);
                                 $rec = (int)($item['quantity_received'] ?? 0);
-                                $rem = isset($item['quantity_balance']) ? (int)$item['quantity_balance'] : max(0, $req - $rec);
+                                $filed = (int)($item['already_filed'] ?? 0);
+                                $rem = (int)($item['remaining_to_file'] ?? max(0, $req - $filed));
                                 $defaultFiling = $rem > 0 ? $rem : $req;
                             @endphp
                             <tr class="border-b po-item-row" data-item-desc="{{ $item['description'] }}" style="display: none;">
@@ -135,21 +136,22 @@
                                     <input type="hidden" name="po_items[{{ $idx }}][unit]" value="{{ $item['unit'] ?? '' }}">
                                     <input type="hidden" name="po_items[{{ $idx }}][quantity_required]" value="{{ $req }}" class="js-po-req">
                                     <input type="hidden" name="po_items[{{ $idx }}][quantity_received]" value="{{ $rec }}" class="js-po-rec">
+                                    <input type="hidden" name="po_items[{{ $idx }}][already_filed]" value="{{ $filed }}" class="js-po-filed">
                                 </td>
                                 <td class="p-2 text-center">{{ $item['unit'] ?? '-' }}</td>
                                 <td class="p-2 text-center font-semibold">{{ $req }}</td>
-                                <td class="p-2 text-center">{{ $rec }}</td>
+                                <td class="p-2 text-center text-blue-600 font-semibold">{{ $filed }}</td>
                                 <td class="p-2 text-center">
                                     <input type="number" 
                                            name="po_items[{{ $idx }}][po_quantity]" 
                                            value="{{ $defaultFiling }}" 
                                            min="1" 
-                                           max="{{ $req }}"
+                                           max="{{ $rem }}"
                                            class="form-control text-center js-po-qty w-full po-required-field" disabled required>
                                 </td>
                                 <td class="p-2 text-center">
-                                    <span class="js-po-rem font-bold {{ max(0, $req - ($rec + $defaultFiling)) > 0 ? 'text-orange-600' : 'text-green-600' }}">
-                                        {{ max(0, $req - ($rec + $defaultFiling)) > 0 ? max(0, $req - ($rec + $defaultFiling)) . ' remaining' : '0 (Fully Filed)' }}
+                                    <span class="js-po-rem font-bold {{ max(0, $rem - $defaultFiling) > 0 ? 'text-orange-600' : 'text-green-600' }}">
+                                        {{ max(0, $rem - $defaultFiling) > 0 ? max(0, $rem - $defaultFiling) . ' remaining' : '0 (Fully Filed)' }}
                                     </span>
                                 </td>
                             </tr>
@@ -216,16 +218,16 @@
 
         receivingDateInput?.addEventListener('change', calculateDelayDays);
 
-        // Live calculation of PO item remaining balance
+        // Live calculation of PO item remaining to file
         document.querySelectorAll('.po-item-row').forEach(row => {
             const req = parseInt(row.querySelector('.js-po-req')?.value || 0, 10);
-            const rec = parseInt(row.querySelector('.js-po-rec')?.value || 0, 10);
+            const filed = parseInt(row.querySelector('.js-po-filed')?.value || 0, 10);
             const qtyInput = row.querySelector('.js-po-qty');
             const remSpan = row.querySelector('.js-po-rem');
 
             function updateRem() {
                 const filing = parseInt(qtyInput?.value || 0, 10);
-                const rem = Math.max(0, req - (rec + filing));
+                const rem = Math.max(0, req - (filed + filing));
                 if (remSpan) {
                     if (rem > 0) {
                         remSpan.textContent = rem + ' remaining';
