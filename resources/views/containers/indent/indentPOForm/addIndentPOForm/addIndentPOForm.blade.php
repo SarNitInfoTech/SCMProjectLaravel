@@ -100,7 +100,7 @@
         </div>
 
         @if(!empty($items) && count($items) > 0)
-        <div class="w-full col-span-full border rounded p-4 bg-gray-50">
+        <div id="po-items-table-container" class="w-full col-span-full border rounded p-4 bg-gray-50 hidden">
             <label class="form-label text-black block mb-2 font-semibold text-base">
                 Item Description & Filing Quantity (Count) Breakdown <span class="text-red-500 required-asterisk">*</span>
             </label>
@@ -125,9 +125,9 @@
                                 $rem = isset($item['quantity_balance']) ? (int)$item['quantity_balance'] : max(0, $req - $rec);
                                 $defaultFiling = $rem > 0 ? $rem : $req;
                             @endphp
-                            <tr class="border-b po-item-row">
+                            <tr class="border-b po-item-row" data-item-desc="{{ $item['description'] }}" style="display: none;">
                                 <td class="p-2 text-center">
-                                    <input type="checkbox" name="po_items[{{ $idx }}][selected]" value="1" class="form-checkbox h-4 w-4 text-indigo-600 po-item-check" checked>
+                                    <input type="checkbox" name="po_items[{{ $idx }}][selected]" value="1" class="form-checkbox h-4 w-4 text-indigo-600 po-item-check">
                                 </td>
                                 <td class="p-2 font-medium">
                                     {{ $item['description'] }}
@@ -145,7 +145,7 @@
                                            value="{{ $defaultFiling }}" 
                                            min="1" 
                                            max="{{ $req }}"
-                                           class="form-control text-center js-po-qty w-full po-required-field" required>
+                                           class="form-control text-center js-po-qty w-full po-required-field" disabled required>
                                 </td>
                                 <td class="p-2 text-center">
                                     <span class="js-po-rem font-bold {{ max(0, $req - ($rec + $defaultFiling)) > 0 ? 'text-orange-600' : 'text-green-600' }}">
@@ -269,6 +269,48 @@
             mandatorySelect.addEventListener('change', updateRequiredState);
             updateRequiredState();
         }
+
+        // Show breakdown table ONLY for items selected in item_description dropdown
+        const itemSelect = document.getElementById('item_description');
+        const tableContainer = document.getElementById('po-items-table-container');
+
+        function syncTableWithSelection() {
+            if (!itemSelect) return;
+            const selectedValues = Array.from(itemSelect.selectedOptions).map(opt => opt.value);
+            const rows = document.querySelectorAll('.po-item-row');
+            let anyVisible = false;
+
+            rows.forEach(row => {
+                const desc = row.getAttribute('data-item-desc');
+                const check = row.querySelector('.po-item-check');
+                const qtyInput = row.querySelector('.js-po-qty');
+
+                if (selectedValues.includes(desc)) {
+                    row.style.display = '';
+                    if (check) check.checked = true;
+                    if (qtyInput) qtyInput.removeAttribute('disabled');
+                    anyVisible = true;
+                } else {
+                    row.style.display = 'none';
+                    if (check) check.checked = false;
+                    if (qtyInput) qtyInput.setAttribute('disabled', 'disabled');
+                }
+            });
+
+            if (tableContainer) {
+                if (anyVisible) {
+                    tableContainer.classList.remove('hidden');
+                } else {
+                    tableContainer.classList.add('hidden');
+                }
+            }
+        }
+
+        itemSelect?.addEventListener('change', syncTableWithSelection);
+        itemSelect?.addEventListener('addItem', syncTableWithSelection);
+        itemSelect?.addEventListener('removeItem', syncTableWithSelection);
+
+        syncTableWithSelection();
     });
 </script>
 
