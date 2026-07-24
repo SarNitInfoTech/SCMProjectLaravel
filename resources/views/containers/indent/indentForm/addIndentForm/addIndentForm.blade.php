@@ -181,8 +181,8 @@
             });
         }
 
+        document.querySelectorAll('.choices-js').forEach(initChoices);
         document.querySelectorAll('.item-row').forEach(row => {
-            row.querySelectorAll('.choices-js').forEach(initChoices);
             updateQtyListeners(row);
             addRemoveHandler(row);
         });
@@ -200,16 +200,6 @@
             addRemoveHandler(newRow);
 
             index++;
-        });
-    });
-</script>
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.choices-js').forEach(el => {
-            new Choices(el, { searchEnabled: true, itemSelectText: '' });
         });
     });
 </script>

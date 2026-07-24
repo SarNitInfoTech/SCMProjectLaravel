@@ -268,6 +268,7 @@ class ReportController extends Controller
                 'ir.items_description as total_description',
                 'ir.indent_project',
                 'ir.status            as indent_status',
+                'ir.remarks           as indent_remarks',
                 'ir.created_at        as indent_created_at',
             ])
             ->limit(100)  // optional: cap initial payload; AJAX will fetch all matches
@@ -293,6 +294,7 @@ class ReportController extends Controller
             ['label' => 'Receiving Date', 'key' => 'receiving_date', 'type' => 'date'],
             ['label' => 'Delay in Days', 'key' => 'invoice_expected_days'],
             ['label' => 'Remarks', 'key' => 'remarks'],
+            ['label' => 'Indent Remarks', 'key' => 'indent_remarks'],
         ];
 
         // Initial rows mapped to the columns' keys
@@ -314,14 +316,19 @@ class ReportController extends Controller
                 'total_description' => empty($r->total_description)
                     ? '-'
                     : collect(is_string($r->total_description) ? json_decode($r->total_description, true) : $r->total_description)
-                        ->map(fn($i) => sprintf(
-                            '%s (%s) [Req:%s, Rcvd:%s, Bal:%s]',
-                            $i['description'] ?? '-',
-                            $i['unit'] ?? '-',
-                            $i['quantity_required'] ?? 0,
-                            $i['quantity_received'] ?? 0,
-                            $i['quantity_balance'] ?? 0
-                        ))
+                        ->map(function ($i) {
+                            $req = (int)($i['quantity_required'] ?? 0);
+                            $rec = (int)($i['quantity_received'] ?? 0);
+                            $bal = isset($i['quantity_balance']) ? (int)$i['quantity_balance'] : max(0, $req - $rec);
+                            return sprintf(
+                                '%s (%s) [Req:%s, Rcvd:%s, Bal:%s]',
+                                $i['description'] ?? '-',
+                                $i['unit'] ?? '-',
+                                $req,
+                                $rec,
+                                $bal
+                            );
+                        })
                         ->implode(' , '),
                 'po_description' => empty($r->po_description)
                     ? '-'
@@ -343,6 +350,7 @@ class ReportController extends Controller
                 'invoice_no' => $r->invoice_no ?? '-',
                 'invoice_expected_days' => $r->invoice_expected_days ?? '-',
                 'remarks' => $r->remarks ?? '-',
+                'indent_remarks' => $r->indent_remarks ?? '-',
             ];
         })->values()->all();
 
@@ -442,6 +450,7 @@ class ReportController extends Controller
                 'ir.items_description as total_description',
                 'ir.indent_project',
                 'ir.status            as indent_status',
+                'ir.remarks           as indent_remarks',
             ])
             ->get()
             ->map(function ($r) {
@@ -461,14 +470,19 @@ class ReportController extends Controller
 
                     if (is_array($items)) {
                         $totalDescription = collect($items)
-                            ->map(fn($i) => sprintf(
-                                '%s (%s) [Req:%s, Rcvd:%s, Bal:%s]',
-                                $i['description'] ?? '-',
-                                $i['unit'] ?? '-',
-                                $i['quantity_required'] ?? 0,
-                                $i['quantity_received'] ?? 0,
-                                $i['quantity_balance'] ?? 0
-                            ))
+                            ->map(function ($i) {
+                                $req = (int)($i['quantity_required'] ?? 0);
+                                $rec = (int)($i['quantity_received'] ?? 0);
+                                $bal = isset($i['quantity_balance']) ? (int)$i['quantity_balance'] : max(0, $req - $rec);
+                                return sprintf(
+                                    '%s (%s) [Req:%s, Rcvd:%s, Bal:%s]',
+                                    $i['description'] ?? '-',
+                                    $i['unit'] ?? '-',
+                                    $req,
+                                    $rec,
+                                    $bal
+                                );
+                            })
                             ->implode(' , ');
                     } else {
                         $totalDescription = (string) $items;
@@ -514,6 +528,7 @@ class ReportController extends Controller
                     'indent_status' => $fmtStatus($r->indent_status),
                     'indent_date' => $r->indent_date ? Carbon::parse($r->indent_date)->format('d-m-Y') : '-',
                     'remarks' => $r->remarks ?? '-',
+                    'indent_remarks' => $r->indent_remarks ?? '-',
                 ];
             })
             ->values();

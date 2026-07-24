@@ -80,7 +80,8 @@
                     <th scope="col" class="text-start">Invoice Date</th>
                     <th scope="col" class="text-start">Receiving Date</th>
                     <th scope="col" class="text-start">Delay in Days</th>
-                    <th scope="col" class="text-start">Remarks</th>
+                    <th scope="col" class="text-start">PO Remarks</th>
+                    <th scope="col" class="text-start">Indent Remarks</th>
                 </tr>
             </thead>
             <tbody id="combinedTableBody">
@@ -117,10 +118,11 @@
                         <td>{{ $row['receiving_date'] }}</td>
                         <td>{{ $row['invoice_expected_days'] ?? '—' }}</td>
                         <td>{{ $row['remarks'] ?? '—' }}</td>
+                        <td>{{ $row['indent_remarks'] ?? '—' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="18" class="text-center py-4 text-gray-500">No records found.</td>
+                        <td colspan="19" class="text-center py-4 text-gray-500">No records found.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -232,6 +234,7 @@
                     <td>${escapeHtml(row.receiving_date)}</td>
                     <td>${escapeHtml(row.invoice_expected_days)}</td>
                     <td>${escapeHtml(row.remarks)}</td>
+                    <td>${escapeHtml(row.indent_remarks)}</td>
                 </tr>
             `;
         }).join('');
@@ -354,13 +357,13 @@
             "Indent ID", "Indent Date", "Dept", "Project", "Indent Description",
             "Party Name", "PO Date", "PO/WO No", "PO Description", "PO Amount",
             "Status", "Exp. Days", "Exp. Date", "Invoice No.", "Invoice Date",
-            "Recv. Date", "Delay", "Remarks"
+            "Recv. Date", "Delay", "PO Remarks", "Indent Remarks"
         ];
         const rows = [];
         document.querySelectorAll("#combinedTableBody tr").forEach(tr => {
             const cells = tr.querySelectorAll("td");
-            if (cells.length >= 18) {
-                rows.push(Array.from({length: 18}, (_, i) => cells[i].innerText.trim()));
+            if (cells.length >= 19) {
+                rows.push(Array.from({length: 19}, (_, i) => cells[i].innerText.trim()));
             }
         });
 
@@ -385,23 +388,24 @@
             },
             columnStyles: {
                 0:  { halign: 'center', cellWidth: 14 },
-                1:  { halign: 'center', cellWidth: 16 },
-                2:  { cellWidth: 14 },
-                3:  { cellWidth: 16 },
-                4:  { cellWidth: 24 },
-                5:  { cellWidth: 18 },
+                1:  { halign: 'center', cellWidth: 15 },
+                2:  { cellWidth: 13 },
+                3:  { cellWidth: 14 },
+                4:  { cellWidth: 22 },
+                5:  { cellWidth: 16 },
                 6:  { halign: 'center', cellWidth: 14 },
-                7:  { halign: 'center', cellWidth: 16 },
-                8:  { cellWidth: 20 },
-                9:  { halign: 'right',  cellWidth: 14 },
-                10: { halign: 'center', cellWidth: 14 },
-                11: { halign: 'center', cellWidth: 12 },
-                12: { halign: 'center', cellWidth: 16 },
-                13: { halign: 'center', cellWidth: 16 },
-                14: { halign: 'center', cellWidth: 16 },
-                15: { halign: 'center', cellWidth: 16 },
+                7:  { halign: 'center', cellWidth: 15 },
+                8:  { cellWidth: 18 },
+                9:  { halign: 'right',  cellWidth: 13 },
+                10: { halign: 'center', cellWidth: 13 },
+                11: { halign: 'center', cellWidth: 11 },
+                12: { halign: 'center', cellWidth: 15 },
+                13: { halign: 'center', cellWidth: 15 },
+                14: { halign: 'center', cellWidth: 15 },
+                15: { halign: 'center', cellWidth: 15 },
                 16: { halign: 'center', cellWidth: 10 },
-                17: { cellWidth: 16 }
+                17: { cellWidth: 14 },
+                18: { cellWidth: 14 }
             },
             alternateRowStyles: { fillColor: [239, 246, 255] },
             tableLineColor: [203, 213, 225],

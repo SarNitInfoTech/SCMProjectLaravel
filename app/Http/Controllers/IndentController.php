@@ -341,12 +341,18 @@ public function create()
     $items = [];
 
     foreach ($request->items as $item) {
+        $req = (int) ($item['required'] ?? 0);
+        $rec = (int) ($item['received'] ?? 0);
+        $bal = isset($item['balance']) ? (int)$item['balance'] : max(0, $req - $rec);
+        if ($req > $rec && $bal <= 0) {
+            $bal = max(0, $req - $rec);
+        }
         $items[] = [
-            'description'       => $item['description'],
-            'unit'              => $item['unit'],
-            'quantity_required' => (int) $item['required'],
-            'quantity_received' => (int) $item['received'],
-            'quantity_balance'  => (int) $item['balance'],
+            'description'       => $item['description'] ?? '',
+            'unit'              => $item['unit'] ?? '',
+            'quantity_required' => $req,
+            'quantity_received' => $rec,
+            'quantity_balance'  => $bal,
         ];
     }
 
@@ -391,12 +397,18 @@ public function create()
     $processedItems = [];
 
     foreach ($items as $item) {
+        $req = (int)($item['required'] ?? 0);
+        $rec = (int)($item['received'] ?? 0);
+        $bal = isset($item['balance']) ? (int)$item['balance'] : max(0, $req - $rec);
+        if ($req > $rec && $bal <= 0) {
+            $bal = max(0, $req - $rec);
+        }
         $processedItems[] = [
             'description'        => $item['description'] ?? '',
             'unit'               => $item['unit'] ?? '',
-            'quantity_required'  => (int)($item['required'] ?? 0),
-            'quantity_received'  => (int)($item['received'] ?? 0),
-            'quantity_balance'   => (int)($item['balance'] ?? 0),
+            'quantity_required'  => $req,
+            'quantity_received'  => $rec,
+            'quantity_balance'   => $bal,
         ];
     }
 

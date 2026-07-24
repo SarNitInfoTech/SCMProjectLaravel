@@ -30,7 +30,7 @@
             <th>Expected</th>
             <th>Receiving</th>
             <th>Delay</th>
-            <th>Remarks</th>
+            <th>PO Remarks</th>
             <th>Indent Ticket</th>
             <th>Indent Date</th>
             <th>Project</th>
@@ -39,6 +39,7 @@
             <th>Qty Req</th>
             <th>Qty Recv</th>
             <th>Qty Bal</th>
+            <th>Indent Remarks</th>
         </tr>
     </thead>
     <tbody>
@@ -65,6 +66,7 @@
             <td>{{ $row->quantity_required }}</td>
             <td>{{ $row->quantity_received }}</td>
             <td>{{ $row->quantity_balance }}</td>
+            <td>{{ $row->indent_remarks ?? '-' }}</td>
         </tr>
         @endforeach
     </tbody>

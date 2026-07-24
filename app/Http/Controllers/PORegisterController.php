@@ -722,6 +722,7 @@ class PORegisterController extends Controller
                 'indent_registers.purchased_order',
                 'indent_registers.quantity_received',
                 'indent_registers.quantity_balance',
+                'indent_registers.remarks as indent_remarks',
                 'indent_registers.created_at as indent_created_at',
                 'indent_registers.updated_at as indent_updated_at'
             )

@@ -320,14 +320,19 @@
     });
 </script>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        new Choices('#item_description', {
-            removeItemButton: true,
-            placeholderValue: 'Select item(s)',
-            searchPlaceholderValue: 'Search items...',
-        });
-    });
-</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const itemSelectEl = document.getElementById('item_description');
+        if (itemSelectEl && typeof Choices !== 'undefined') {
+            new Choices(itemSelectEl, {
+                removeItemButton: true,
+                placeholderValue: 'Select item(s)',
+                searchPlaceholderValue: 'Search items...',
+                searchEnabled: true,
+                searchChoices: true,
+            });
+        }
+    });
+</script>

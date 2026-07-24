@@ -130,6 +130,8 @@
   </form>
 </div>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const poDateInput        = document.getElementById('po_date');
@@ -154,13 +156,15 @@ document.addEventListener('DOMContentLoaded', function () {
   calcExpectedDays();
 
   // Choices init
-  new Choices('#item_description', {
-    removeItemButton: true,
-    placeholderValue: 'Select item(s)',
-    searchPlaceholderValue: 'Search items...',
-  });
+  const itemSelectEl = document.getElementById('item_description');
+  if (itemSelectEl && typeof Choices !== 'undefined') {
+    new Choices(itemSelectEl, {
+      removeItemButton: true,
+      placeholderValue: 'Select item(s)',
+      searchPlaceholderValue: 'Search items...',
+      searchEnabled: true,
+      searchChoices: true,
+    });
+  }
 });
 </script>
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
