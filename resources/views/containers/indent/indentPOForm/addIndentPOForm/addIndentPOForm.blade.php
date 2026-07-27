@@ -83,7 +83,7 @@
                 <!-- PR Date -->
                 <div>
                     <label for="po_date" style="display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px;">
-                        PR Date <span style="color: #EF4444;">*</span>
+                        PR Date <span class="req-asterisk" style="color: #EF4444;">*</span>
                     </label>
                     <div style="position: relative;">
                         <input type="date" name="po_date" id="po_date" required value="{{ date('Y-m-d') }}"
@@ -94,7 +94,7 @@
                 <!-- Party Name -->
                 <div>
                     <label for="party_name" style="display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px;">
-                        Party Name <span style="color: #EF4444;">*</span>
+                        Party Name <span class="req-asterisk" style="color: #EF4444;">*</span>
                     </label>
                     <div style="position: relative;">
                         <select name="party_name" id="party_name" required style="width: 100%; padding: 10px 14px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13px; font-weight: 600; color: #0F172A; outline: none; box-sizing: border-box;">
@@ -123,7 +123,7 @@
                 <!-- PO Amount -->
                 <div>
                     <label for="po_amount" style="display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px;">
-                        PO Amount <span style="color: #EF4444;">*</span>
+                        PO Amount <span class="req-asterisk" style="color: #EF4444;">*</span>
                     </label>
                     <div style="position: relative;">
                         <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-weight: 700; font-size: 14px;">₹</span>
@@ -138,7 +138,7 @@
                 <!-- Item Description Multi-Select Tag Dropdown Component -->
                 <div style="grid-column: span 1; position: relative;">
                     <label style="display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px;">
-                        Item Description <span style="color: #EF4444;">*</span>
+                        Item Description <span class="req-asterisk" style="color: #EF4444;">*</span>
                     </label>
 
                     <!-- Hidden select for backend compatibility -->
@@ -191,7 +191,7 @@
                 <!-- Expected Date -->
                 <div>
                     <label for="expected_date" style="display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px;">
-                        Expected Date <span style="color: #EF4444;">*</span>
+                        Expected Date <span class="req-asterisk" style="color: #EF4444;">*</span>
                     </label>
                     <div style="position: relative;">
                         <input type="date" name="expected_date" id="expected_date" required value="{{ date('Y-m-d') }}"
@@ -233,7 +233,7 @@
                     <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
                 </div>
                 <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;">
-                    Item Description & Filing Quantity (Count) Breakdown <span style="color: #EF4444;">*</span>
+                    Item Description & Filing Quantity (Count) Breakdown <span class="req-asterisk" style="color: #EF4444;">*</span>
                 </h3>
             </div>
 
@@ -320,6 +320,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const poDateInput = document.getElementById('po_date');
         const expectedDateInput = document.getElementById('expected_date');
+        const isMandatorySelect = document.getElementById('is_mandatory');
 
         const expectedDaysDisplay = document.getElementById('expected_days');
         const expectedDaysHidden = document.getElementById('expected_days_hidden');
@@ -341,6 +342,46 @@
 
         poDateInput?.addEventListener('change', calculateExpectedDays);
         expectedDateInput?.addEventListener('change', calculateExpectedDays);
+
+        // Requirement Type (Mandatory vs Non-Mandatory) Toggle Logic
+        function updateRequirementType() {
+            if (!isMandatorySelect) return;
+            const isNonMandatory = isMandatorySelect.value === 'Non-Mandatory';
+
+            const fieldsToToggle = [
+                document.getElementById('po_date'),
+                document.getElementById('party_name'),
+                document.getElementById('po_amount'),
+                document.getElementById('expected_date')
+            ];
+
+            fieldsToToggle.forEach(field => {
+                if (field) {
+                    if (isNonMandatory) {
+                        field.removeAttribute('required');
+                    } else {
+                        field.setAttribute('required', 'required');
+                    }
+                }
+            });
+
+            document.querySelectorAll('.js-po-qty').forEach(input => {
+                const row = input.closest('.po-item-row');
+                const isRowVisible = row && row.style.display !== 'none';
+                if (isNonMandatory) {
+                    input.removeAttribute('required');
+                } else if (isRowVisible && !input.disabled) {
+                    input.setAttribute('required', 'required');
+                }
+            });
+
+            document.querySelectorAll('.req-asterisk').forEach(ast => {
+                ast.style.display = isNonMandatory ? 'none' : 'inline';
+            });
+        }
+
+        isMandatorySelect?.addEventListener('change', updateRequirementType);
+        updateRequirementType();
 
         // All Item Data for Tag Selection
         const allItemData = [
@@ -445,8 +486,13 @@
                     rowCheck.checked = isSel;
                     const qtyInput = row.querySelector('.js-po-qty');
                     if (qtyInput) {
+                        const isNonMandatory = isMandatorySelect && isMandatorySelect.value === 'Non-Mandatory';
                         qtyInput.disabled = !isSel;
-                        qtyInput.required = isSel;
+                        if (isNonMandatory) {
+                            qtyInput.removeAttribute('required');
+                        } else {
+                            qtyInput.required = isSel;
+                        }
                     }
                 }
             });
