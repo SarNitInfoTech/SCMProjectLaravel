@@ -206,10 +206,11 @@ Route::get('/reports/indents-pos/filter', [ReportController::class, 'filterAllIn
     // -----------------------
     require __DIR__.'/inventory.php';
 
-    // -----------------------
-    // 🚫 Fallback
-    // -----------------------
-    Route::fallback(function () {
-        return redirect()->route('dashboard.index');
-    });
+});
+
+// -----------------------
+// 🚫 Global Fallback (Redirect wrong/invalid paths to /login)
+// -----------------------
+Route::fallback(function () {
+    return redirect()->route('login');
 });
