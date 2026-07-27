@@ -59,8 +59,27 @@ class ReportController extends Controller
             $query->where('po_registers.indent_id', $request->indent_id);
         }
 
-        if ($request->filled('department_id')) {
-            $query->where('po_registers.department_id', $request->department_id);
+        if ($request->filled('department')) {
+            $query->where('departments.name', $request->get('department'));
+        }
+
+        if ($request->filled('project')) {
+            $query->where('projects.name', $request->get('project'));
+        }
+
+        if ($request->filled('status')) {
+            $st = strtolower(trim($request->get('status')));
+            if (in_array($st, ['pending', 'open'])) {
+                $query->whereIn(DB::raw('LOWER(po_registers.status)'), ['pending', 'open']);
+            } elseif ($st === 'partially received') {
+                $query->where(DB::raw('LOWER(po_registers.status)'), 'partially received');
+            } elseif (in_array($st, ['completed', 'close', 'closed'])) {
+                $query->whereIn(DB::raw('LOWER(po_registers.status)'), ['completed', 'close', 'closed']);
+            } elseif (in_array($st, ['cancel', 'cancelled'])) {
+                $query->whereIn(DB::raw('LOWER(po_registers.status)'), ['cancel', 'cancelled']);
+            } else {
+                $query->where(DB::raw('LOWER(po_registers.status)'), $st);
+            }
         }
 
         if ($search = $request->input('search')) {
@@ -75,6 +94,14 @@ class ReportController extends Controller
             ]);
         }
 
+        if ($request->filled('date_from')) {
+            $query->whereDate('po_registers.created_at', '>=', $request->get('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('po_registers.created_at', '<=', $request->get('date_to'));
+        }
+
         if ($request->filled(['start_date', 'end_date'])) {
             try {
                 $start = Carbon::parse($request->start_date)->startOfDay();
@@ -85,8 +112,11 @@ class ReportController extends Controller
             }
         }
 
-        // Fetch paginated results
-        $reports = $query->orderByDesc('po_registers.created_at')->paginate(15)->withQueryString();
+        $perPage = (int) $request->get('per_page', 15);
+        $reports = $query->orderByDesc('po_registers.created_at')->paginate($perPage)->withQueryString();
+
+        $departments = \App\Models\Department::orderBy('name')->get();
+        $projects = \App\Models\Project::orderBy('name')->get();
 
         // Columns for table
         $columns = [
@@ -100,7 +130,7 @@ class ReportController extends Controller
             ['label' => 'Created On', 'key' => 'po_created_at', 'type' => 'date'],
         ];
 
-        return view('pages.report.viewReport.viewReport', compact('reports', 'columns'));
+        return view('pages.report.viewReport.viewReport', compact('reports', 'columns', 'departments', 'projects'));
     }
 
     public function viewAllIndent(Request $request)
