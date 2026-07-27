@@ -163,9 +163,15 @@ class PORegisterController extends Controller
         $poItemsRaw = DB::table('po_registers')
             ->where('indent_id', $indent_id)
             ->whereNotIn(DB::raw('LOWER(status)'), ['cancel', 'cancelled'])
+            ->where(function($w) {
+                $w->whereNull('receiving_date')
+                  ->orWhere('receiving_date', '')
+                  ->orWhereNull('invoice_date')
+                  ->orWhere('invoice_date', '');
+            })
             ->pluck('item_description');
 
-        $filedQtyMap = [];
+        $openPoQtyMap = [];
         foreach ($poItemsRaw as $rawJson) {
             if (!empty($rawJson) && is_string($rawJson)) {
                 $decoded = json_decode($rawJson, true);
@@ -174,27 +180,13 @@ class PORegisterController extends Controller
                         if (is_array($entry) && isset($entry['description'])) {
                             $descKey = mb_strtolower(trim($entry['description']));
                             $ordered = (int)($entry['quantity'] ?? $entry['po_quantity'] ?? 1);
-                            $received = isset($entry['quantity_received']) ? (int)$entry['quantity_received'] : null;
+                            $received = (int)($entry['quantity_received'] ?? 0);
                             $cancelled = (int)($entry['quantity_cancelled'] ?? 0);
-
-                            // If invoice receiving has been recorded and received + cancelled < ordered, effective fulfilled PO qty is min(ordered, received + cancelled)
-                            if ($received !== null && $received > 0 && ($received + $cancelled) < $ordered) {
-                                $effectiveQty = min($ordered, $received + $cancelled);
-                            } else {
-                                $effectiveQty = $ordered;
-                            }
-
-                            $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + $effectiveQty;
+                            $pending = max(0, $ordered - ($received + $cancelled));
+                            $openPoQtyMap[$descKey] = ($openPoQtyMap[$descKey] ?? 0) + $pending;
                         } elseif (is_string($entry)) {
                             $descKey = mb_strtolower(trim($entry));
-                            $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + 1;
-                        }
-                    }
-                } else {
-                    foreach (preg_split('/[,|]/', $rawJson) as $p) {
-                        $descKey = mb_strtolower(trim($p));
-                        if ($descKey !== '') {
-                            $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + 1;
+                            $openPoQtyMap[$descKey] = ($openPoQtyMap[$descKey] ?? 0) + 1;
                         }
                     }
                 }
@@ -203,20 +195,20 @@ class PORegisterController extends Controller
 
         // Keep indent items that still have remaining quantity to file (>0)
         $items = $itemsFromIndent
-            ->map(function ($item) use ($filedQtyMap) {
+            ->map(function ($item) use ($openPoQtyMap) {
                 $descKey = mb_strtolower(trim((string) ($item['description'] ?? '')));
                 if ($descKey === '') return null;
 
                 $req  = (int)($item['quantity_required'] ?? 1);
                 $rec  = (int)($item['quantity_received'] ?? 0);
                 $canc = (int)($item['quantity_cancelled'] ?? 0);
-                $alreadyFiled = (int)($filedQtyMap[$descKey] ?? 0);
+                $openPo = (int)($openPoQtyMap[$descKey] ?? 0);
 
-                // Accounted quantity is maximum of PO filed or received + cancelled
-                $alreadyAccounted = max($alreadyFiled, $rec + $canc);
-                $remainingToFile  = max(0, $req - $alreadyAccounted);
+                // Remaining quantity available to file on a new PO = required - (received + cancelled + pending un-invoiced POs)
+                $alreadyFiled    = $rec + $canc;
+                $remainingToFile = max(0, $req - ($alreadyFiled + $openPo));
 
-                $item['already_filed']     = $alreadyAccounted;
+                $item['already_filed']     = $alreadyFiled;
                 $item['remaining_to_file'] = $remainingToFile;
                 $item['quantity_balance']  = $remainingToFile;
 
