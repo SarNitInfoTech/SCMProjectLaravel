@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\SearchHelper;
 use App\Models\Project;
 use App\Models\Notification;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ class ProjectController extends Controller
         $title = 'Project List';
         $query = Project::query();
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            SearchHelper::applyFuzzySearch($query, $request->search, ['name']);
         }
         $projects = $query->orderBy('name')->paginate(10);
 

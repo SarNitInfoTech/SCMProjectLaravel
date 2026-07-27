@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Helpers\SearchHelper;
 use App\Models\Department;
 use App\Models\IndentRegister;
 use App\Models\IndentTicket;
@@ -21,13 +22,15 @@ class IndentController extends Controller
         ->join('departments', 'departments.name', '=', 'indent_registers.indent_department');
 
     if ($request->filled('search')) {
-        $search = $request->search;
-        $query->where(function($q) use ($search) {
-            $q->where('indent_registers.indent_id', 'like', "%{$search}%")
-              ->orWhere('departments.name', 'like', "%{$search}%")
-              ->orWhere('indent_registers.indent_project', 'like', "%{$search}%")
-              ->orWhere('indent_registers.items_description', 'like', "%{$search}%");
-        });
+        SearchHelper::applyFuzzySearch($query, $request->search, [
+            'indent_registers.indent_id',
+            'departments.name',
+            'indent_registers.indent_department',
+            'indent_registers.indent_project',
+            'indent_registers.items_description',
+            'indent_registers.status',
+            'indent_registers.remarks'
+        ]);
     }
 
     $registers = $query->select(
@@ -343,16 +346,15 @@ public function create()
     foreach ($request->items as $item) {
         $req = (int) ($item['required'] ?? 0);
         $rec = (int) ($item['received'] ?? 0);
-        $bal = isset($item['balance']) ? (int)$item['balance'] : max(0, $req - $rec);
-        if ($req > $rec && $bal <= 0) {
-            $bal = max(0, $req - $rec);
-        }
+        $canc = (int) ($item['cancelled'] ?? 0);
+        $bal = max(0, $req - ($rec + $canc));
         $items[] = [
-            'description'       => $item['description'] ?? '',
-            'unit'              => $item['unit'] ?? '',
-            'quantity_required' => $req,
-            'quantity_received' => $rec,
-            'quantity_balance'  => $bal,
+            'description'        => $item['description'] ?? '',
+            'unit'               => $item['unit'] ?? '',
+            'quantity_required'  => $req,
+            'quantity_received'  => $rec,
+            'quantity_cancelled' => $canc,
+            'quantity_balance'   => $bal,
         ];
     }
 
@@ -399,15 +401,14 @@ public function create()
     foreach ($items as $item) {
         $req = (int)($item['required'] ?? 0);
         $rec = (int)($item['received'] ?? 0);
-        $bal = isset($item['balance']) ? (int)$item['balance'] : max(0, $req - $rec);
-        if ($req > $rec && $bal <= 0) {
-            $bal = max(0, $req - $rec);
-        }
+        $canc = (int)($item['cancelled'] ?? 0);
+        $bal = max(0, $req - ($rec + $canc));
         $processedItems[] = [
             'description'        => $item['description'] ?? '',
             'unit'               => $item['unit'] ?? '',
             'quantity_required'  => $req,
             'quantity_received'  => $rec,
+            'quantity_cancelled' => $canc,
             'quantity_balance'   => $bal,
         ];
     }

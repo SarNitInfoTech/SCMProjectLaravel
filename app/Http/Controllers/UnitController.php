@@ -1,6 +1,7 @@
 <?php 
 namespace App\Http\Controllers;
 
+use App\Helpers\SearchHelper;
 use App\Models\Unit;
 use App\Models\Notification;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class UnitController extends Controller
         $title = 'Unit List';
         $query = Unit::query();
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            SearchHelper::applyFuzzySearch($query, $request->search, ['name']);
         }
         $units = $query->orderBy('name')->paginate(10);
 

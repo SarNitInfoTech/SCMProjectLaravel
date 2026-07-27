@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\SearchHelper;
 use App\Models\Item;
 use App\Models\Notification;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ class ItemController extends Controller
         $title = 'Item List';
         $query = Item::query();
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            SearchHelper::applyFuzzySearch($query, $request->search, ['name']);
         }
         $items = $query->orderBy('name')->paginate(10);
 

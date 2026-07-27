@@ -46,7 +46,7 @@
             @php $itemsDecoded = json_decode($indent->items_description, true); @endphp
             @foreach($itemsDecoded as $i => $item)
                 <div class="item-row grid grid-cols-12 gap-4 bg-gray-50 p-4 rounded relative">
-                    <div class="col-span-4">
+                    <div class="col-span-3">
                         <label class="form-label block mb-1">Item Description <span class="text-red-500">*</span></label>
                         <select name="items[{{ $i }}][description]" class="form-control choices-js" required>
                             <option value="">-- Select Item --</option>
@@ -75,6 +75,11 @@
                         <label class="form-label block mb-1">Quantity Received</label>
                         <input type="number" name="items[{{ $i }}][received]" class="form-control qty-received w-full"
                             value="{{ $item['quantity_received'] ?? 0 }}" min="0">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="form-label block mb-1 text-red-600">Qty Cancelled</label>
+                        <input type="number" name="items[{{ $i }}][cancelled]" class="form-control qty-cancelled w-full text-red-600 font-semibold"
+                            value="{{ $item['quantity_cancelled'] ?? 0 }}" min="0">
                     </div>
                     <div class="col-span-2">
                         <label class="form-label block mb-1">Quantity Balance</label>
@@ -106,7 +111,7 @@
 <!-- Template for New Item -->
 <template id="item-template">
     <div class="item-row grid grid-cols-12 gap-4 bg-gray-50 p-4 rounded relative">
-        <div class="col-span-4">
+        <div class="col-span-3">
             <label class="form-label block mb-1">Item Description <span class="text-red-500">*</span></label>
             <select name="items[__index__][description]" class="form-control choices-js" required>
                 <option value="">-- Select Item --</option>
@@ -132,6 +137,11 @@
         <div class="col-span-2">
             <label class="form-label block mb-1">Quantity Received</label>
             <input type="number" name="items[__index__][received]" class="form-control qty-received w-full" value="0"
+                min="0">
+        </div>
+        <div class="col-span-1">
+            <label class="form-label block mb-1 text-red-600">Qty Cancelled</label>
+            <input type="number" name="items[__index__][cancelled]" class="form-control qty-cancelled w-full text-red-600 font-semibold" value="0"
                 min="0">
         </div>
         <div class="col-span-2">
@@ -163,18 +173,21 @@
         function updateQtyListeners(row) {
             const qtyRequired = row.querySelector('.qty-required');
             const qtyReceived = row.querySelector('.qty-received');
+            const qtyCancelled = row.querySelector('.qty-cancelled');
             const qtyBalance = row.querySelector('.qty-balance');
 
             function calc() {
                 const req = parseFloat(qtyRequired.value) || 0;
                 const rec = parseFloat(qtyReceived.value) || 0;
-                qtyBalance.value = Math.max(req - rec, 0);
+                const canc = parseFloat(qtyCancelled?.value) || 0;
+                qtyBalance.value = Math.max(req - (rec + canc), 0);
             }
 
-            qtyRequired.addEventListener('input', calc);
-            qtyReceived.addEventListener('input', calc);
-            [qtyRequired, qtyReceived].forEach(input => {
-                input.addEventListener('keypress', e => {
+            qtyRequired?.addEventListener('input', calc);
+            qtyReceived?.addEventListener('input', calc);
+            qtyCancelled?.addEventListener('input', calc);
+            [qtyRequired, qtyReceived, qtyCancelled].forEach(input => {
+                input?.addEventListener('keypress', e => {
                     if (e.key === '+' || e.key === '-') e.preventDefault();
                 });
             });

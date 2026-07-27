@@ -44,6 +44,7 @@
                         <th class="p-2 text-start">Item Description</th>
                         <th class="p-2 text-center">Qty Required</th>
                         <th class="p-2 text-center">Qty Received</th>
+                        <th class="p-2 text-center">Qty Cancelled</th>
                         <th class="p-2 text-center">Qty Balance (Remaining)</th>
                     </tr>
                 </thead>
@@ -52,7 +53,8 @@
                         @php
                             $req = (int)($item['quantity_required'] ?? 0);
                             $rec = (int)($item['quantity_received'] ?? 0);
-                            $bal = max(0, $req - $rec);
+                            $canc = (int)($item['quantity_cancelled'] ?? 0);
+                            $bal = max(0, $req - ($rec + $canc));
                         @endphp
                         <tr class="border-b item-qty-row">
                             <td class="p-2 font-medium">
@@ -70,9 +72,22 @@
                                        max="{{ $req > 0 ? $req : 999999 }}"
                                        class="form-control text-center js-qty-rec w-full">
                             </td>
+                            <td class="p-2 text-center w-36">
+                                <input type="number" 
+                                       name="items[{{ $idx }}][cancelled]" 
+                                       value="{{ $canc }}" 
+                                       min="0" 
+                                       max="{{ $req > 0 ? $req : 999999 }}"
+                                       class="form-control text-center js-qty-canc w-full text-red-600 font-semibold"
+                                       placeholder="0">
+                            </td>
                             <td class="p-2 text-center">
                                 <span class="js-qty-bal font-bold {{ $bal > 0 ? 'text-orange-600' : 'text-green-600' }}">
-                                    {{ $bal > 0 ? $bal . ' remaining' : '0 (Fully Received)' }}
+                                    @if($bal > 0)
+                                        {{ $bal }} remaining
+                                    @else
+                                        0 ({{ $canc > 0 ? 'Closed: ' . $canc . ' Cancelled' : 'Fully Accounted' }})
+                                    @endif
                                 </span>
                             </td>
                         </tr>
@@ -111,25 +126,29 @@
     document.querySelectorAll('.item-qty-row').forEach(row => {
         const reqEl = row.querySelector('.js-qty-req');
         const recEl = row.querySelector('.js-qty-rec');
+        const cancEl = row.querySelector('.js-qty-canc');
         const balEl = row.querySelector('.js-qty-bal');
 
         function updateBalance() {
             const req = parseInt(reqEl?.value || 0, 10);
             const rec = parseInt(recEl?.value || 0, 10);
-            const bal = Math.max(0, req - rec);
+            const canc = parseInt(cancEl?.value || 0, 10);
+            const bal = Math.max(0, req - (rec + canc));
 
             if (balEl) {
                 if (bal > 0) {
                     balEl.textContent = bal + ' remaining';
                     balEl.className = 'js-qty-bal font-bold text-orange-600';
                 } else {
-                    balEl.textContent = '0 (Fully Received)';
+                    balEl.textContent = '0 (' + (canc > 0 ? 'Closed: ' + canc + ' Cancelled' : 'Fully Accounted') + ')';
                     balEl.className = 'js-qty-bal font-bold text-green-600';
                 }
             }
         }
 
         recEl?.addEventListener('input', updateBalance);
+        cancEl?.addEventListener('input', updateBalance);
+    });
     });
   });
 </script>

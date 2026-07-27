@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\SearchHelper;
 use App\Models\InventoryStock;
 use App\Models\InventoryMovement;
 use App\Models\Item;
@@ -48,7 +49,7 @@ class InventoryController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('item', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+                SearchHelper::applyFuzzySearch($q, $search, ['name']);
             });
         }
 
@@ -74,7 +75,7 @@ class InventoryController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('item', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+                SearchHelper::applyFuzzySearch($q, $search, ['name']);
             });
         }
 

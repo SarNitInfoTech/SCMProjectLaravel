@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\SearchHelper;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,12 +14,7 @@ class VendorController extends Controller
         $title = 'Vendor List';
         $query = Vendor::query();
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
-            });
+            SearchHelper::applyFuzzySearch($query, $request->search, ['name', 'email', 'phone', 'address']);
         }
         $vendors = $query->orderBy('name')->paginate(10);
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\PORegisterExport;
+use App\Helpers\SearchHelper;
 use App\Models\IndentRegister;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -63,13 +64,15 @@ class ReportController extends Controller
         }
 
         if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q
-                    ->where('po_registers.party_name', 'like', "%{$search}%")
-                    ->orWhere('departments.name', 'like', "%{$search}%")
-                    ->orWhere('po_registers.po_wo_no', 'like', "%{$search}%")
-                    ->orWhere('projects.name', 'like', "%{$search}%");
-            });
+            SearchHelper::applyFuzzySearch($query, $search, [
+                'po_registers.party_name',
+                'departments.name',
+                'po_registers.po_wo_no',
+                'projects.name',
+                'po_registers.indent_id',
+                'po_registers.item_description',
+                'po_registers.remarks'
+            ]);
         }
 
         if ($request->filled(['start_date', 'end_date'])) {
@@ -175,15 +178,14 @@ class ReportController extends Controller
 
         // Text search across common fields
         if ($q !== '') {
-            $query->where(function ($sub) use ($q) {
-                $like = '%' . $q . '%';
-                $sub
-                    ->where('indent_id', 'like', $like)
-                    ->orWhere('indent_department', 'like', $like)
-                    ->orWhere('indent_project', 'like', $like)
-                    ->orWhere('status', 'like', $like)
-                    ->orWhere('items_description', 'like', $like);
-            });
+            SearchHelper::applyFuzzySearch($query, $q, [
+                'indent_id',
+                'indent_department',
+                'indent_project',
+                'status',
+                'items_description',
+                'remarks'
+            ]);
         }
 
         $registers = $query->orderByDesc('indent_date')->get();
@@ -318,14 +320,19 @@ class ReportController extends Controller
                     : collect(is_string($r->total_description) ? json_decode($r->total_description, true) : $r->total_description)
                         ->map(function ($i) {
                             $req = (int)($i['quantity_required'] ?? 0);
+                            $po  = (int)($i['purchased_order'] ?? $i['already_filed'] ?? 0);
                             $rec = (int)($i['quantity_received'] ?? 0);
-                            $bal = isset($i['quantity_balance']) ? (int)$i['quantity_balance'] : max(0, $req - $rec);
+                            $canc = (int)($i['quantity_cancelled'] ?? 0);
+                            $bal = isset($i['quantity_balance']) ? (int)$i['quantity_balance'] : max(0, $req - max($po, $rec + $canc));
+                            $cancStr = $canc > 0 ? ", Canc:{$canc}" : '';
                             return sprintf(
-                                '%s (%s) [Req:%s, Rcvd:%s, Bal:%s]',
+                                '%s (%s) [Req:%s, PO:%s, Rcvd:%s%s, Bal:%s]',
                                 $i['description'] ?? '-',
                                 $i['unit'] ?? '-',
                                 $req,
+                                $po,
                                 $rec,
+                                $cancStr,
                                 $bal
                             );
                         })
@@ -386,19 +393,21 @@ class ReportController extends Controller
 
         // Text search across common fields
         if ($q !== '') {
-            $like = "%{$q}%";
-            $query->where(function ($w) use ($like) {
-                $w
-                    ->where('po.indent_id', 'like', $like)
-                    ->orWhere('po.department_id', 'like', $like)
-                    ->orWhere('po.party_name', 'like', $like)
-                    ->orWhere('po.po_wo_no', 'like', $like)
-                    ->orWhere('po.status', 'like', $like)
-                    ->orWhere('po.item_description', 'like', $like)
-                    ->orWhere('ir.indent_project', 'like', $like)
-                    ->orWhere('ir.items_description', 'like', $like)
-                    ->orWhere('ir.status', 'like', $like);
-            });
+            SearchHelper::applyFuzzySearch($query, $q, [
+                'po.indent_id',
+                'po.department_id',
+                'po.party_name',
+                'po.po_wo_no',
+                'po.status',
+                'po.item_description',
+                'po.store_indent_no',
+                'po.remarks',
+                'ir.indent_project',
+                'ir.items_description',
+                'ir.indent_department',
+                'ir.status',
+                'ir.remarks'
+            ]);
         }
 
         // Date range: match either PO Date OR Indent Date within range
@@ -472,14 +481,19 @@ class ReportController extends Controller
                         $totalDescription = collect($items)
                             ->map(function ($i) {
                                 $req = (int)($i['quantity_required'] ?? 0);
+                                $po  = (int)($i['purchased_order'] ?? $i['already_filed'] ?? 0);
                                 $rec = (int)($i['quantity_received'] ?? 0);
-                                $bal = isset($i['quantity_balance']) ? (int)$i['quantity_balance'] : max(0, $req - $rec);
+                                $canc = (int)($i['quantity_cancelled'] ?? 0);
+                                $bal = isset($i['quantity_balance']) ? (int)$i['quantity_balance'] : max(0, $req - max($po, $rec + $canc));
+                                $cancStr = $canc > 0 ? ", Canc:{$canc}" : '';
                                 return sprintf(
-                                    '%s (%s) [Req:%s, Rcvd:%s, Bal:%s]',
+                                    '%s (%s) [Req:%s, PO:%s, Rcvd:%s%s, Bal:%s]',
                                     $i['description'] ?? '-',
                                     $i['unit'] ?? '-',
                                     $req,
+                                    $po,
                                     $rec,
+                                    $cancStr,
                                     $bal
                                 );
                             })

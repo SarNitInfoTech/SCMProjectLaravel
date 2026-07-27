@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\SearchHelper;
 use App\Models\User;
 use App\Models\Department;
 use App\Models\Role;
@@ -17,11 +18,7 @@ class UserController extends Controller
         $title = 'User List';
         $query = User::with('department:id,name');
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
+            SearchHelper::applyFuzzySearch($query, $request->search, ['name', 'email']);
         }
         $users = $query->paginate(10);
 

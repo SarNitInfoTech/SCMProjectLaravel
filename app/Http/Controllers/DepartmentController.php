@@ -1,6 +1,7 @@
 <?php 
 namespace App\Http\Controllers;
 
+use App\Helpers\SearchHelper;
 use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,7 +15,7 @@ class DepartmentController extends Controller
         $title = 'Department List';
         $query = Department::query();
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            SearchHelper::applyFuzzySearch($query, $request->search, ['name']);
         }
         $departments = $query->orderBy('name')->paginate(10);
 

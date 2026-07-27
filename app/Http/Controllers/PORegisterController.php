@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\POStatus;
 use App\Exports\PORegisterExport;
+use App\Helpers\SearchHelper;
 use App\Models\Department;
 use App\Models\DepartmentHead;
 use App\Models\IndentRegister;
@@ -39,13 +40,16 @@ class PORegisterController extends Controller
             ->leftJoin('departments', 'departments.id', '=', 'po_registers.department_id');
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('po_registers.indent_id', 'like', "%{$search}%")
-                  ->orWhere('departments.name', 'like', "%{$search}%")
-                  ->orWhere('po_registers.party_name', 'like', "%{$search}%")
-                  ->orWhere('po_registers.item_description', 'like', "%{$search}%");
-            });
+            SearchHelper::applyFuzzySearch($query, $request->search, [
+                'po_registers.indent_id',
+                'departments.name',
+                'po_registers.party_name',
+                'po_registers.item_description',
+                'po_registers.po_wo_no',
+                'po_registers.status',
+                'po_registers.store_indent_no',
+                'po_registers.remarks'
+            ]);
         }
 
         $poRegisters = $query->select('po_registers.*', 'departments.name as department_name')
@@ -159,6 +163,7 @@ class PORegisterController extends Controller
         }
         $poItemsRaw = DB::table('po_registers')
             ->where('indent_id', $indent_id)
+            ->whereNotIn(DB::raw('LOWER(status)'), ['cancel', 'cancelled'])
             ->pluck('item_description');
 
         $filedQtyMap = [];
@@ -200,7 +205,7 @@ class PORegisterController extends Controller
 
                 $item['already_filed'] = $alreadyFiled;
                 $item['remaining_to_file'] = $remainingToFile;
-                $item['quantity_balance'] = max(0, $req - $rec);
+                $item['quantity_balance'] = $remainingToFile;
 
                 return $remainingToFile > 0 ? $item : null;
             })
@@ -293,18 +298,20 @@ class PORegisterController extends Controller
 
                     $req = (int)($ex['quantity_required'] ?? ($foundMatch['required'] ?? 0));
                     $rec = $foundMatch ? (int)($foundMatch['received'] ?? 0) : (int)($ex['quantity_received'] ?? 0);
-                    $bal = max(0, $req - $rec);
+                    $canc = $foundMatch ? (int)($foundMatch['cancelled'] ?? 0) : (int)($ex['quantity_cancelled'] ?? 0);
+                    $bal = max(0, $req - ($rec + $canc));
 
                     if ($bal > 0) {
                         $allCompleted = false;
                     }
 
                     $updatedItems[] = [
-                        'description'       => $desc,
-                        'unit'              => $ex['unit'] ?? ($foundMatch['unit'] ?? ''),
-                        'quantity_required' => $req,
-                        'quantity_received' => $rec,
-                        'quantity_balance'  => $bal,
+                        'description'        => $desc,
+                        'unit'               => $ex['unit'] ?? ($foundMatch['unit'] ?? ''),
+                        'quantity_required'  => $req,
+                        'quantity_received'  => $rec,
+                        'quantity_cancelled' => $canc,
+                        'quantity_balance'   => $bal,
                     ];
                 }
 
@@ -319,6 +326,7 @@ class PORegisterController extends Controller
                 }
 
                 DB::table('indent_registers')->where('id', $indent->id)->update($indentData);
+                self::syncIndentItemsBalance($po->indent_id);
             }
         }
 
@@ -528,39 +536,10 @@ class PORegisterController extends Controller
             'updated_at' => now(),
         ]);
 
-        // Sync item counts to indent_registers
+        // Sync item counts and remaining balances across ALL POs to indent_registers
         $indentId = $request->input('indent_id');
-        if ($indentId && !empty($poItems)) {
-            $indent = DB::table('indent_registers')->where('indent_id', $indentId)->first();
-            if ($indent && !empty($indent->items_description)) {
-                $existingItems = json_decode($indent->items_description, true) ?? [];
-                $updatedIndentItems = [];
-                foreach ($existingItems as $ex) {
-                    $desc = $ex['description'] ?? '';
-                    $poMatch = null;
-                    foreach ($poItems as $p) {
-                        if (mb_strtolower(trim($p['description'])) === mb_strtolower(trim($desc))) {
-                            $poMatch = $p;
-                            break;
-                        }
-                    }
-                    $req = (int)($ex['quantity_required'] ?? ($poMatch['quantity_required'] ?? 0));
-                    $rec = (int)($ex['quantity_received'] ?? 0);
-                    $bal = $poMatch ? ($poMatch['quantity_balance'] ?? max(0, $req - $rec)) : max(0, $req - $rec);
-
-                    $updatedIndentItems[] = [
-                        'description'       => $desc,
-                        'unit'              => $ex['unit'] ?? ($poMatch['unit'] ?? ''),
-                        'quantity_required' => $req,
-                        'quantity_received' => $rec,
-                        'quantity_balance'  => $bal,
-                    ];
-                }
-                DB::table('indent_registers')->where('id', $indent->id)->update([
-                    'items_description' => json_encode($updatedIndentItems),
-                    'updated_at'        => now(),
-                ]);
-            }
+        if ($indentId) {
+            self::syncIndentItemsBalance($indentId);
         }
 
         return redirect()
@@ -810,6 +789,11 @@ class PORegisterController extends Controller
 
         $affected = DB::table('po_registers')->where('id', $id)->update($data);
 
+        $po = DB::table('po_registers')->where('id', $id)->first();
+        if ($po && $po->indent_id) {
+            self::syncIndentItemsBalance($po->indent_id);
+        }
+
         if ($affected === 0) {
             // Could be "no row found" or "values identical" — up to you how to message
             return redirect()
@@ -911,6 +895,8 @@ class PORegisterController extends Controller
             return [$poRows, $indentRows];
         });
 
+        self::syncIndentItemsBalance($indentId);
+
         $total = $poRows + $indentRows;
 
         return back()->with(
@@ -951,6 +937,8 @@ class PORegisterController extends Controller
 
             return [$poRows, $indentRows];
         });
+
+        self::syncIndentItemsBalance($indentId);
 
         $total = $poRows + $indentRows;
 
@@ -1002,4 +990,91 @@ class PORegisterController extends Controller
                 : 'No rows matched the given indent_id and department.'
         );
     }
+
+    /**
+     * Recalculates and syncs purchased PO quantities and remaining balances across all active POs for an indent.
+     */
+    public static function syncIndentItemsBalance($indentId)
+    {
+        if (!$indentId) return;
+
+        $indent = DB::table('indent_registers')->where('indent_id', $indentId)->first();
+        if (!$indent || empty($indent->items_description)) return;
+
+        $existingItems = json_decode($indent->items_description, true);
+        if (!is_array($existingItems)) return;
+
+        // Fetch all active (non-cancelled) POs for this indent
+        $allPoItemsRaw = DB::table('po_registers')
+            ->where('indent_id', $indentId)
+            ->whereNotIn(DB::raw('LOWER(status)'), ['cancel', 'cancelled'])
+            ->pluck('item_description');
+
+        $allFiledQtyMap = [];
+        foreach ($allPoItemsRaw as $rawJson) {
+            if (!empty($rawJson) && is_string($rawJson)) {
+                $decoded = json_decode($rawJson, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    foreach ($decoded as $entry) {
+                        if (is_array($entry) && isset($entry['description'])) {
+                            $dk = mb_strtolower(trim($entry['description']));
+                            $qty = (int)($entry['quantity'] ?? $entry['po_quantity'] ?? 1);
+                            $allFiledQtyMap[$dk] = ($allFiledQtyMap[$dk] ?? 0) + $qty;
+                        } elseif (is_string($entry)) {
+                            $dk = mb_strtolower(trim($entry));
+                            $allFiledQtyMap[$dk] = ($allFiledQtyMap[$dk] ?? 0) + 1;
+                        }
+                    }
+                } else {
+                    foreach (preg_split('/[,|]/', $rawJson) as $p) {
+                        $dk = mb_strtolower(trim($p));
+                        if ($dk !== '') {
+                            $allFiledQtyMap[$dk] = ($allFiledQtyMap[$dk] ?? 0) + 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        $updatedIndentItems = [];
+        $allBalZero = true;
+
+        foreach ($existingItems as $ex) {
+            $desc = $ex['description'] ?? '';
+            $dk = mb_strtolower(trim($desc));
+            $req = (int)($ex['quantity_required'] ?? 0);
+            $rec = (int)($ex['quantity_received'] ?? 0);
+            $canc = (int)($ex['quantity_cancelled'] ?? 0);
+            $totalFiled = (int)($allFiledQtyMap[$dk] ?? 0);
+
+            // Balance is quantity_required minus total PO quantity filed (or received + cancelled if higher)
+            $bal = max(0, $req - max($totalFiled, $rec + $canc));
+
+            if ($bal > 0) {
+                $allBalZero = false;
+            }
+
+            $updatedIndentItems[] = [
+                'description'        => $desc,
+                'unit'               => $ex['unit'] ?? '',
+                'quantity_required'  => $req,
+                'purchased_order'    => $totalFiled,
+                'quantity_received'  => $rec,
+                'quantity_cancelled' => $canc,
+                'quantity_balance'   => $bal,
+            ];
+        }
+
+        $updateData = [
+            'items_description' => json_encode($updatedIndentItems),
+            'updated_at'        => now(),
+        ];
+
+        if ($allBalZero && count($updatedIndentItems) > 0) {
+            $updateData['status'] = 'Close';
+        }
+
+        DB::table('indent_registers')->where('id', $indent->id)->update($updateData);
+    }
 }
+

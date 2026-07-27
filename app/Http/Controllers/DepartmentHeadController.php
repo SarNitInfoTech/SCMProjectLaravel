@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Helpers\SearchHelper;
 use App\Models\Department;
 use App\Models\Notification;
 use App\Models\DepartmentHead;
@@ -15,12 +16,7 @@ class DepartmentHeadController extends Controller
         $query = DepartmentHead::with('department:id,name');
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('department_head', 'like', "%{$search}%")
-                  ->orWhereHas('department', function($dq) use ($search) {
-                      $dq->where('name', 'like', "%{$search}%");
-                  });
-            });
+            SearchHelper::applyFuzzySearch($query, $search, ['department_head']);
         }
         $departmentHeads = $query->paginate(10);
 
