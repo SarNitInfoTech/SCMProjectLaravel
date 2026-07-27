@@ -23,11 +23,9 @@ use App\Http\Controllers\{
 // =======================
 // 🔓 Public Routes
 // =======================
-// Root redirect — unauthenticated users go to login, authenticated go to dashboard
+// Root redirect — always redirect to /login
 Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('dashboard.index')
-        : redirect()->route('login');
+    return redirect()->route('login');
 });
 
 Route::middleware('guest')->group(function () {
