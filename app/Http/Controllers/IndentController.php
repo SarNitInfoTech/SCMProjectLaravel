@@ -33,6 +33,34 @@ class IndentController extends Controller
         ]);
     }
 
+    if ($request->filled('department')) {
+        $query->where('indent_registers.indent_department', $request->department);
+    }
+
+    if ($request->filled('project')) {
+        $query->where('indent_registers.indent_project', $request->project);
+    }
+
+    if ($request->filled('status')) {
+        $query->whereRaw('LOWER(indent_registers.status) = ?', [mb_strtolower(trim($request->status))]);
+    }
+
+    if ($request->filled('date_from')) {
+        $query->whereDate('indent_registers.indent_date', '>=', $request->date_from);
+    }
+
+    if ($request->filled('date_to')) {
+        $query->whereDate('indent_registers.indent_date', '<=', $request->date_to);
+    }
+
+    $perPage = (int) $request->input('per_page', 10);
+    if (!in_array($perPage, [10, 25, 50, 100])) {
+        $perPage = 10;
+    }
+
+    $departments = DB::table('departments')->orderBy('name')->get();
+    $projects = DB::table('vendors')->orderBy('name')->get();
+
     $registers = $query->select(
             'indent_registers.id',
             'indent_registers.indent_id',
@@ -47,7 +75,7 @@ class IndentController extends Controller
             'indent_registers.updated_at'
         )
         ->orderByDesc('indent_registers.created_at')
-        ->paginate(10);
+        ->paginate($perPage);
 
     // Format rows
     $rows = $registers->map(function ($reg) {
@@ -107,7 +135,7 @@ class IndentController extends Controller
         ];
     });
 
-    return view('pages.indent.indentForm.viewIndentForm.viewIndentForm', compact('title', 'rows', 'registers'));
+    return view('pages.indent.indentForm.viewIndentForm.viewIndentForm', compact('title', 'rows', 'registers', 'departments', 'projects'));
   }
 
 
