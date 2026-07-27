@@ -254,6 +254,17 @@ class PORegisterController extends Controller
     public function updateInvoice(Request $request, int $id)
     {
         Gate::authorize('pos.edit');
+
+        $po = DB::table('po_registers')->where('id', $id)->first();
+        if (!$po) {
+            return back()->with('warning', 'Purchase Order not found.');
+        }
+
+        $currentStatus = mb_strtolower(trim((string)$po->status));
+        if (in_array($currentStatus, ['closed', 'close', 'cancel', 'cancelled'])) {
+            return back()->with('warning', "Cannot update invoice or receive goods for a {$po->status} Purchase Order.");
+        }
+
         $validated = $request->validate([
             'invoice_date'   => 'nullable|date',
             'receiving_date' => 'nullable|date',
@@ -273,18 +284,13 @@ class PORegisterController extends Controller
         if ($request->has('delay_in_days'))  $data['delay_in_days']  = $request->input('delay_in_days');
         if ($request->has('store_indent_no'))$data['store_indent_no']= $request->input('store_indent_no');
 
-        DB::table('po_registers')->where('id', $id)->update($data);
-
-        // Fetch the PO to get indent_id and department_id
-        $po = DB::table('po_registers')->where('id', $id)->first();
-
         // Update item_description JSON in po_registers for THIS PO with received & cancelled quantities
-        if ($po && $request->has('items') && is_array($request->input('items'))) {
+        $updatedPoItems = [];
+        if ($request->has('items') && is_array($request->input('items'))) {
             $submittedItems = $request->input('items');
             if (!empty($po->item_description)) {
                 $poItemDesc = json_decode($po->item_description, true);
                 if (is_array($poItemDesc)) {
-                    $updatedPoItems = [];
                     foreach ($poItemDesc as $pItem) {
                         $pDesc = is_array($pItem) ? ($pItem['description'] ?? '') : (string)$pItem;
                         $foundMatch = null;
@@ -296,8 +302,14 @@ class PORegisterController extends Controller
                         }
                         if (is_array($pItem)) {
                             if ($foundMatch) {
-                                $pItem['quantity_received'] = (int)($foundMatch['received'] ?? 0);
-                                $pItem['quantity_cancelled'] = (int)($foundMatch['cancelled'] ?? 0);
+                                $req = (int)($pItem['quantity'] ?? $pItem['po_quantity'] ?? 1);
+                                $recRaw = (int)($foundMatch['received'] ?? 0);
+                                $cancRaw = (int)($foundMatch['cancelled'] ?? 0);
+                                $rec = $req > 0 ? min($req, max(0, $recRaw)) : max(0, $recRaw);
+                                $canc = $req > 0 ? min(max(0, $req - $rec), max(0, $cancRaw)) : max(0, $cancRaw);
+
+                                $pItem['quantity_received']  = $rec;
+                                $pItem['quantity_cancelled'] = $canc;
                             }
                             $updatedPoItems[] = $pItem;
                         } else {
@@ -309,12 +321,40 @@ class PORegisterController extends Controller
                             ];
                         }
                     }
-                    DB::table('po_registers')->where('id', $id)->update([
-                        'item_description' => json_encode($updatedPoItems),
-                    ]);
+                    $data['item_description'] = json_encode($updatedPoItems);
                 }
             }
         }
+
+        // Calculate PO status based on received vs ordered quantities
+        $totOrd = 0;
+        $totRec = 0;
+        $totCanc = 0;
+        $itemsToEvaluate = !empty($updatedPoItems) ? $updatedPoItems : (!empty($po->item_description) ? (json_decode($po->item_description, true) ?? []) : []);
+        if (is_array($itemsToEvaluate)) {
+            foreach ($itemsToEvaluate as $pi) {
+                if (is_array($pi)) {
+                    $totOrd  += (int)($pi['quantity'] ?? $pi['po_quantity'] ?? 1);
+                    $totRec  += (int)($pi['quantity_received'] ?? 0);
+                    $totCanc += (int)($pi['quantity_cancelled'] ?? 0);
+                }
+            }
+        }
+
+        $prevStatus = $po->status;
+        $newPoStatus = 'Open';
+        if ($totRec > 0 || $totCanc > 0) {
+            if ($totOrd > 0 && ($totRec + $totCanc) >= $totOrd) {
+                $newPoStatus = 'Completed';
+            } else {
+                $newPoStatus = 'Partially Received';
+            }
+        }
+
+        $data['status'] = $newPoStatus;
+        DB::table('po_registers')->where('id', $id)->update($data);
+
+        self::logPOAction($id, 'receipt_added', $prevStatus, $newPoStatus, null, ['items' => $itemsToEvaluate]);
 
         // Sync item received quantities to indent_registers
         if ($po && $po->indent_id && $request->has('items') && is_array($request->input('items'))) {
@@ -559,10 +599,10 @@ class PORegisterController extends Controller
             }
         }
 
-        DB::table('po_registers')->insert([
+        $poId = DB::table('po_registers')->insertGetId([
             'indent_id' => $request->input('indent_id'),
             'department_id' => $request->input('department_id'),
-            'status' => 'Pending',
+            'status' => 'Open',
             'is_mandatory' => $request->input('is_mandatory', 'Mandatory'),
             'po_date' => $fmt('po_date'),
             'party_name' => $request->input('party_name'),
@@ -583,6 +623,8 @@ class PORegisterController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        self::logPOAction($poId, 'created', null, 'Open', null, ['items' => $poItems]);
 
         // Sync item counts and remaining balances across ALL POs to indent_registers
         $indentId = $request->input('indent_id');
@@ -1131,6 +1173,120 @@ class PORegisterController extends Controller
         }
 
         DB::table('indent_registers')->where('id', $indent->id)->update($updateData);
+    }
+
+    /**
+     * Log an action in po_audit_logs.
+     */
+    public static function logPOAction($poId, $action, $prevStatus = null, $newStatus = null, $reason = null, $details = null)
+    {
+        try {
+            DB::table('po_audit_logs')->insert([
+                'po_id'           => $poId,
+                'user_id'         => auth()->id(),
+                'user_name'       => auth()->user()?->name ?? 'System',
+                'action'          => $action,
+                'previous_status' => $prevStatus,
+                'new_status'      => $newStatus,
+                'reason'          => $reason,
+                'details'         => is_array($details) || is_object($details) ? json_encode($details) : $details,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Failed to write PO audit log: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Manually Close a PO with an optional reason.
+     */
+    public function closePO(Request $request, $id)
+    {
+        Gate::authorize('pos.edit');
+        $po = DB::table('po_registers')->where('id', $id)->first();
+        if (!$po) {
+            return back()->with('warning', 'Purchase Order not found.');
+        }
+
+        $prevStatus = $po->status;
+        $reason = $request->input('close_reason') ?? $request->input('reason');
+
+        DB::table('po_registers')->where('id', $id)->update([
+            'status'       => 'Closed',
+            'closed_at'    => now(),
+            'closed_by'    => auth()->id(),
+            'close_reason' => $reason,
+            'updated_at'   => now(),
+        ]);
+
+        self::logPOAction($id, 'closed', $prevStatus, 'Closed', $reason);
+
+        if ($po->indent_id) {
+            self::syncIndentItemsBalance($po->indent_id);
+        }
+
+        return back()->with('success', "PO #{$po->id} has been manually closed.");
+    }
+
+    /**
+     * Manually Reopen a previously closed PO.
+     */
+    public function reopenPO(Request $request, $id)
+    {
+        Gate::authorize('pos.edit');
+        $po = DB::table('po_registers')->where('id', $id)->first();
+        if (!$po) {
+            return back()->with('warning', 'Purchase Order not found.');
+        }
+
+        $prevStatus = $po->status;
+
+        // Calculate current received vs ordered
+        $items = !empty($po->item_description) ? json_decode($po->item_description, true) : [];
+        $totalOrdered = 0;
+        $totalReceived = 0;
+        if (is_array($items)) {
+            foreach ($items as $it) {
+                if (is_array($it)) {
+                    $totalOrdered += (int)($it['quantity'] ?? $it['po_quantity'] ?? 0);
+                    $totalReceived += (int)($it['quantity_received'] ?? 0);
+                }
+            }
+        }
+
+        $newStatus = ($totalReceived > 0) ? 'Partially Received' : 'Reopened';
+
+        DB::table('po_registers')->where('id', $id)->update([
+            'status'      => $newStatus,
+            'reopened_at' => now(),
+            'reopened_by' => auth()->id(),
+            'updated_at'  => now(),
+        ]);
+
+        self::logPOAction($id, 'reopened', $prevStatus, $newStatus, $request->input('reason'));
+
+        if ($po->indent_id) {
+            self::syncIndentItemsBalance($po->indent_id);
+        }
+
+        return back()->with('success', "PO #{$po->id} has been reopened.");
+    }
+
+    /**
+     * Get JSON audit logs for a PO.
+     */
+    public function getAuditLogs($id)
+    {
+        try {
+            $logs = DB::table('po_audit_logs')
+                ->where('po_id', $id)
+                ->orderByDesc('created_at')
+                ->get();
+            return response()->json($logs);
+        } catch (\Throwable $e) {
+            return response()->json([]);
+        }
     }
 }
 

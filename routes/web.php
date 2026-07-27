@@ -112,6 +112,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/po-register/status-pending', [PORegisterController::class, 'statusPending'])->name('po-register.statusPending');
     Route::post('/po-register/status-close', [PORegisterController::class, 'statusClose'])->name('po-register.statusClose');
     Route::post('/po-register/status-cancel', [PORegisterController::class, 'statusCancel'])->name('po-register.statusCancel');
+    Route::post('/po-register/{id}/close', [PORegisterController::class, 'closePO'])->name('po-register.closePO');
+    Route::post('/po-register/{id}/reopen', [PORegisterController::class, 'reopenPO'])->name('po-register.reopenPO');
+    Route::get('/po-register/{id}/audit-logs', [PORegisterController::class, 'getAuditLogs'])->name('po-register.auditLogs');
     Route::put('/po-register/{id}', [PORegisterController::class, 'updateInvoice'])->name('po-register.updateInvoice');
     Route::patch('/po-register/{id}', [PORegisterController::class, 'updateById'])
     ->name('po-register.updatePObyId');

@@ -88,11 +88,15 @@
                 @forelse ($rows as $row)
                     @php
                         $status = $row['po_status'];
-                        $badgeClass = match (strtolower($status)) {
-                            'pending' => 'bg-yellow-100 text-yellow-800',
-                            'cancel', 'cancelled' => 'bg-red-100 text-red-800',
-                            'close', 'closed' => 'bg-green-100 text-green-800',
-                            default => 'bg-gray-100 text-gray-800'
+                        $normSt = strtolower(trim($status));
+                        $badgeClass = match ($normSt) {
+                            'completed'          => 'bg-emerald-100 text-emerald-800 border border-emerald-300',
+                            'partially received' => 'bg-blue-100 text-blue-800 border border-blue-300',
+                            'reopened'           => 'bg-purple-100 text-purple-800 border border-purple-300',
+                            'close', 'closed'    => 'bg-gray-100 text-gray-800 border border-gray-300',
+                            'cancel', 'cancelled'=> 'bg-red-100 text-red-800 border border-red-300',
+                            'open', 'pending'    => 'bg-green-100 text-green-800 border border-green-300',
+                            default              => 'bg-gray-100 text-gray-800'
                         };
                     @endphp
                     <tr class="border-b border-defaultborder hover:bg-gray-50 transition-colors">
@@ -202,11 +206,15 @@
         }
 
         tbody.innerHTML = rows.map(row => {
-            const status = row.po_status || 'Pending';
+            const status = row.po_status || 'Open';
+            const s = status.toLowerCase().trim();
             let badgeClass = 'bg-gray-100 text-gray-800';
-            if (status.toLowerCase() === 'pending') badgeClass = 'bg-yellow-100 text-yellow-800';
-            else if (status.toLowerCase() === 'cancel') badgeClass = 'bg-red-100 text-red-800';
-            else if (status.toLowerCase() === 'close') badgeClass = 'bg-green-100 text-green-800';
+            if (s === 'completed') badgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+            else if (s === 'partially received') badgeClass = 'bg-blue-100 text-blue-800 border border-blue-300';
+            else if (s === 'reopened') badgeClass = 'bg-purple-100 text-purple-800 border border-purple-300';
+            else if (s === 'close' || s === 'closed') badgeClass = 'bg-gray-100 text-gray-800 border border-gray-300';
+            else if (s === 'cancel' || s === 'cancelled') badgeClass = 'bg-red-100 text-red-800 border border-red-300';
+            else if (s === 'open' || s === 'pending') badgeClass = 'bg-green-100 text-green-800 border border-green-300';
 
             const amountText = row.po_amount !== '-' ? '₹' + row.po_amount : '-';
 

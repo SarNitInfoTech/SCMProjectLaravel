@@ -4,9 +4,13 @@ namespace App\Enums;
 
 enum POStatus: string
 {
+    case OPEN = 'Open';
+    case PARTIALLY_RECEIVED = 'Partially Received';
+    case COMPLETED = 'Completed';
+    case CLOSED = 'Closed';
+    case REOPENED = 'Reopened';
     case CANCEL = 'Cancel';
     case PENDING = 'Pending';
-    case CLOSE = 'Close';
 
     public static function values(): array
     {
