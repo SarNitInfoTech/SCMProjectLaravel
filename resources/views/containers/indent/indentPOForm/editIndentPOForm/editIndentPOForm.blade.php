@@ -195,9 +195,9 @@
             </div>
 
             <!-- Row 3 -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px;">
                 <!-- Item Description Multi-Select Tag Dropdown Component -->
-                <div style="grid-column: span 1; position: relative;">
+                <div style="grid-column: span 2; position: relative;">
                     <label style="display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px;">
                         Item Description <span class="req-asterisk" style="color: #EF4444;">*</span>
                     </label>
@@ -270,13 +270,16 @@
                         <input type="hidden" name="expected_days" id="expected_days_hidden" value="{{ $po->expected_days }}">
                     </div>
                 </div>
+            </div>
 
+            <!-- Row 4 -->
+            <div style="display: grid; grid-template-columns: 1fr;">
                 <!-- Remarks -->
                 <div>
                     <label for="remarks" style="display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px;">
                         Remarks
                     </label>
-                    <textarea name="remarks" id="remarks" rows="1" placeholder="Enter any remarks (optional)..."
+                    <textarea name="remarks" id="remarks" rows="2" placeholder="Enter any remarks (optional)..."
                               style="width: 100%; padding: 10px 14px; background: #FAFAFA; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13px; outline: none; box-sizing: border-box;">{{ old('remarks', $po->remarks) }}</textarea>
                 </div>
             </div>
