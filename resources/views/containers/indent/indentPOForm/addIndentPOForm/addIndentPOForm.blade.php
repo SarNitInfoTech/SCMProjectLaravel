@@ -135,22 +135,35 @@
 
             <!-- Row 3 -->
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
-                <!-- Item Description Multi Select -->
-                <div>
-                    <label for="item_description" style="display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px;">
+                <!-- Item Description Modern Pill Display -->
+                <div style="grid-column: span 1;">
+                    <label style="display: block; font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 8px;">
                         Item Description <span style="color: #EF4444;">*</span>
                     </label>
-                    <select name="item_description[]" id="item_description" class="choices-multiple-remove" multiple required
-                            style="width: 100%; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13px; font-weight: 600;">
+
+                    <!-- Hidden select for backend compatibility -->
+                    <select name="item_description[]" id="item_description" multiple style="display: none;">
                         @foreach ($items as $item)
+                            <option value="{{ $item['description'] }}" selected>{{ $item['description'] }}</option>
+                        @endforeach
+                    </select>
+
+                    <!-- Beautiful Pill Container -->
+                    <div style="width: 100%; min-height: 42px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px; padding: 8px 10px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 6px; max-height: 140px; overflow-y: auto;">
+                        @forelse ($items as $item)
                             @php
                                 $req = (int)($item['quantity_required'] ?? 0);
                                 $unitVal = $item['unit'] ?? '-';
-                                $label = $item['description'] . " (Qty: {$req}, Unit: {$unitVal})";
                             @endphp
-                            <option value="{{ $item['description'] }}" selected>{{ $label }}</option>
-                        @endforeach
-                    </select>
+                            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF; border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                <span style="color: #2563EB; font-weight: 800;">✓</span>
+                                <span>{{ $item['description'] }}</span>
+                                <span style="color: #64748B; font-weight: 600; font-size: 11px;">(Qty: {{ $req }}, Unit: {{ $unitVal }})</span>
+                            </div>
+                        @empty
+                            <span style="color: #94A3B8; font-size: 13px; font-weight: 500;">No items found</span>
+                        @endforelse
+                    </div>
                 </div>
 
                 <!-- Expected Date -->
