@@ -313,20 +313,23 @@ class ReportController extends Controller
 
     public function allIndentAndPOlist(Request $request)
     {
+        $perPage = (int) $request->get('per_page', 15);
+
         // Base join: only POs that have indent_id + department_id and match an indent row
-        $joined = DB::table('po_registers as po')
+        $query = DB::table('po_registers as po')
             ->join('indent_registers as ir', function ($join) {
-                // ir.indent_id (varchar) == po.indent_id (bigint)  -> cast PO to CHAR for join
                 $join->on('ir.indent_id', '=', DB::raw('CAST(po.indent_id AS CHAR)'));
             })
+            ->leftJoin('departments as d', 'd.id', '=', 'po.department_id')
+            ->leftJoin('projects as p', 'p.id', '=', 'ir.indent_project')
             ->whereNotNull('po.indent_id')
             ->whereNotNull('po.department_id')
-            ->orderByDesc('po.po_date')
             ->select([
                 // PO
                 'po.id                as po_id',
                 'po.indent_id         as po_indent_id',
                 'po.department_id     as department_id',
+                'd.name               as department_name',
                 'po.status            as po_status',
                 'po.po_date',
                 'po.party_name',
@@ -348,12 +351,62 @@ class ReportController extends Controller
                 'ir.indent_department',
                 'ir.items_description as total_description',
                 'ir.indent_project',
+                'p.name               as project_name',
                 'ir.status            as indent_status',
                 'ir.remarks           as indent_remarks',
                 'ir.created_at        as indent_created_at',
-            ])
-            ->limit(100)  // optional: cap initial payload; AJAX will fetch all matches
-            ->get();
+            ]);
+
+        if ($request->filled('search')) {
+            $search = trim($request->get('search'));
+            SearchHelper::applyFuzzySearch($query, $search, [
+                'po.indent_id',
+                'd.name',
+                'p.name',
+                'po.party_name',
+                'po.po_wo_no',
+                'po.item_description',
+                'ir.items_description',
+                'po.remarks',
+                'ir.remarks'
+            ]);
+        }
+
+        if ($request->filled('department')) {
+            $query->where('d.name', $request->get('department'));
+        }
+
+        if ($request->filled('project')) {
+            $query->where('p.name', $request->get('project'));
+        }
+
+        if ($request->filled('status')) {
+            $st = strtolower(trim($request->get('status')));
+            if (in_array($st, ['pending', 'open'])) {
+                $query->whereIn(DB::raw('LOWER(po.status)'), ['pending', 'open']);
+            } elseif ($st === 'partially received') {
+                $query->where(DB::raw('LOWER(po.status)'), 'partially received');
+            } elseif (in_array($st, ['completed', 'close', 'closed'])) {
+                $query->whereIn(DB::raw('LOWER(po.status)'), ['completed', 'close', 'closed']);
+            } elseif (in_array($st, ['cancel', 'cancelled'])) {
+                $query->whereIn(DB::raw('LOWER(po.status)'), ['cancel', 'cancelled']);
+            } else {
+                $query->where(DB::raw('LOWER(po.status)'), $st);
+            }
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('po.po_date', '>=', $request->get('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('po.po_date', '<=', $request->get('date_to'));
+        }
+
+        $paginated = $query->orderByDesc('po.po_date')->paginate($perPage)->withQueryString();
+
+        $departments = \App\Models\Department::orderBy('name')->get();
+        $projects = \App\Models\Project::orderBy('name')->get();
 
         // Table columns for the reusable component
         $columns = [
@@ -374,24 +427,24 @@ class ReportController extends Controller
             ['label' => 'Invoice Date', 'key' => 'invoice_date', 'type' => 'date'],
             ['label' => 'Receiving Date', 'key' => 'receiving_date', 'type' => 'date'],
             ['label' => 'Delay in Days', 'key' => 'invoice_expected_days'],
-            ['label' => 'Remarks', 'key' => 'remarks'],
             ['label' => 'Indent Remarks', 'key' => 'indent_remarks'],
+            ['label' => 'PO Remarks', 'key' => 'remarks'],
         ];
 
         // Initial rows mapped to the columns' keys
-        $rows = $joined->map(function ($r) {
+        $rows = collect($paginated->items())->map(function ($r) {
             $fmtStatus = fn($s) => match (strtolower((string) $s)) {
-                'close' => 'Close',
-                'cancel' => 'Cancel',
-                'pending' => 'Pending',
+                'close', 'closed', 'completed' => 'Close',
+                'cancel', 'cancelled' => 'Cancel',
+                'partially received' => 'Partially Received',
                 default => 'Pending',
             };
             return [
                 // rowKey will be po_id (unique)
                 'po_id' => (string) $r->po_id,
-                'indent_id' => (string) $r->po_indent_id,  // same as $r->indent_indent_id
-                'department' => $r->department_id ?? '-',
-                'project' => $r->indent_project ?? '-',
+                'indent_id' => (string) $r->po_indent_id,
+                'department' => $r->department_name ?? $r->department_id ?? '-',
+                'project' => $r->project_name ?? $r->indent_project ?? '-',
                 'party_name' => $r->party_name ?? '-',
                 'po_no' => $r->po_wo_no ?? '-',
                 'total_description' => empty($r->total_description)
@@ -444,11 +497,13 @@ class ReportController extends Controller
             'title' => 'All Indents & POs',
             'columns' => $columns,
             'rows' => $rows,
-            'searchPlaceholder' => 'Search indents / POs…',
+            'searchPlaceholder' => 'Search ID, department, party, PO...',
             'customButton' => null,
-            'pagination' => null,  // not used here
+            'paginated' => $paginated,
+            'departments' => $departments,
+            'projects' => $projects,
             'filterUrl' => route('reports.indentspos.filter'),
-            'rowKey' => 'po_id',  // unique per row
+            'rowKey' => 'po_id',
         ]);
     }
 
