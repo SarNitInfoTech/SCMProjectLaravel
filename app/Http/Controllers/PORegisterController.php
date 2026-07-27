@@ -174,8 +174,18 @@ class PORegisterController extends Controller
                     foreach ($decoded as $entry) {
                         if (is_array($entry) && isset($entry['description'])) {
                             $descKey = mb_strtolower(trim($entry['description']));
-                            $qty = (int)($entry['quantity'] ?? $entry['po_quantity'] ?? 1);
-                            $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + $qty;
+                            $ordered = (int)($entry['quantity'] ?? $entry['po_quantity'] ?? 1);
+                            $received = isset($entry['quantity_received']) ? (int)$entry['quantity_received'] : null;
+                            $cancelled = (int)($entry['quantity_cancelled'] ?? 0);
+
+                            // If invoice receiving has been recorded and received + cancelled < ordered, effective fulfilled PO qty is min(ordered, received + cancelled)
+                            if ($received !== null && $received > 0 && ($received + $cancelled) < $ordered) {
+                                $effectiveQty = min($ordered, $received + $cancelled);
+                            } else {
+                                $effectiveQty = $ordered;
+                            }
+
+                            $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + $effectiveQty;
                         } elseif (is_string($entry)) {
                             $descKey = mb_strtolower(trim($entry));
                             $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + 1;
@@ -272,6 +282,44 @@ class PORegisterController extends Controller
 
         // Fetch the PO to get indent_id and department_id
         $po = DB::table('po_registers')->where('id', $id)->first();
+
+        // Update item_description JSON in po_registers for THIS PO with received & cancelled quantities
+        if ($po && $request->has('items') && is_array($request->input('items'))) {
+            $submittedItems = $request->input('items');
+            if (!empty($po->item_description)) {
+                $poItemDesc = json_decode($po->item_description, true);
+                if (is_array($poItemDesc)) {
+                    $updatedPoItems = [];
+                    foreach ($poItemDesc as $pItem) {
+                        $pDesc = is_array($pItem) ? ($pItem['description'] ?? '') : (string)$pItem;
+                        $foundMatch = null;
+                        foreach ($submittedItems as $sub) {
+                            if (isset($sub['description']) && mb_strtolower(trim($sub['description'])) === mb_strtolower(trim($pDesc))) {
+                                $foundMatch = $sub;
+                                break;
+                            }
+                        }
+                        if (is_array($pItem)) {
+                            if ($foundMatch) {
+                                $pItem['quantity_received'] = (int)($foundMatch['received'] ?? 0);
+                                $pItem['quantity_cancelled'] = (int)($foundMatch['cancelled'] ?? 0);
+                            }
+                            $updatedPoItems[] = $pItem;
+                        } else {
+                            $updatedPoItems[] = [
+                                'description'        => $pDesc,
+                                'quantity'           => 1,
+                                'quantity_received'  => $foundMatch ? (int)($foundMatch['received'] ?? 0) : 0,
+                                'quantity_cancelled' => $foundMatch ? (int)($foundMatch['cancelled'] ?? 0) : 0,
+                            ];
+                        }
+                    }
+                    DB::table('po_registers')->where('id', $id)->update([
+                        'item_description' => json_encode($updatedPoItems),
+                    ]);
+                }
+            }
+        }
 
         // Sync item received quantities to indent_registers
         if ($po && $po->indent_id && $request->has('items') && is_array($request->input('items'))) {
@@ -1018,8 +1066,17 @@ class PORegisterController extends Controller
                     foreach ($decoded as $entry) {
                         if (is_array($entry) && isset($entry['description'])) {
                             $dk = mb_strtolower(trim($entry['description']));
-                            $qty = (int)($entry['quantity'] ?? $entry['po_quantity'] ?? 1);
-                            $allFiledQtyMap[$dk] = ($allFiledQtyMap[$dk] ?? 0) + $qty;
+                            $ordered = (int)($entry['quantity'] ?? $entry['po_quantity'] ?? 1);
+                            $received = isset($entry['quantity_received']) ? (int)$entry['quantity_received'] : null;
+                            $cancelled = (int)($entry['quantity_cancelled'] ?? 0);
+
+                            if ($received !== null && $received > 0 && ($received + $cancelled) < $ordered) {
+                                $effectiveQty = min($ordered, $received + $cancelled);
+                            } else {
+                                $effectiveQty = $ordered;
+                            }
+
+                            $allFiledQtyMap[$dk] = ($allFiledQtyMap[$dk] ?? 0) + $effectiveQty;
                         } elseif (is_string($entry)) {
                             $dk = mb_strtolower(trim($entry));
                             $allFiledQtyMap[$dk] = ($allFiledQtyMap[$dk] ?? 0) + 1;
