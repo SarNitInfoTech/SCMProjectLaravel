@@ -1,7 +1,9 @@
 <IfModule mod_rewrite.c>
+    DirectoryIndex index.php public/index.php
     RewriteEngine On
-    
-    # Transparently route all traffic to the /public directory
-    RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Redirect root domain & all traffic through Laravel front controller
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
 </IfModule>
