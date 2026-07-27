@@ -103,12 +103,60 @@ class ReportController extends Controller
         return view('pages.report.viewReport.viewReport', compact('reports', 'columns'));
     }
 
-    public function viewAllIndent()
+    public function viewAllIndent(Request $request)
     {
         $title = 'All Indents';
         $searchPlaceholder = 'Search indents…';
+        $perPage = (int) $request->get('per_page', 15);
 
-        $pagination = $registers = IndentRegister::orderByDesc('indent_date')->paginate(15);
+        $query = IndentRegister::query();
+
+        if ($request->filled('search')) {
+            $search = trim($request->get('search'));
+            SearchHelper::applySearch($query, $search, [
+                'indent_id',
+                'indent_department',
+                'indent_project',
+                'items_description',
+                'remarks'
+            ]);
+        }
+
+        if ($request->filled('department')) {
+            $query->where('indent_department', $request->get('department'));
+        }
+
+        if ($request->filled('project')) {
+            $query->where('indent_project', $request->get('project'));
+        }
+
+        if ($request->filled('status')) {
+            $st = strtolower(trim($request->get('status')));
+            if (in_array($st, ['pending', 'open'])) {
+                $query->whereIn(DB::raw('LOWER(status)'), ['pending', 'open']);
+            } elseif ($st === 'partially received') {
+                $query->where(DB::raw('LOWER(status)'), 'partially received');
+            } elseif (in_array($st, ['completed', 'close', 'closed'])) {
+                $query->whereIn(DB::raw('LOWER(status)'), ['completed', 'close', 'closed']);
+            } elseif (in_array($st, ['cancel', 'cancelled'])) {
+                $query->whereIn(DB::raw('LOWER(status)'), ['cancel', 'cancelled']);
+            } else {
+                $query->where(DB::raw('LOWER(status)'), $st);
+            }
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('indent_date', '>=', $request->get('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('indent_date', '<=', $request->get('date_to'));
+        }
+
+        $pagination = $registers = $query->orderByDesc('indent_date')->paginate($perPage);
+
+        $departments = \App\Models\Department::orderBy('name')->get();
+        $projects = \App\Models\Project::orderBy('name')->get();
 
         $columns = [
             ['label' => 'Indent ID', 'key' => 'indent_id'],
@@ -130,9 +178,9 @@ class ReportController extends Controller
                 }
             }
             $status = match (strtolower((string) ($r->status ?? ''))) {
-                'close' => 'Close',
-                'cancel' => 'Cancel',
-                'pending' => 'Pending',
+                'close', 'closed', 'completed' => 'Close',
+                'cancel', 'cancelled' => 'Cancel',
+                'partially received' => 'Partially Received',
                 default => 'Pending',
             };
             return [
@@ -151,10 +199,11 @@ class ReportController extends Controller
             'rows' => $rows,
             'searchPlaceholder' => $searchPlaceholder,
             'customButton' => null,
+            'registers' => $registers,
             'pagination' => $pagination,
-            // AJAX endpoint you already created earlier
+            'departments' => $departments,
+            'projects' => $projects,
             'filterUrl' => route('reports.indents.filter'),
-            // Optionally specify a unique row key (defaults to first column key)
             'rowKey' => 'indent_id',
         ]);
     }
