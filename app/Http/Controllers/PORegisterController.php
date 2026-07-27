@@ -26,7 +26,7 @@ class PORegisterController extends Controller
     {
         Gate::authorize('pos.view');
         $title = 'PO Register List';
-        $viewBtnTitle="File Invoice";
+        $viewBtnTitle = "File Invoice";
 
         // Subquery to get latest PO ID per indent_id
         $latestPoIds = DB::table('po_registers')
@@ -52,9 +52,36 @@ class PORegisterController extends Controller
             ]);
         }
 
+        if ($request->filled('department_id')) {
+            $query->where('po_registers.department_id', $request->department_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->whereRaw('LOWER(po_registers.status) = ?', [mb_strtolower(trim($request->status))]);
+        }
+
+        if ($request->filled('party_name')) {
+            $query->where('po_registers.party_name', 'LIKE', '%' . $request->party_name . '%');
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('po_registers.po_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('po_registers.po_date', '<=', $request->date_to);
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100])) {
+            $perPage = 10;
+        }
+
+        $departments = DB::table('departments')->orderBy('name')->get();
+
         $poRegisters = $query->select('po_registers.*', 'departments.name as department_name')
             ->orderByDesc('po_registers.created_at')
-            ->paginate(10);
+            ->paginate($perPage);
 
         $rows = $poRegisters->map(function ($po) {
             $actions = [
@@ -120,7 +147,8 @@ class PORegisterController extends Controller
             'title' => $title,
             'rows' => $rows,
             'pagination' => $poRegisters,
-            'viewBtnTitle' => $viewBtnTitle
+            'viewBtnTitle' => $viewBtnTitle,
+            'departments' => $departments,
         ]);
     }
     public function create(Request $request)
