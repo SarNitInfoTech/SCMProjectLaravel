@@ -345,8 +345,11 @@ public function create()
 
     foreach ($request->items as $item) {
         $req = (int) ($item['required'] ?? 0);
-        $rec = (int) ($item['received'] ?? 0);
-        $canc = (int) ($item['cancelled'] ?? 0);
+        $recRaw = (int) ($item['received'] ?? 0);
+        $cancRaw = (int) ($item['cancelled'] ?? 0);
+
+        $rec = $req > 0 ? min($req, max(0, $recRaw)) : max(0, $recRaw);
+        $canc = $req > 0 ? min(max(0, $req - $rec), max(0, $cancRaw)) : max(0, $cancRaw);
         $bal = max(0, $req - ($rec + $canc));
         $items[] = [
             'description'        => $item['description'] ?? '',
@@ -400,8 +403,11 @@ public function create()
 
     foreach ($items as $item) {
         $req = (int)($item['required'] ?? 0);
-        $rec = (int)($item['received'] ?? 0);
-        $canc = (int)($item['cancelled'] ?? 0);
+        $recRaw = (int)($item['received'] ?? 0);
+        $cancRaw = (int)($item['cancelled'] ?? 0);
+
+        $rec = $req > 0 ? min($req, max(0, $recRaw)) : max(0, $recRaw);
+        $canc = $req > 0 ? min(max(0, $req - $rec), max(0, $cancRaw)) : max(0, $cancRaw);
         $bal = max(0, $req - ($rec + $canc));
         $processedItems[] = [
             'description'        => $item['description'] ?? '',

@@ -177,15 +177,31 @@
             const qtyBalance = row.querySelector('.qty-balance');
 
             function calc() {
-                const req = parseFloat(qtyRequired.value) || 0;
-                const rec = parseFloat(qtyReceived.value) || 0;
-                const canc = parseFloat(qtyCancelled?.value) || 0;
+                const req = parseFloat(qtyRequired?.value) || 0;
+                let rec = parseFloat(qtyReceived?.value) || 0;
+                let canc = parseFloat(qtyCancelled?.value) || 0;
+
+                if (rec < 0) { rec = 0; if (qtyReceived) qtyReceived.value = 0; }
+                if (canc < 0) { canc = 0; if (qtyCancelled) qtyCancelled.value = 0; }
+
+                if (req > 0 && rec > req) {
+                    rec = req;
+                    if (qtyReceived) qtyReceived.value = req;
+                }
+
+                if (req > 0 && (rec + canc) > req) {
+                    canc = req - rec;
+                    if (qtyCancelled) qtyCancelled.value = canc;
+                }
+
                 qtyBalance.value = Math.max(req - (rec + canc), 0);
             }
 
             qtyRequired?.addEventListener('input', calc);
             qtyReceived?.addEventListener('input', calc);
             qtyCancelled?.addEventListener('input', calc);
+            qtyReceived?.addEventListener('change', calc);
+            qtyCancelled?.addEventListener('change', calc);
             [qtyRequired, qtyReceived, qtyCancelled].forEach(input => {
                 input?.addEventListener('keypress', e => {
                     if (e.key === '+' || e.key === '-') e.preventDefault();

@@ -340,8 +340,12 @@ class PORegisterController extends Controller
                     }
 
                     $req = (int)($ex['quantity_required'] ?? ($foundMatch['required'] ?? 0));
-                    $rec = $foundMatch ? (int)($foundMatch['received'] ?? 0) : (int)($ex['quantity_received'] ?? 0);
-                    $canc = $foundMatch ? (int)($foundMatch['cancelled'] ?? 0) : (int)($ex['quantity_cancelled'] ?? 0);
+                    $recRaw = $foundMatch ? (int)($foundMatch['received'] ?? 0) : (int)($ex['quantity_received'] ?? 0);
+                    $cancRaw = $foundMatch ? (int)($foundMatch['cancelled'] ?? 0) : (int)($ex['quantity_cancelled'] ?? 0);
+
+                    // Clamp received and cancelled so they never exceed required quantity
+                    $rec = $req > 0 ? min($req, max(0, $recRaw)) : max(0, $recRaw);
+                    $canc = $req > 0 ? min(max(0, $req - $rec), max(0, $cancRaw)) : max(0, $cancRaw);
                     $bal = max(0, $req - ($rec + $canc));
 
                     if ($bal > 0) {

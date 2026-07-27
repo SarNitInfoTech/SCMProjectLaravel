@@ -131,8 +131,24 @@
 
         function updateBalance() {
             const req = parseInt(reqEl?.value || 0, 10);
-            const rec = parseInt(recEl?.value || 0, 10);
-            const canc = parseInt(cancEl?.value || 0, 10);
+            let rec = parseInt(recEl?.value || 0, 10);
+            let canc = parseInt(cancEl?.value || 0, 10);
+
+            if (isNaN(rec) || rec < 0) rec = 0;
+            if (isNaN(canc) || canc < 0) canc = 0;
+
+            // Clamp received quantity so it cannot exceed required quantity
+            if (req > 0 && rec > req) {
+                rec = req;
+                if (recEl) recEl.value = req;
+            }
+
+            // Clamp cancelled quantity so received + cancelled cannot exceed required quantity
+            if (req > 0 && (rec + canc) > req) {
+                canc = req - rec;
+                if (cancEl) cancEl.value = canc;
+            }
+
             const bal = Math.max(0, req - (rec + canc));
 
             if (balEl) {
@@ -148,7 +164,8 @@
 
         recEl?.addEventListener('input', updateBalance);
         cancEl?.addEventListener('input', updateBalance);
-    });
+        recEl?.addEventListener('change', updateBalance);
+        cancEl?.addEventListener('change', updateBalance);
     });
   });
 </script>
