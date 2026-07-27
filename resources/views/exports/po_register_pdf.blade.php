@@ -30,7 +30,6 @@
             <th>Expected</th>
             <th>Receiving</th>
             <th>Delay</th>
-            <th>PO Remarks</th>
             <th>Indent Ticket</th>
             <th>Indent Date</th>
             <th>Project</th>
@@ -40,6 +39,7 @@
             <th>Qty Recv</th>
             <th>Qty Bal</th>
             <th>Indent Remarks</th>
+            <th>PO Remarks</th>
         </tr>
     </thead>
     <tbody>
@@ -57,7 +57,6 @@
             <td>{{ $row->expected_date }}</td>
             <td>{{ $row->receiving_date }}</td>
             <td>{{ $row->delay_in_days }}</td>
-            <td>{{ $row->remarks }}</td>
             <td>{{ $row->indent_ticket_no }}</td>
             <td>{{ $row->indent_date }}</td>
             <td>{{ $row->project_name }}</td>
@@ -67,6 +66,7 @@
             <td>{{ $row->quantity_received }}</td>
             <td>{{ $row->quantity_balance }}</td>
             <td>{{ $row->indent_remarks ?? '-' }}</td>
+            <td>{{ $row->remarks ?? $row->po_remarks ?? '-' }}</td>
         </tr>
         @endforeach
     </tbody>

@@ -1,5 +1,5 @@
 @php
-    $maxPoItems = 1; // since we’ll merge all into one column
+    $maxPoItems = 1;
     $maxIndentItems = 1;
 @endphp
 
@@ -23,7 +23,6 @@
             <th>Invoice Date</th>
             <th>Receiving Date</th>
             <th>Delay in Days</th>
-            <th>Remarks</th>
             <th>Store Indent No</th>
             <th>PO Created At</th>
             <th>PO Updated At</th>
@@ -38,6 +37,8 @@
             <th>Quantity Balance</th>
             <th>Indent Created At</th>
             <th>Indent Updated At</th>
+            <th>Indent Remarks</th>
+            <th>PO Remarks</th>
         </tr>
     </thead>
     <tbody>
@@ -71,7 +72,6 @@
                 <td>{{ $po->invoice_date }}</td>
                 <td>{{ $po->receiving_date }}</td>
                 <td>{{ $po->delay_in_days }}</td>
-                <td>{{ $po->remarks }}</td>
                 <td>{{ $po->store_indent_no }}</td>
                 <td>{{ $po->po_created_at }}</td>
                 <td>{{ $po->po_updated_at }}</td>
@@ -89,6 +89,8 @@
                 <td>{{ $po->quantity_balance }}</td>
                 <td>{{ $po->indent_created_at }}</td>
                 <td>{{ $po->indent_updated_at }}</td>
+                <td>{{ $po->indent_remarks ?? '-' }}</td>
+                <td>{{ $po->po_remarks ?? '-' }}</td>
             </tr>
         @endforeach
     </tbody>

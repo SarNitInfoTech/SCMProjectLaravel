@@ -45,7 +45,7 @@ class PORegisterExport implements FromView
                 'po_registers.invoice_date',
                 'po_registers.receiving_date',
                 'po_registers.delay_in_days',
-                'po_registers.remarks',
+                'po_registers.remarks as po_remarks',
                 'po_registers.store_indent_no',
                 'po_registers.created_at as po_created_at',
                 'po_registers.updated_at as po_updated_at',
@@ -63,6 +63,7 @@ class PORegisterExport implements FromView
                 'indent_registers.purchased_order',
                 'indent_registers.quantity_received',
                 'indent_registers.quantity_balance',
+                'indent_registers.remarks as indent_remarks',
                 'indent_registers.created_at as indent_created_at',
                 'indent_registers.updated_at as indent_updated_at'
             );
