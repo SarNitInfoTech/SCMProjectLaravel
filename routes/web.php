@@ -180,6 +180,7 @@ Route::middleware(['auth'])->group(function () {
     });
     Route::get('/report/view', [ReportController::class, 'viewReport'])->name('reports.po');
     Route::get('/report/view-all-indent', [ReportController::class, 'viewAllIndent'])->name('reports.viewAllIndent');
+    Route::get('/report/view-all-indent', [ReportController::class, 'viewAllIndent'])->name('report.viewAllIndent');
 
     // routes/web.php
     Route::get('/reports/indents/filter', [ReportController::class, 'filterAllIndentAjax'])
