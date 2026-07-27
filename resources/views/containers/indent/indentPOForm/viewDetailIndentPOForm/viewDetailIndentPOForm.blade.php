@@ -1,437 +1,430 @@
-<div>
+<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-    {{-- Section 1: Indent Summary --}}
-    <div class="{{ $po->status === 'Pending'
-    ? 'bg-white border-gray-400'
-    : ($po->status === 'Close'
-        ? 'bg-green-50 border-green-800'
-        : 'bg-red-100 border-red-800') }} border shadow-sm rounded-[4px] p-6 mb-10">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-2xl font-bold text-gray-900 tracking-tight">Indent Summary</h3>
-            <div class="flex items-center gap-1">
-                <div class="flex flex-wrap items-center gap-2">
-                    @php $status = strtolower($po->status ?? 'pending'); @endphp
+    @php
+        $indentId    = $indent->indent_id ?? $indent_id;
+        $deptName    = $indent->department_name ?? $indent->indent_department ?? $department_id;
+        $projectName = $indent->indent_project ?? '-';
+        $indentDate  = !empty($indent->indent_date) ? date('d M Y', strtotime($indent->indent_date)) : (!empty($po->indent_date) ? date('d M Y', strtotime($po->indent_date)) : '-');
 
-                    {{-- ========== CANCEL -> Reopen + Close ========== --}}
-                    @if ($status === 'cancel')
-                        {{-- Re-Open (Pending) --}}
-                        <a href="#"
-                            onclick="event.preventDefault(); document.getElementById('pending-po-{{ $po->id }}').submit();"
-                            class="inline-flex items-center px-3 py-1 rounded-[4px] text-sm font-medium bg-yellow-600 text-white shadow hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 transition">
-                            Re-Open
-                        </a>
-                        <form id="pending-po-{{ $po->id }}" action="{{ route('po-register.statusPending') }}" method="POST"
-                            class="hidden">
-                            @csrf
-                            <input type="hidden" name="indent_id" value="{{ $po->indent_id }}">
-                            <input type="hidden" name="department_id" value="{{ $po->department_id }}">
-                        </form>
+        // Extract indent items from indent_registers JSON
+        $indentItems = [];
+        if (!empty($indent->items_description)) {
+            $indentItems = json_decode($indent->items_description, true) ?? [];
+        } elseif (!empty($po->items_description)) {
+            $indentItems = json_decode($po->items_description, true) ?? [];
+        }
+    @endphp
 
-                        {{-- Close --}}
-                        <a href="#"
-                            onclick="event.preventDefault(); document.getElementById('close-po-{{ $po->id }}').submit();"
-                            class="inline-flex items-center px-3 py-1 rounded-[4px] text-sm font-medium bg-green-600 text-white shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition">
-                            Close
-                        </a>
-                        <form id="close-po-{{ $po->id }}" action="{{ route('po-register.statusClose') }}" method="POST"
-                            class="hidden">
-                            @csrf
-                            <input type="hidden" name="indent_id" value="{{ $po->indent_id }}">
-                            <input type="hidden" name="department_id" value="{{ $po->department_id }}">
-                        </form>
-                    @endif
+    <!-- Top Header -->
+    <div class="flex flex-wrap justify-between items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Indent Summary</h1>
+            <p class="text-sm text-gray-500">Overview of requested and received items in this indent.</p>
+        </div>
+    </div>
 
-                    {{-- ========== PENDING -> Close + Cancel ========== --}}
-                    @if ($status === 'pending')
-                        {{-- Close --}}
-                        <a href="#"
-                            onclick="event.preventDefault(); document.getElementById('close-po-{{ $po->id }}').submit();"
-                            class="inline-flex items-center px-3 py-1 rounded-[4px] text-sm font-medium bg-green-600 text-white shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition">
-                            Close
-                        </a>
-                        <form id="close-po-{{ $po->id }}" action="{{ route('po-register.statusClose') }}" method="POST"
-                            class="hidden">
-                            @csrf
-                            <input type="hidden" name="indent_id" value="{{ $po->indent_id }}">
-                            <input type="hidden" name="department_id" value="{{ $po->department_id }}">
-                        </form>
-
-                        {{-- Cancel --}}
-                        <a href="#"
-                            onclick="event.preventDefault(); document.getElementById('cancel-po-{{ $po->id }}').submit();"
-                            class="inline-flex items-center px-3 py-1 rounded-[4px] text-sm font-medium bg-red-600 text-white shadow hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition">
-                            Cancel
-                        </a>
-                        <form id="cancel-po-{{ $po->id }}" action="{{ route('po-register.statusCancel') }}" method="POST"
-                            class="hidden">
-                            @csrf
-                            <input type="hidden" name="indent_id" value="{{ $po->indent_id }}">
-                            <input type="hidden" name="department_id" value="{{ $po->department_id }}">
-                        </form>
-                    @endif
-
-                    {{-- ========== CLOSE -> Reopen + Cancel ========== --}}
-                    @if ($status === 'close')
-                        {{-- Re-Open (Pending) --}}
-                        <a href="#"
-                            onclick="event.preventDefault(); document.getElementById('pending-po-{{ $po->id }}').submit();"
-                            class="inline-flex items-center px-3 py-1 rounded-[4px] text-sm font-medium bg-yellow-600 text-white shadow hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 transition">
-                            Re-Open
-                        </a>
-                        <form id="pending-po-{{ $po->id }}" action="{{ route('po-register.statusPending') }}" method="POST"
-                            class="hidden">
-                            @csrf
-                            <input type="hidden" name="indent_id" value="{{ $po->indent_id }}">
-                            <input type="hidden" name="department_id" value="{{ $po->department_id }}">
-                        </form>
-
-                        {{-- Cancel --}}
-                        <a href="#"
-                            onclick="event.preventDefault(); document.getElementById('cancel-po-{{ $po->id }}').submit();"
-                            class="inline-flex items-center px-3 py-1 rounded-[4px] text-sm font-medium bg-red-600 text-white shadow hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition">
-                            Cancel
-                        </a>
-                        <form id="cancel-po-{{ $po->id }}" action="{{ route('po-register.statusCancel') }}" method="POST"
-                            class="hidden">
-                            @csrf
-                            <input type="hidden" name="indent_id" value="{{ $po->indent_id }}">
-                            <input type="hidden" name="department_id" value="{{ $po->department_id }}">
-                        </form>
-                    @endif
+    <!-- 1. Key Indent Metadata Cards -->
+    <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Indent ID -->
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 shadow-sm border border-purple-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                 </div>
-
+                <div>
+                    <span class="text-xs uppercase font-bold text-gray-400 tracking-wider block">INDENT ID</span>
+                    <span class="text-xl font-extrabold text-purple-700">{{ $indentId }}</span>
+                </div>
             </div>
 
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-gray-800 text-sm leading-6">
-            <div
-                class="group rounded-[4px] border border-gray-400 p-4 hover:bg-gray-50 transition flex items-center justify-between gap-3">
-                <span class="text-xs uppercase tracking-wider text-gray-800 whitespace-nowrap font-[400]">Indent
-                    ID:</span>
-                <span class="mt-0 font-bold text-gray-900 whitespace-nowrap">{{ $po->indent_id }}</span>
+            <!-- Department -->
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm border border-blue-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xs uppercase font-bold text-gray-400 tracking-wider block">DEPARTMENT</span>
+                    <span class="text-lg font-bold text-gray-900 truncate block max-w-[150px]" title="{{ $deptName }}">{{ $deptName }}</span>
+                </div>
             </div>
 
-
-            <div
-                class="group rounded-[4px] border border-gray-400 p-4 hover:bg-gray-50 transition flex items-center justify-between gap-3">
-                <span
-                    class="text-xs uppercase tracking-wider text-gray-800 whitespace-nowrap font-[400]">Department:</span>
-                <span class="font-bold text-gray-900 truncate">{{ $po->department_id }}</span>
+            <!-- Project -->
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm border border-emerald-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xs uppercase font-bold text-gray-400 tracking-wider block">PROJECT</span>
+                    <span class="text-lg font-bold text-gray-900 truncate block max-w-[150px]" title="{{ $projectName }}">{{ $projectName }}</span>
+                </div>
             </div>
 
-            <div
-                class="group rounded-[4px] border border-gray-400 p-4 hover:bg-gray-50 transition flex items-center justify-between gap-3">
-                <span
-                    class="text-xs uppercase tracking-wider text-gray-800 whitespace-nowrap font-[400]">Project:</span>
-                <span class="font-bold text-gray-900 truncate">{{ $po->project_name }}</span>
-            </div>
-            <div
-                class="group rounded-[4px] border border-gray-400 p-4 hover:bg-gray-50 transition flex items-center justify-between gap-3">
-                <span class="text-xs uppercase tracking-wider text-gray-800 whitespace-nowrap font-[400]">Indent
-                    Date:</span>
-                <span class="mt-0 font-bold text-gray-900 whitespace-nowrap">{{ $po->indent_date }}</span>
-            </div>
-
-        </div>
-
-        {{-- Item Description One-Line --}}
-
-        <div class="mt-4">
-            <div
-                class="group rounded-[4px] border border-gray-400 p-4 hover:bg-gray-50 transition flex items-center justify-between gap-3">
-                <span class="font-[400] text-gray-900">Items:</span>
-                <span class="text-sm text-gray-900 font-bold">
-                    {{ collect($po->items ?? [])->map(function($item) {
-                        $desc = $item['description'] ?? '-';
-                        $req = $item['quantity_required'] ?? '-';
-                        $rec = $item['quantity_received'] ?? 0;
-                        $bal = $item['quantity_balance'] ?? (is_numeric($req) ? max(0, (int)$req - (int)$rec) : 0);
-                        return "{$desc} (Req: {$req}, Rec: {$rec}, Rem: {$bal})";
-                    })->implode(' | ') }}
-                </span>
-            </div>
-
-        </div>
-    </div>
-
-    {{-- Section 2: PO Header & Action Buttons --}}
-    <div class="sticky top-2 z-10">
-        <div
-            class="bg-white/90 backdrop-blur border shadow-sm rounded-2xl p-4 flex flex-wrap justify-between items-center">
-            <h4 class="text-xl font-bold text-gray-900">All Purchase Orders</h4>
-            <div class="flex gap-3">
-                <a href="{{ route('po-register.create', ['indent_id' => $indent_id, 'department_id' => $department_id]) }}"
-                    class="inline-flex items-center px-4 py-2 rounded-[4px] text-sm font-medium bg-orange-500 text-white shadow hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition">
-                    <i class="bi bi-file-earmark-plus mr-1.5"></i> File PO / Remaining Items
-                </a>
+            <!-- Indent Date -->
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0 shadow-sm border border-orange-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xs uppercase font-bold text-gray-400 tracking-wider block">INDENT DATE</span>
+                    <span class="text-lg font-bold text-orange-600 whitespace-nowrap">{{ $indentDate }}</span>
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- Section 3: PO Entries --}}
-    @forelse($allPos as $row)
-        @php
-            $raw = (string) ($row->status ?? '');
-            $status = strtolower(trim($raw));
+    <!-- 2. Requested vs Received (Summary) Cards Grid -->
+    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div class="flex flex-wrap justify-between items-center mb-5 gap-3 border-b border-gray-100 pb-4">
+            <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span>Requested vs Received (Summary)</span>
+            </h3>
+            <div class="flex items-center gap-4 text-xs font-semibold text-gray-500">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Received</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Remaining</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block"></span> Requested</span>
+            </div>
+        </div>
 
-            // base badge look
-            $base = 'display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .625rem;' .
-                'border-radius:9999px;font-size:.75rem;line-height:1rem;font-weight:600;' .
-                'border:1px solid;';
+        @if(!empty($indentItems) && count($indentItems) > 0)
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                @php
+                    $colors = [
+                        ['bg' => 'bg-purple-50', 'text' => 'text-purple-600', 'border' => 'border-purple-100'],
+                        ['bg' => 'bg-amber-50', 'text' => 'text-amber-600', 'border' => 'border-amber-100'],
+                        ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-600', 'border' => 'border-emerald-100'],
+                        ['bg' => 'bg-sky-50', 'text' => 'text-sky-600', 'border' => 'border-sky-100'],
+                        ['bg' => 'bg-rose-50', 'text' => 'text-rose-600', 'border' => 'border-rose-100'],
+                        ['bg' => 'bg-teal-50', 'text' => 'text-teal-600', 'border' => 'border-teal-100'],
+                        ['bg' => 'bg-indigo-50', 'text' => 'text-indigo-600', 'border' => 'border-indigo-100'],
+                        ['bg' => 'bg-orange-50', 'text' => 'text-orange-600', 'border' => 'border-orange-100'],
+                    ];
+                @endphp
 
-            // colors (approx Tailwind hues)
-            $palette = [
-                'pending' => 'background:#FFFBEB;color:#92400E;border-color:#FCD34D;', // amber
-                'cancel' => 'background:#FEF2F2;color:#991B1B;border-color:#FCA5A5;', // red/rose
-                'close' => 'background:#ECFDF5;color:#065F46;border-color:#A7F3D0;', // emerald
-                'closed' => 'background:#ECFDF5;color:#065F46;border-color:#A7F3D0;', // alias
-                'default' => 'background:#F5F5F5;color:#1F2937;border-color:#E5E7EB;', // gray
-            ];
-
-            $style = $base . ($palette[$status] ?? $palette['default']);
-
-            // icon path per status (SVG inherits currentColor)
-            $icons = [
-                'pending' => 'M12 6v6l4 2',             // clock-ish
-                'cancel' => 'M6 6l12 12M18 6L6 18',    // X
-                'close' => 'M5 13l4 4L19 7',          // check
-                'closed' => 'M5 13l4 4L19 7',
-                'default' => 'M5 12h14',                // dash
-            ];
-            $iconPath = $icons[$status] ?? $icons['default'];
-
-            // label
-            $label = ucfirst($status ?: 'Unknown');
-        @endphp
-
-
-
-
-        <div class="{{ $po->status === 'Pending'
-    ? 'bg-white border-gray-400'
-    : ($po->status === 'Close'
-        ? 'bg-green-50 border-green-800'
-        : 'bg-red-100 border-red-800') }} border shadow-sm rounded-[4px] p-6 mb-6 hover:shadow-md transition">
-            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div class="space-y-2">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-sm text-gray-700 ml-3">PO/WO No.</span>
-                        <span
-                            class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-50 ring-1 ring-gray-200 text-gray-900">
-                            {{ $row->po_wo_no }}
-                        </span>
-
-                        <span class="text-gray-300 mx-1 select-none">|</span>
-
-                        <span class="text-sm text-gray-700">PO Date</span>
-                        <span
-                            class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-sm font-medium bg-gray-50 ring-1 ring-gray-200 text-gray-900">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                    d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2z" />
-                            </svg>
-                            {{ $row->po_date }}
-                        </span>
-
-                        <span class="text-gray-300 mx-1 select-none">|</span>
-
-                        <span class="text-sm text-gray-700">Status: </span>
-                        <span style="{{ $style }}">
-                            {{-- Icon (inherits text color via currentColor) --}}
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" style="stroke-width:2;">
-                                <path d="{{ $iconPath }}" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            {{ $label }}
-                        </span>
-                    </div>
-
-
+                @foreach($indentItems as $idx => $it)
                     @php
-                        // Prefer Intl NumberFormatter (₹ 1,23,456.00)
-                        if (class_exists(\NumberFormatter::class)) {
-                            $fmt = new \NumberFormatter('en_IN', \NumberFormatter::CURRENCY);
-                            $poAmountDisplay = $fmt->formatCurrency($row->po_amount ?? 0, 'INR');
-                        } else {
-                            // Fallback: custom Indian grouping formatter
-                            if (!function_exists('format_inr')) {
-                                function format_inr($amount): string
-                                {
-                                    $neg = $amount < 0;
-                                    $amount = abs((float) $amount);
-                                    [$int, $dec] = explode('.', number_format($amount, 2, '.', ''));
-                                    if (strlen($int) > 3) {
-                                        $last3 = substr($int, -3);
-                                        $rest = substr($int, 0, -3);
-                                        $rest = preg_replace('/\B(?=(\d{2})+(?!\d))/', ',', $rest);
-                                        $int = $rest . ',' . $last3;
-                                    }
-                                    return ($neg ? '−' : '') . '₹' . $int . '.' . $dec;
-                                }
-                            }
-                            $poAmountDisplay = format_inr($row->po_amount ?? 0);
-                        }
+                        $desc = $it['description'] ?? 'Item ' . ($idx + 1);
+                        $req  = (int)($it['quantity_required'] ?? 0);
+                        $rec  = (int)($it['quantity_received'] ?? 0);
+                        $canc = (int)($it['quantity_cancelled'] ?? 0);
+                        $rem  = max(0, $req - ($rec + $canc));
+                        $cScheme = $colors[$idx % count($colors)];
                     @endphp
 
-                    <div class="space-y-2">
-                        <div class="flex items-baseline gap-3">
-                            <span class="w-40 sm:w-48 text-sm text-gray-600 font-semibold">Party</span>
-                            <span class="text-base md:text-lg font-bold text-gray-900 break-words">
-                                {{ $row->party_name }}
-                            </span>
-                        </div>
-
-                        <div class="flex items-baseline gap-3">
-                            <span class="w-40 sm:w-48 text-sm text-gray-600 font-semibold">PO Amount</span>
-                            <span class="text-base md:text-lg font-bold text-gray-900 font-mono tabular-nums">
-                                {{ $poAmountDisplay }}
-                            </span>
-                        </div>
-
-                        {{-- Example: Items (chips but still aligned) --}}
-                        @if(!empty($row->item_description))
-                            @php
-                                $decoded = json_decode($row->item_description, true);
-                                $items = is_array($decoded) ? $decoded : [];
-                            @endphp
-                            <div class="flex items-start gap-3">
-                                <span class="w-40 sm:w-48 text-sm text-gray-600 font-semibold mt-1">Items</span>
-                                <div class="flex flex-wrap gap-2">
-                                    @foreach ($items as $item)
-                                        @php
-                                            $label = is_array($item) ? trim(($item['description'] ?? (json_encode($item) ?: 'Item'))) : (string) $item;
-                                          @endphp
-                                        <span
-                                            class="px-2 py-0.5 rounded-md bg-gray-50 ring-1 ring-gray-200 text-gray-900 text-sm font-semibold">
-                                            {{ $label }}
-                                        </span>
-                                    @endforeach
+                    <div class="bg-gray-50/70 border border-gray-200/80 rounded-xl p-3.5 hover:shadow-md transition-all">
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl {{ $cScheme['bg'] }} {{ $cScheme['text'] }} {{ $cScheme['border'] }} border flex items-center justify-center shrink-0 shadow-xs font-bold text-sm">
+                                🧪
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <h4 class="text-sm font-bold text-gray-900 truncate" title="{{ $desc }}">{{ $desc }}</h4>
+                                <div class="text-xs font-medium text-gray-500 mt-1 flex flex-wrap items-center gap-1.5 whitespace-nowrap">
+                                    <span>Req: <strong class="text-gray-700">{{ $req }}</strong></span>
+                                    <span class="text-gray-300">|</span>
+                                    <span>Rec: <strong class="text-emerald-600 font-bold">{{ $rec }}</strong></span>
+                                    <span class="text-gray-300">|</span>
+                                    <span>Rem: <strong class="text-blue-600 font-bold">{{ $rem }}</strong></span>
                                 </div>
                             </div>
-                        @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <p class="text-xs text-gray-500 italic text-center py-4">No items listed on this indent.</p>
+        @endif
+    </div>
+
+    <!-- 3. All Purchase Orders Section -->
+    <div class="space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-4">
+            <h2 class="text-xl font-bold text-gray-900 tracking-tight">All Purchase Orders</h2>
+
+            <!-- New PO File Button -->
+            <a href="{{ route('po-register.create', ['indent_id' => $indentId, 'department_id' => $department_id]) }}"
+               class="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm px-4 py-2 rounded-xl shadow-sm transition-all hover:shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>File PO / Remaining Items</span>
+            </a>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+                <!-- Search Input -->
+                <div class="relative flex-1 min-w-[200px]">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </span>
+                    <input type="text" id="poSearchInput" placeholder="Search PO/WO No..." 
+                           class="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <!-- PO Date Picker -->
+                <div class="relative w-40">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </span>
+                    <input type="date" id="poDateFilter" 
+                           class="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <!-- Status Filter Dropdown -->
+                <div class="relative w-48">
+                    <select id="poStatusFilter" 
+                            class="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none appearance-none">
+                        <option value="">Status: All</option>
+                        <option value="open">Open</option>
+                        <option value="partially received">Partially received</option>
+                        <option value="completed">Completed</option>
+                        <option value="closed">Closed</option>
+                        <option value="reopened">Reopened</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. PO Cards List -->
+        <div id="poListContainer" class="space-y-4">
+            @forelse($allPos as $row)
+                @php
+                    $rowStStr   = is_object($row->status) ? $row->status->value : (string)($row->status ?? 'Open');
+                    $normSt     = mb_strtolower(trim($rowStStr));
+                    $canEdit    = !in_array($normSt, ['closed', 'close', 'cancel', 'cancelled']);
+
+                    // Status Badge Styling
+                    $badgeStyle = match($normSt) {
+                        'completed'          => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                        'partially received' => 'bg-blue-100 text-blue-800 border-blue-200',
+                        'reopened'           => 'bg-purple-100 text-purple-800 border-purple-200',
+                        'closed', 'close'    => 'bg-gray-100 text-gray-700 border-gray-200',
+                        'cancel', 'cancelled'=> 'bg-red-100 text-red-800 border-red-200',
+                        default              => 'bg-green-100 text-green-800 border-green-200',
+                    };
+
+                    $poItemsDecoded = !empty($row->item_description) ? (is_array($row->item_description) ? $row->item_description : json_decode($row->item_description, true)) : [];
+                    $poItemsCount   = is_array($poItemsDecoded) ? count($poItemsDecoded) : 0;
+                    $poWoDisplay    = !empty($row->po_wo_no) ? $row->po_wo_no : ('PO/' . $indentId . '/' . str_pad($row->id, 2, '0', STR_PAD_LEFT));
+                    $poDateDisplay  = !empty($row->po_date) ? date('d M Y', strtotime($row->po_date)) : '-';
+                @endphp
+
+                <div class="po-card bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all space-y-4"
+                     data-po-no="{{ strtolower($poWoDisplay) }}"
+                     data-po-date="{{ $row->po_date }}"
+                     data-po-status="{{ $normSt }}">
+                    
+                    <!-- PO Card Header -->
+                    <div class="flex flex-wrap justify-between items-center gap-4 border-b border-gray-100 pb-3">
+                        <div class="flex flex-wrap items-center gap-4 text-xs font-semibold">
+                            <!-- PO No -->
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+                                    📄
+                                </div>
+                                <div>
+                                    <span class="text-gray-400 block uppercase text-[10px]">PO/WO No.</span>
+                                    <span class="text-sm font-extrabold text-purple-700">{{ $poWoDisplay }}</span>
+                                </div>
+                            </div>
+
+                            <span class="text-gray-300">|</span>
+
+                            <!-- PO Date -->
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <div>
+                                    <span class="text-gray-400 block uppercase text-[10px]">PO Date</span>
+                                    <span class="text-xs font-bold text-gray-800">{{ $poDateDisplay }}</span>
+                                </div>
+                            </div>
+
+                            <span class="text-gray-300">|</span>
+
+                            <!-- Status Badge -->
+                            <div>
+                                <span class="text-gray-400 block uppercase text-[10px]">Status</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $badgeStyle }}">
+                                    {{ ucfirst($rowStStr) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if($canEdit)
+                                <a href="{{ route('po-register.edit', $row->id) }}" 
+                                   class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
+                                    📅 Update P.O.
+                                </a>
+
+                                <a href="{{ route('indentroview.createInvoiceById', $row->id) }}" 
+                                   class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
+                                    📑 {{ !empty($row->invoice_date) ? 'Update Invoice' : 'File Invoice / Goods Receipt' }}
+                                </a>
+
+                                <button type="button" 
+                                        onclick="document.getElementById('closePoModal_{{ $row->id }}').classList.remove('hidden')" 
+                                        class="inline-flex items-center gap-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
+                                    🔒 Close PO
+                                </button>
+                            @elseif(in_array($normSt, ['closed', 'close']))
+                                <a href="{{ route('indentroview.createInvoiceById', $row->id) }}" 
+                                   class="inline-flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
+                                    👁️ View Goods Receipt
+                                </a>
+
+                                <form method="POST" action="{{ route('po-register.reopenPO', $row->id) }}" class="inline" onsubmit="return confirm('Are you sure you want to reopen this PO?');">
+                                    @csrf
+                                    <button type="submit" class="inline-flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
+                                        🔓 Reopen PO
+                                    </button>
+                                </form>
+                            @else
+                                <a href="{{ route('indentroview.createInvoiceById', $row->id) }}" 
+                                   class="inline-flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
+                                    👁️ View Details
+                                </a>
+                            @endif
+                        </div>
                     </div>
 
+                    <!-- PO Metadata Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                        <div>
+                            <span class="text-gray-400 block font-medium uppercase text-[10px]">Party</span>
+                            <span class="font-extrabold text-gray-900 text-sm">{{ $row->party_name ?? '-' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 block font-medium uppercase text-[10px]">PO Amount</span>
+                            <span class="font-extrabold text-gray-900 text-sm font-mono">₹ {{ number_format($row->po_amount ?? 0, 2) }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 block font-medium uppercase text-[10px]">Items</span>
+                            <span class="inline-block px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-extrabold text-xs">
+                                {{ $poItemsCount }} {{ Str::plural('Item', $poItemsCount) }}
+                            </span>
+                        </div>
+                    </div>
 
+                    <!-- PO Items List Breakdown -->
+                    @if(is_array($poItemsDecoded) && count($poItemsDecoded) > 0)
+                        <div class="bg-gray-50/70 border border-gray-100 rounded-xl p-3 space-y-2">
+                            @foreach($poItemsDecoded as $pIt)
+                                @php
+                                    $pDesc = is_array($pIt) ? ($pIt['description'] ?? '') : (string)$pIt;
+                                    $pOrd  = is_array($pIt) ? (int)($pIt['quantity'] ?? $pIt['po_quantity'] ?? 1) : 1;
+                                    $pRec  = is_array($pIt) ? (int)($pIt['quantity_received'] ?? 0) : 0;
+                                    $pCanc = is_array($pIt) ? (int)($pIt['quantity_cancelled'] ?? 0) : 0;
+                                    $pRem  = max(0, $pOrd - ($pRec + $pCanc));
+                                @endphp
 
-                </div>
-
-                {{-- Quick meta stack on the right --}}
-                @php
-                    $rowStatus = mb_strtolower(trim((string)($row->status ?? 'open')));
-                    $canFileInvoice = !in_array($rowStatus, ['closed', 'close', 'cancel', 'cancelled']);
-                @endphp
-                <div class="flex flex-col items-start md:items-end gap-2 text-sm">
-                    @if ($canFileInvoice)
-                        <form action="{{ route('po-register.edit', $row->id) }}" method="GET" class="inline">
-                            <button type="submit" class="ti-btn ti-btn-success-full label-ti-btn me-[0.375rem]">
-                                <i class="ri-receipt-line label-ti-btn-icon me-2"></i> Update P.O.
-                            </button>
-                        </form>
-
-                        <a href="{{ route('indentroview.createInvoiceById', $row->id) }}"
-                           class="ti-btn ti-btn-primary-full label-ti-btn me-[0.375rem] inline-flex items-center">
-                            <i class="ri-file-list-3-line label-ti-btn-icon me-2"></i>
-                            {{ $row->invoice_date ? 'Update Invoice' : 'File Invoice / Goods Receipt' }}
-                        </a>
-
-                        <button type="button" onclick="document.getElementById('closePoModal_{{ $row->id }}').classList.remove('hidden')" class="ti-btn ti-btn-danger text-xs font-semibold px-3 py-1.5 inline-flex items-center me-[0.375rem]">
-                            🔒 Close PO
-                        </button>
-                    @elseif(in_array($rowStatus, ['closed', 'close']))
-                        <a href="{{ route('indentroview.createInvoiceById', $row->id) }}"
-                           class="ti-btn ti-btn-secondary-full label-ti-btn me-[0.375rem] inline-flex items-center">
-                            <i class="ri-eye-line label-ti-btn-icon me-2"></i> View Goods Receipt
-                        </a>
-
-                        <form method="POST" action="{{ route('po-register.reopenPO', $row->id) }}" class="inline" onsubmit="return confirm('Are you sure you want to reopen this PO?');">
-                            @csrf
-                            <button type="submit" class="ti-btn ti-btn-secondary text-xs font-semibold px-3 py-1.5 me-[0.375rem]">
-                                🔓 Reopen PO
-                            </button>
-                        </form>
-                    @else
-                        <a href="{{ route('indentroview.createInvoiceById', $row->id) }}"
-                           class="ti-btn ti-btn-secondary-full label-ti-btn me-[0.375rem] inline-flex items-center">
-                            <i class="ri-eye-line label-ti-btn-icon me-2"></i> View Details
-                        </a>
+                                <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                                    <div class="flex items-center gap-2 font-bold text-gray-800">
+                                        <span class="w-2 h-2 rounded-full bg-purple-500 inline-block"></span>
+                                        <span>{{ $pDesc }}</span>
+                                    </div>
+                                    <div class="text-gray-500 font-medium whitespace-nowrap">
+                                        Req: <strong class="text-gray-700">{{ $pOrd }}</strong>
+                                        <span class="text-gray-300 mx-1">|</span>
+                                        Rec: <strong class="text-emerald-600 font-bold">{{ $pRec }}</strong>
+                                        <span class="text-gray-300 mx-1">|</span>
+                                        Rem: <strong class="text-blue-600 font-bold">{{ $pRem }}</strong>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     @endif
+
+                    <!-- Expandable Remarks Accordion -->
+                    <details class="group bg-indigo-50/30 border border-indigo-100/70 rounded-xl">
+                        <summary class="flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-700 cursor-pointer select-none">
+                            <div class="flex items-center gap-2">
+                                💬 <span>Remarks</span>
+                                <span class="text-gray-400 font-normal italic">
+                                    {{ !empty($row->remarks) ? Str::limit($row->remarks, 50) : 'No remarks added' }}
+                                </span>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div class="px-3 py-2 border-t border-indigo-100/50 text-xs text-gray-800 whitespace-pre-line bg-white/80 rounded-b-xl">
+                            {{ !empty($row->remarks) ? $row->remarks : 'No remarks recorded for this Purchase Order.' }}
+                        </div>
+                    </details>
+
+                    <!-- Close PO Modal for this PO -->
+                    <div id="closePoModal_{{ $row->id }}" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4">
+                        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100">
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">Close Purchase Order #{{ $row->id }}</h3>
+                            <p class="text-xs text-gray-600 mb-4">Are you sure you want to close this PO? Once closed, no further goods receipts or invoice modifications will be allowed.</p>
+                            <form method="POST" action="{{ route('po-register.closePO', $row->id) }}">
+                                @csrf
+                                <div class="mb-4">
+                                    <label for="close_reason_{{ $row->id }}" class="block text-xs font-semibold text-gray-700 mb-1">Close Reason (Optional)</label>
+                                    <textarea name="close_reason" id="close_reason_{{ $row->id }}" rows="3" class="form-control w-full text-xs rounded-xl p-2.5 border" placeholder="Enter reason for closing this PO..."></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" onclick="document.getElementById('closePoModal_{{ $row->id }}').classList.add('hidden')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-xs">Confirm Close PO</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                 </div>
-
-                <!-- Close PO Modal for this PO row -->
-                <div id="closePoModal_{{ $row->id }}" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center">
-                  <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl border">
-                    <h3 class="text-lg font-bold text-gray-800 mb-2">Close Purchase Order #{{ $row->id }}</h3>
-                    <p class="text-xs text-gray-600 mb-4">Are you sure you want to close this PO? Once closed, no further goods receipts or invoice modifications will be allowed.</p>
-                    <form method="POST" action="{{ route('po-register.closePO', $row->id) }}">
-                      @csrf
-                      <div class="mb-4">
-                        <label for="close_reason_{{ $row->id }}" class="block text-xs font-semibold text-gray-700 mb-1">Close Reason (Optional)</label>
-                        <textarea name="close_reason" id="close_reason_{{ $row->id }}" rows="3" class="form-control w-full text-sm" placeholder="Enter reason for closing this PO..."></textarea>
-                      </div>
-                      <div class="flex justify-end gap-2">
-                        <button type="button" onclick="document.getElementById('closePoModal_{{ $row->id }}').classList.add('hidden')" class="ti-btn ti-btn-secondary text-xs">Cancel</button>
-                        <button type="submit" class="ti-btn ti-btn-danger text-xs">Confirm Close PO</button>
-                      </div>
-                    </form>
-                  </div>
+            @empty
+                <div class="bg-white border border-gray-200 rounded-2xl p-10 text-center text-gray-500 shadow-sm">
+                    <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mx-auto mb-3 text-xl">📦</div>
+                    <p class="font-semibold text-sm text-gray-700">No purchase orders found for this indent.</p>
                 </div>
-            </div>@php
-                $remarksText = $row->remarks ?? 'No remarks available.';
-                $remarksPreview = Str::limit(trim(strip_tags($remarksText)), 70); // preview in summary
-            @endphp
-
-            <details class="group py-2">
-                <summary
-                    class="flex items-center gap-2 w-full cursor-pointer select-none rounded-[4px] border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 hover:bg-gray-50">
-                    <!-- Left icon (fixed size) -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-70 shrink-0" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M3 7h18M3 12h18M3 17h18" />
-                    </svg>
-
-                    <!-- Label -->
-                    <span class="font-medium text-gray-900">Remarks</span>
-
-                    <!-- Chevron -->
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="w-4 h-4 ml-auto transition group-open:rotate-180 shrink-0" viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path fill-rule="evenodd"
-                            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </summary>
-
-                <div
-                    class="mt-3 p-3 bg-gray-50 ring-1 ring-gray-200 rounded-md text-sm text-gray-900 whitespace-pre-line break-words">
-                    {{ $remarksText }}
-                </div>
-            </details>
-
-
-            {{-- Expandable details --}}
-
+            @endforelse
         </div>
-    @empty
-        <div class="bg-white border border-gray-400 shadow-sm rounded-2xl p-10 text-center text-gray-700">
-            <div class="mx-auto mb-3 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M12 8v4m0 4h.01M4 6h16M6 6v14h12V6" />
-                </svg>
-            </div>
-            No purchase orders found.
-        </div>
-    @endforelse
-
+    </div>
 </div>
-@if (session('debug'))
-    <script>
-        console.log('updateStatus debug:', @json(session('debug')));
-        console.table(@json(session('debug')));
-    </script>
-@endif
+
+<!-- Client-side Search & Filtering Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('poSearchInput');
+        const dateInput   = document.getElementById('poDateFilter');
+        const statusInput = document.getElementById('poStatusFilter');
+        const poCards     = document.querySelectorAll('.po-card');
+
+        function filterPOCards() {
+            const query  = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const date   = dateInput   ? dateInput.value : '';
+            const status = statusInput ? statusInput.value.toLowerCase().trim() : '';
+
+            poCards.forEach(card => {
+                const cardPoNo   = card.getAttribute('data-po-no') || '';
+                const cardDate   = card.getAttribute('data-po-date') || '';
+                const cardStatus = card.getAttribute('data-po-status') || '';
+
+                const matchesQuery  = !query || cardPoNo.includes(query);
+                const matchesDate   = !date  || cardDate === date;
+                const matchesStatus = !status|| cardStatus === status;
+
+                if (matchesQuery && matchesDate && matchesStatus) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        searchInput?.addEventListener('input', filterPOCards);
+        dateInput?.addEventListener('change', filterPOCards);
+        statusInput?.addEventListener('change', filterPOCards);
+    });
+</script>

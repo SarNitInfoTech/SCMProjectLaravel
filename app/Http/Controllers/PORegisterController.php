@@ -725,6 +725,18 @@ class PORegisterController extends Controller
         Gate::authorize('pos.view');
         $title = "PO Records for Indent #$indent_id - Department";
 
+        $indent = DB::table('indent_registers')
+            ->leftJoin('departments', 'departments.id', '=', 'indent_registers.indent_department')
+            ->select('indent_registers.*', 'departments.name as department_name')
+            ->where('indent_registers.indent_id', $indent_id)
+            ->first();
+
+        if (!$indent) {
+            $indent = DB::table('indent_registers')
+                ->where('indent_id', $indent_id)
+                ->first();
+        }
+
         $allPos = DB::table('po_registers')
             ->leftJoin('departments', 'departments.id', '=', 'po_registers.department_id')
             ->leftJoin('indent_registers', function ($join) {
@@ -736,7 +748,7 @@ class PORegisterController extends Controller
                 'departments.name as department_name',
                 'indent_registers.indent_id as indent_ticket_no',
                 'indent_registers.indent_date as indent_date',
-                'indent_registers.items_description',
+                'indent_registers.items_description as indent_items_description',
                 'indent_registers.indent_project as project_name',
             )
             ->where('po_registers.indent_id', $indent_id)
@@ -746,7 +758,7 @@ class PORegisterController extends Controller
 
         // Add decoded items_description for each PO record
         $allPos->transform(function ($record) {
-            $record->items = json_decode($record->items_description, true) ?? [];
+            $record->items = !empty($record->item_description) ? json_decode($record->item_description, true) : [];
             return $record;
         });
 
@@ -755,6 +767,7 @@ class PORegisterController extends Controller
         return view('pages.indent.indentPOForm.viewDetailIndentPOForm.viewDetailIndentPOForm', compact(
             'title',
             'po',
+            'indent',
             'allPos',
             'indent_id',
             'department_id'
