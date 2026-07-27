@@ -1,208 +1,228 @@
 @extends("layouts.layout")
 
 @section("bodyContent")
-@include("pages.home")
+<div style="width: 100%; max-width: 100%; padding: 24px; box-sizing: border-box; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 
-@if (session('success'))
-    <div class="mb-4 p-3 bg-green-100 border-l-4 border-green-500 text-green-700 text-sm">
-        {{ session('success') }}
-    </div>
-@endif
+    @include("pages.home")
 
-<div class="card shadow-sm border mb-6 bg-white">
-    <div class="card-header flex justify-between items-center p-4 border-b">
-        <h3 class="text-xl font-semibold text-gray-800">{{ $title }}</h3>
-        <div class="flex items-center gap-2">
-            <input
-                type="text"
-                placeholder="Search recent indents..."
-                class="form-input rounded border px-3 py-1.5 text-sm w-64 bg-gray-50"
-                onkeyup="filterDashboardTable(this)"
-            >
-            <a href="{{ route('indent.create') }}" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-all">
-                <i class="bi bi-plus-lg"></i> Add New Indent
-            </a>
-        </div>
-    </div>
-
-    <div class="table-responsive p-4">
-        <table class="table whitespace-nowrap min-w-full" id="dashboard-recent-table">
-            <thead>
-                <tr class="border-b border-defaultborder">
-                    <th scope="col" class="text-start">Indent ID</th>
-                    <th scope="col" class="text-start">Department</th>
-                    <th scope="col" class="text-start">Project</th>
-                    <th scope="col" class="text-start">Description</th>
-                    <th scope="col" class="text-start">Status</th>
-                    <th scope="col" class="text-start">Created Date</th>
-                    <th scope="col" class="text-center">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($rows as $row)
-                    @php
-                        $status = $row['status'];
-                        $badgeClass = match (strtolower($status)) {
-                            'pending' => 'bg-yellow-100 text-yellow-800',
-                            'cancel', 'cancelled' => 'bg-red-100 text-red-800',
-                            'close', 'closed' => 'bg-green-100 text-green-800',
-                            default => 'bg-gray-100 text-gray-800'
-                        };
-                        $actions = $row['action'];
-                    @endphp
-                    <tr class="border-b border-defaultborder hover:bg-gray-50 transition-colors">
-                        <td class="font-medium text-gray-900">{{ $row['indent_id'] }}</td>
-                        <td>{{ $row['department_name'] }}</td>
-                        <td>{{ $row['project'] }}</td>
-                        <td class="max-w-xs truncate" title="{{ $row['item_description'] }}">{{ $row['item_description'] }}</td>
-                        <td>
-                            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $badgeClass }}">
-                                {{ $status }}
-                            </span>
-                        </td>
-                        <td>{{ $row['date'] }}</td>
-                        <td class="text-center">
-                            <div class="flex flex-wrap gap-2 justify-center">
-                                @if (isset($actions['edit']))
-                                    <a href="{{ $actions['edit'] }}"
-                                       class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-all">
-                                        <i class="bi bi-pencil-square"></i> Edit
-                                    </a>
-                                @endif
-
-                                @if (isset($actions['file_po']))
-                                    <a href="{{ $actions['file_po'] }}"
-                                       class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded transition-all">
-                                        <i class="bi bi-file-earmark-plus"></i> File PO
-                                    </a>
-                                @endif
-
-                                @if (isset($actions['pending']))
-                                    <form action="{{ $actions['pending']['route'] }}" method="POST" class="js-dashboard-status-form inline">
-                                        @csrf
-                                        <input type="hidden" name="indent_id" value="{{ $actions['pending']['params']['indent_id'] }}">
-                                        <input type="hidden" name="department_id" value="{{ $actions['pending']['params']['department_id'] }}">
-                                        <input type="hidden" name="status" value="Pending">
-                                        <button type="button" data-action="Pending" onclick="confirmDashboardStatus(this)"
-                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-all">
-                                            <i class="bi bi-arrow-counterclockwise"></i> Re-Open
-                                        </button>
-                                    </form>
-                                @endif
-
-                                @if (isset($actions['close']))
-                                    <form action="{{ $actions['close']['route'] }}" method="POST" class="js-dashboard-status-form inline">
-                                        @csrf
-                                        <input type="hidden" name="indent_id" value="{{ $actions['close']['params']['indent_id'] }}">
-                                        <input type="hidden" name="department_id" value="{{ $actions['close']['params']['department_id'] }}">
-                                        <input type="hidden" name="status" value="Close">
-                                        <button type="button" data-action="Close" onclick="confirmDashboardStatus(this)"
-                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-gray-700 hover:bg-gray-800 rounded transition-all">
-                                            <i class="bi bi-x-octagon"></i> Close
-                                        </button>
-                                    </form>
-                                @endif
-
-                                @if (isset($actions['cancel']))
-                                    <form action="{{ $actions['cancel']['route'] }}" method="POST" class="js-dashboard-status-form inline">
-                                        @csrf
-                                        <input type="hidden" name="indent_id" value="{{ $actions['cancel']['params']['indent_id'] }}">
-                                        <input type="hidden" name="department_id" value="{{ $actions['cancel']['params']['department_id'] }}">
-                                        <input type="hidden" name="status" value="Cancel">
-                                        <button type="button" data-action="Cancel" onclick="confirmDashboardStatus(this)"
-                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded transition-all">
-                                            <i class="bi bi-x-circle"></i> Cancel
-                                        </button>
-                                    </form>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="text-center py-4 text-gray-500">No recent indents found.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    @if($pagination->hasPages())
-        <div class="p-4 border-t">
-            {{ $pagination->links('pagination::tailwind') }}
+    @if (session('success'))
+        <div style="margin-bottom: 20px; padding: 14px 18px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; color: #047857; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>{{ session('success') }}</span>
         </div>
     @endif
+
+    <!-- Recent Indents Card (Full Width) -->
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); overflow: hidden; margin-bottom: 24px;">
+        
+        <!-- Header Toolbar -->
+        <div style="padding: 20px; border-bottom: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; background: #FAFAFA;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 38px; height: 38px; border-radius: 12px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(37,99,235,0.25);">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div>
+                    <h3 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.3px;">{{ $title }}</h3>
+                    <p style="font-size: 12px; color: #64748B; margin: 0; font-weight: 500;">Overview of recently filed indents and quick actions</p>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <!-- Search Input -->
+                <div style="position: relative; width: 280px;">
+                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8;">
+                        <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </span>
+                    <input type="text" placeholder="Search recent indents..." onkeyup="filterDashboardTable(this)"
+                           style="width: 100%; padding: 9px 12px 9px 38px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13px; outline: none; box-sizing: border-box;">
+                </div>
+
+                <!-- Add New Indent Button -->
+                <a href="{{ route('indent.create') }}" 
+                   style="background: #2563EB; color: #FFFFFF; font-weight: 700; font-size: 13px; padding: 9px 18px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.25);">
+                    <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <span>Add New Indent</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Table Responsive Container -->
+        <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table style="width: 100%; min-width: 1100px; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;" id="dashboard-recent-table">
+                <thead>
+                    <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th style="padding: 14px 16px; width: 110px; vertical-align: middle;">INDENT ID <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 150px; vertical-align: middle;">DEPARTMENT <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 140px; vertical-align: middle;">PROJECT <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 220px; vertical-align: middle;">DESCRIPTION <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 130px; text-align: center; vertical-align: middle;">STATUS <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 130px; vertical-align: middle;">CREATED DATE <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 260px; text-align: center; vertical-align: middle;">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($rows as $row)
+                        @php
+                            $status = $row['status'];
+                            $normSt = strtolower(trim($status));
+                            
+                            $badgeBg = '#F8FAFC'; $badgeColor = '#475569'; $dotColor = '#64748B'; $badgeBorder = '#E2E8F0';
+                            if (in_array($normSt, ['pending', 'open'])) {
+                                $badgeBg = '#FEF3C7'; $badgeColor = '#D97706'; $dotColor = '#D97706'; $badgeBorder = '#FDE68A';
+                            } elseif ($normSt === 'partially received') {
+                                $badgeBg = '#F3E8FF'; $badgeColor = '#7C3AED'; $dotColor = '#7C3AED'; $badgeBorder = '#E9D5FF';
+                            } elseif (in_array($normSt, ['completed', 'close', 'closed'])) {
+                                $badgeBg = '#ECFDF5'; $badgeColor = '#047857'; $dotColor = '#10B981'; $badgeBorder = '#A7F3D0';
+                            } elseif (in_array($normSt, ['cancel', 'cancelled'])) {
+                                $badgeBg = '#FEF2F2'; $badgeColor = '#DC2626'; $dotColor = '#DC2626'; $badgeBorder = '#FECDD3';
+                            }
+                            $actions = $row['action'];
+                        @endphp
+                        <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.15s ease;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#FFFFFF'">
+                            <!-- Indent ID -->
+                            <td style="padding: 16px; vertical-align: middle; font-weight: 800; color: #0F172A; white-space: nowrap;">{{ $row['indent_id'] }}</td>
+                            
+                            <!-- Department -->
+                            <td style="padding: 16px; vertical-align: middle; color: #475569; font-weight: 600; white-space: nowrap;">{{ $row['department_name'] }}</td>
+                            
+                            <!-- Project -->
+                            <td style="padding: 16px; vertical-align: middle; color: #0F172A; font-weight: 700; white-space: nowrap;">{{ $row['project'] }}</td>
+
+                            <!-- Description -->
+                            <td style="padding: 16px; vertical-align: middle; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $row['item_description'] }}">
+                                {{ $row['item_description'] }}
+                            </td>
+
+                            <!-- Status Badge -->
+                            <td style="padding: 16px; vertical-align: middle; text-align: center; white-space: nowrap;">
+                                <span style="background: {{ $badgeBg }}; border: 1px solid {{ $badgeBorder }}; color: {{ $badgeColor }}; font-weight: 700; font-size: 12px; padding: 5px 14px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                                    <span style="width: 6px; height: 6px; border-radius: 50%; background: {{ $dotColor }}; display: inline-block;"></span>
+                                    {{ ucfirst($status) }}
+                                </span>
+                            </td>
+
+                            <!-- Date -->
+                            <td style="padding: 16px; vertical-align: middle; color: #64748B; font-family: monospace; white-space: nowrap;">
+                                {{ $row['date'] }}
+                            </td>
+
+                            <!-- Action Buttons -->
+                            <td style="padding: 16px; vertical-align: middle; text-align: center; white-space: nowrap;">
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    @if (isset($actions['edit']))
+                                        <a href="{{ $actions['edit'] }}" title="Edit Ticket"
+                                           style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #2563EB; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                            <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            <span>Edit</span>
+                                        </a>
+                                    @endif
+
+                                    @if (isset($actions['file_po']))
+                                        <a href="{{ $actions['file_po'] }}" title="File PO"
+                                           style="background: #FFF7ED; border: 1px solid #FED7AA; color: #EA580C; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                            <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                            <span>File PO</span>
+                                        </a>
+                                    @endif
+
+                                    @if (isset($actions['pending']))
+                                        <form action="{{ $actions['pending']['route'] }}" method="POST" class="js-dashboard-status-form" style="display: inline;">
+                                            @csrf
+                                            <input type="hidden" name="indent_id" value="{{ $actions['pending']['params']['indent_id'] }}">
+                                            <input type="hidden" name="department_id" value="{{ $actions['pending']['params']['department_id'] }}">
+                                            <input type="hidden" name="status" value="Pending">
+                                            <button type="button" data-action="Pending" onclick="confirmDashboardStatus(this)" title="Re-Open Ticket"
+                                                    style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                                <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>Re-Open</span>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if (isset($actions['close']))
+                                        <form action="{{ $actions['close']['route'] }}" method="POST" class="js-dashboard-status-form" style="display: inline;">
+                                            @csrf
+                                            <input type="hidden" name="indent_id" value="{{ $actions['close']['params']['indent_id'] }}">
+                                            <input type="hidden" name="department_id" value="{{ $actions['close']['params']['department_id'] }}">
+                                            <input type="hidden" name="status" value="Close">
+                                            <button type="button" data-action="Close" onclick="confirmDashboardStatus(this)" title="Close Ticket"
+                                                    style="background: #F8FAFC; border: 1px solid #CBD5E1; color: #334155; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                                <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                <span>Close</span>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if (isset($actions['cancel']))
+                                        <form action="{{ $actions['cancel']['route'] }}" method="POST" class="js-dashboard-status-form" style="display: inline;">
+                                            @csrf
+                                            <input type="hidden" name="indent_id" value="{{ $actions['cancel']['params']['indent_id'] }}">
+                                            <input type="hidden" name="department_id" value="{{ $actions['cancel']['params']['department_id'] }}">
+                                            <input type="hidden" name="status" value="Cancel">
+                                            <button type="button" data-action="Cancel" onclick="confirmDashboardStatus(this)" title="Cancel Ticket"
+                                                    style="background: #FEF2F2; border: 1px solid #FECDD3; color: #DC2626; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                                <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                <span>Cancel</span>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 32px; color: #64748B; font-weight: 600;">No recent indents found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-<!-- Status Confirm Modal -->
-<div id="dashboardStatusModal" class="fixed inset-0 z-50 hidden">
-  <div class="absolute inset-0 bg-black/50" onclick="closeDashboardStatusModal()"></div>
-  <div class="relative mx-auto mt-24 w-[90%] max-w-md rounded-2xl bg-white shadow-xl">
-    <div class="px-5 py-4 border-b">
-      <h4 id="dashboardModalTitle" class="text-lg font-semibold text-gray-800">Confirm Action</h4>
+<!-- Modal Confirmation -->
+<div id="dashboardStatusModal" style="display: none; position: fixed; inset: 0; z-index: 99999;">
+    <div onclick="closeDashboardModal()" style="position: fixed; inset: 0; background: rgba(15,23,42,0.4); backdrop-filter: blur(2px);"></div>
+    <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; max-width: 90vw; background: #FFFFFF; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); padding: 24px; z-index: 100000;">
+        <h4 id="dashboardModalTitle" style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0 0 8px 0;">Confirm Action</h4>
+        <p id="dashboardModalText" style="font-size: 13px; color: #475569; margin: 0 0 20px 0;">Are you sure you want to proceed?</p>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" onclick="closeDashboardModal()" style="padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; background: #F1F5F9; color: #475569; border: none; cursor: pointer;">Cancel</button>
+            <button type="button" id="dashboardConfirmBtn" style="padding: 9px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; background: #2563EB; color: #FFFFFF; border: none; cursor: pointer;">Confirm</button>
+        </div>
     </div>
-    <div class="px-5 py-4">
-      <p id="dashboardModalText" class="text-sm text-gray-700">Are you sure you want to proceed?</p>
-    </div>
-    <div class="px-5 py-4 border-t flex items-center justify-end gap-2">
-      <button type="button" onclick="closeDashboardStatusModal()"
-              class="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">
-        No
-      </button>
-      <button type="button" id="dashboardConfirmBtn"
-              class="px-4 py-2 text-sm font-medium rounded-md text-white bg-gray-700 hover:bg-gray-800">
-        Yes
-      </button>
-    </div>
-  </div>
 </div>
 
 <script>
-  let activeDashboardForm = null;
+let currentFormToSubmit = null;
 
-  function confirmDashboardStatus(btn) {
-    activeDashboardForm = btn.closest('form');
-    const action = btn.dataset.action.toLowerCase();
+function confirmDashboardStatus(btn) {
+    const action = btn.getAttribute('data-action');
+    currentFormToSubmit = btn.closest('form');
     
-    const modal = document.getElementById('dashboardStatusModal');
-    const title = document.getElementById('dashboardModalTitle');
-    const text = document.getElementById('dashboardModalText');
-    const confirmBtn = document.getElementById('dashboardConfirmBtn');
+    document.getElementById('dashboardModalTitle').textContent = `Confirm ${action}`;
+    document.getElementById('dashboardModalText').textContent = `Are you sure you want to change the status of this indent to "${action}"?`;
+    document.getElementById('dashboardStatusModal').style.display = 'block';
+}
 
-    const config = {
-      close: { title: 'Confirm Close', text: 'This will mark the Indent & PO as Closed. Continue?', cls: 'bg-gray-700 hover:bg-gray-800' },
-      cancel: { title: 'Confirm Cancel', text: 'This will mark the Indent & PO as Cancelled. Continue?', cls: 'bg-red-600 hover:bg-red-700' },
-      pending: { title: 'Re-Open (Pending)', text: 'This will set the status back to Pending. Continue?', cls: 'bg-green-600 hover:bg-green-700' }
-    };
+function closeDashboardModal() {
+    document.getElementById('dashboardStatusModal').style.display = 'none';
+    currentFormToSubmit = null;
+}
 
-    const cfg = config[action] || config.close;
-    title.textContent = cfg.title;
-    text.textContent = cfg.text;
-
-    confirmBtn.className = 'px-4 py-2 text-sm font-medium rounded-md text-white';
-    confirmBtn.classList.add(...cfg.cls.split(' '));
-    modal.classList.remove('hidden');
-  }
-
-  function closeDashboardStatusModal() {
-    document.getElementById('dashboardStatusModal').classList.add('hidden');
-    activeDashboardForm = null;
-  }
-
-  document.getElementById('dashboardConfirmBtn').addEventListener('click', function() {
-    if (activeDashboardForm) {
-      activeDashboardForm.submit();
+document.getElementById('dashboardConfirmBtn').addEventListener('click', function() {
+    if (currentFormToSubmit) {
+        currentFormToSubmit.submit();
     }
-    closeDashboardStatusModal();
-  });
+});
 
-  function filterDashboardTable(input) {
+function filterDashboardTable(input) {
     const filter = input.value.toLowerCase();
     const rows = document.querySelectorAll('#dashboard-recent-table tbody tr');
     rows.forEach(row => {
-      const text = row.innerText.toLowerCase();
-      row.style.display = text.includes(filter) ? '' : 'none';
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
     });
-  }
+}
 </script>
 @endsection
