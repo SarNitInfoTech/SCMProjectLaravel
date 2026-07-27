@@ -150,7 +150,6 @@ class PORegisterController extends Controller
 
         $indent = DB::table('indent_registers')
             ->where('indent_id', $indent_id)
-            ->where('indent_department', $department_name_resolved)
             ->first();
 
         $itemsFromIndent = collect();
@@ -208,14 +207,18 @@ class PORegisterController extends Controller
                 $descKey = mb_strtolower(trim((string) ($item['description'] ?? '')));
                 if ($descKey === '') return null;
 
-                $req = (int)($item['quantity_required'] ?? 1);
-                $rec = (int)($item['quantity_received'] ?? 0);
+                $req  = (int)($item['quantity_required'] ?? 1);
+                $rec  = (int)($item['quantity_received'] ?? 0);
+                $canc = (int)($item['quantity_cancelled'] ?? 0);
                 $alreadyFiled = (int)($filedQtyMap[$descKey] ?? 0);
-                $remainingToFile = max(0, $req - $alreadyFiled);
 
-                $item['already_filed'] = $alreadyFiled;
+                // Accounted quantity is maximum of PO filed or received + cancelled
+                $alreadyAccounted = max($alreadyFiled, $rec + $canc);
+                $remainingToFile  = max(0, $req - $alreadyAccounted);
+
+                $item['already_filed']     = $alreadyAccounted;
                 $item['remaining_to_file'] = $remainingToFile;
-                $item['quantity_balance'] = $remainingToFile;
+                $item['quantity_balance']  = $remainingToFile;
 
                 return $remainingToFile > 0 ? $item : null;
             })
