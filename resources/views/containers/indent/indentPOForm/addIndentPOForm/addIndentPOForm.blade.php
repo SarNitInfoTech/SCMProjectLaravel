@@ -148,18 +148,19 @@
                         @endforeach
                     </select>
 
-                    <!-- Beautiful Pill Container -->
+                    <!-- Interactive Checkbox Pill Container -->
                     <div style="width: 100%; min-height: 42px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px; padding: 8px 10px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 6px; max-height: 140px; overflow-y: auto;">
                         @forelse ($items as $item)
                             @php
                                 $req = (int)($item['quantity_required'] ?? 0);
                                 $unitVal = $item['unit'] ?? '-';
                             @endphp
-                            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF; border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                                <span style="color: #2563EB; font-weight: 800;">✓</span>
+                            <label class="po-item-pill" data-desc="{{ $item['description'] }}"
+                                   style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF; border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; user-select: none; transition: all 0.15s ease;">
+                                <input type="checkbox" class="js-item-pill-checkbox" data-desc="{{ $item['description'] }}" checked style="width: 14px; height: 14px; accent-color: #2563EB; cursor: pointer;">
                                 <span>{{ $item['description'] }}</span>
                                 <span style="color: #64748B; font-weight: 600; font-size: 11px;">(Qty: {{ $req }}, Unit: {{ $unitVal }})</span>
-                            </div>
+                            </label>
                         @empty
                             <span style="color: #94A3B8; font-size: 13px; font-weight: 500;">No items found</span>
                         @endforelse
@@ -220,7 +221,7 @@
                     <thead>
                         <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; color: #475569; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
                             <th style="padding: 14px 16px; width: 60px; text-align: center; vertical-align: middle;">
-                                <input type="checkbox" checked style="width: 16px; height: 16px; border-radius: 4px; accent-color: #2563EB;">
+                                <input type="checkbox" id="selectAllPoItems" checked style="width: 16px; height: 16px; border-radius: 4px; accent-color: #2563EB; cursor: pointer;">
                             </th>
                             <th style="padding: 14px 16px; vertical-align: middle;">ITEM DESCRIPTION</th>
                             <th style="padding: 14px 16px; width: 100px; text-align: center; vertical-align: middle;">UNIT</th>
@@ -320,9 +321,92 @@
         poDateInput?.addEventListener('change', calculateExpectedDays);
         expectedDateInput?.addEventListener('change', calculateExpectedDays);
 
+        // Interactive Checkbox Pills <-> Breakdown Table Rows Sync
+        const pillCheckboxes = document.querySelectorAll('.js-item-pill-checkbox');
+        const selectEl = document.getElementById('item_description');
+        const tableRows = document.querySelectorAll('.po-item-row');
+        const selectAllCheck = document.getElementById('selectAllPoItems');
+
+        function syncPillState(checkbox) {
+            const desc = checkbox.getAttribute('data-desc');
+            const pill = checkbox.closest('.po-item-pill');
+            const isChecked = checkbox.checked;
+
+            // Update Pill visuals
+            if (pill) {
+                if (isChecked) {
+                    pill.style.background = '#EFF6FF';
+                    pill.style.borderColor = '#BFDBFE';
+                    pill.style.color = '#1E40AF';
+                } else {
+                    pill.style.background = '#F8FAFC';
+                    pill.style.borderColor = '#E2E8F0';
+                    pill.style.color = '#94A3B8';
+                }
+            }
+
+            // Update hidden select option
+            if (selectEl) {
+                Array.from(selectEl.options).forEach(opt => {
+                    if (opt.value === desc) {
+                        opt.selected = isChecked;
+                    }
+                });
+            }
+
+            // Update table row
+            tableRows.forEach(row => {
+                if (row.getAttribute('data-item-desc') === desc) {
+                    row.style.display = isChecked ? '' : 'none';
+                    const rowCheck = row.querySelector('.po-item-check');
+                    if (rowCheck) {
+                        rowCheck.checked = isChecked;
+                        const qtyInput = row.querySelector('.js-po-qty');
+                        if (qtyInput) {
+                            qtyInput.disabled = !isChecked;
+                            qtyInput.required = isChecked;
+                        }
+                    }
+                }
+            });
+
+            // Sync header select-all check state
+            if (selectAllCheck) {
+                const total = pillCheckboxes.length;
+                const checkedCount = document.querySelectorAll('.js-item-pill-checkbox:checked').length;
+                selectAllCheck.checked = total > 0 && total === checkedCount;
+                selectAllCheck.indeterminate = checkedCount > 0 && checkedCount < total;
+            }
+        }
+
+        pillCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function () {
+                syncPillState(this);
+            });
+        });
+
+        tableRows.forEach(row => {
+            const rowCheck = row.querySelector('.po-item-check');
+            const desc = row.getAttribute('data-item-desc');
+            rowCheck?.addEventListener('change', function () {
+                const pillCb = document.querySelector(`.js-item-pill-checkbox[data-desc="${CSS.escape(desc)}"]`);
+                if (pillCb) {
+                    pillCb.checked = this.checked;
+                    syncPillState(pillCb);
+                }
+            });
+        });
+
+        selectAllCheck?.addEventListener('change', function () {
+            const isChecked = this.checked;
+            pillCheckboxes.forEach(cb => {
+                cb.checked = isChecked;
+                syncPillState(cb);
+            });
+        });
+
         // Checkbox & Filing Qty Calculations
         document.querySelectorAll('.po-item-row').forEach(row => {
-            const check = row.querySelector('.po-item-check');
             const qtyInput = row.querySelector('.js-po-qty');
             const remSpan = row.querySelector('.js-po-rem');
             const reqVal = parseFloat(row.querySelector('.js-po-req')?.value) || 0;
@@ -349,9 +433,6 @@
             }
 
             qtyInput?.addEventListener('input', updateRem);
-            check?.addEventListener('change', function () {
-                if (qtyInput) qtyInput.disabled = !this.checked;
-            });
             updateRem();
         });
     });
