@@ -318,25 +318,64 @@
                 </div>
 
                 {{-- Quick meta stack on the right --}}
+                @php
+                    $rowStatus = mb_strtolower(trim((string)($row->status ?? 'open')));
+                    $canFileInvoice = !in_array($rowStatus, ['closed', 'close', 'cancel', 'cancelled']);
+                @endphp
                 <div class="flex flex-col items-start md:items-end gap-2 text-sm">
-                    @if ($po->status==="pending" || $po->status==="Pending")
-                         <form action="{{ route('po-register.edit', $row->id) }}" method="GET" class="inline">
-  <button type="submit" class="ti-btn ti-btn-success-full label-ti-btn me-[0.375rem]">
-<i class="ri-receipt-line label-ti-btn-icon me-2"></i>
-    Update P.O.
-  </button>
-</form>
-<a href="{{ route('indentroview.createInvoiceById', $row->id) }}"
-   class="ti-btn ti-btn-primary-full label-ti-btn me-[0.375rem] inline-flex items-center">
-  <i class="ri-file-list-3-line label-ti-btn-icon me-2"></i>
+                    @if ($canFileInvoice)
+                        <form action="{{ route('po-register.edit', $row->id) }}" method="GET" class="inline">
+                            <button type="submit" class="ti-btn ti-btn-success-full label-ti-btn me-[0.375rem]">
+                                <i class="ri-receipt-line label-ti-btn-icon me-2"></i> Update P.O.
+                            </button>
+                        </form>
 
-{{ $row->invoice_date ? 'Update Invoice' : 'File Invoice' }}
+                        <a href="{{ route('indentroview.createInvoiceById', $row->id) }}"
+                           class="ti-btn ti-btn-primary-full label-ti-btn me-[0.375rem] inline-flex items-center">
+                            <i class="ri-file-list-3-line label-ti-btn-icon me-2"></i>
+                            {{ $row->invoice_date ? 'Update Invoice' : 'File Invoice / Goods Receipt' }}
+                        </a>
 
-</a>
+                        <button type="button" onclick="document.getElementById('closePoModal_{{ $row->id }}').classList.remove('hidden')" class="ti-btn ti-btn-danger text-xs font-semibold px-3 py-1.5 inline-flex items-center me-[0.375rem]">
+                            🔒 Close PO
+                        </button>
+                    @elseif(in_array($rowStatus, ['closed', 'close']))
+                        <a href="{{ route('indentroview.createInvoiceById', $row->id) }}"
+                           class="ti-btn ti-btn-secondary-full label-ti-btn me-[0.375rem] inline-flex items-center">
+                            <i class="ri-eye-line label-ti-btn-icon me-2"></i> View Goods Receipt
+                        </a>
+
+                        <form method="POST" action="{{ route('po-register.reopenPO', $row->id) }}" class="inline" onsubmit="return confirm('Are you sure you want to reopen this PO?');">
+                            @csrf
+                            <button type="submit" class="ti-btn ti-btn-secondary text-xs font-semibold px-3 py-1.5 me-[0.375rem]">
+                                🔓 Reopen PO
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('indentroview.createInvoiceById', $row->id) }}"
+                           class="ti-btn ti-btn-secondary-full label-ti-btn me-[0.375rem] inline-flex items-center">
+                            <i class="ri-eye-line label-ti-btn-icon me-2"></i> View Details
+                        </a>
                     @endif
-                 
+                </div>
 
-
+                <!-- Close PO Modal for this PO row -->
+                <div id="closePoModal_{{ $row->id }}" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center">
+                  <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl border">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Close Purchase Order #{{ $row->id }}</h3>
+                    <p class="text-xs text-gray-600 mb-4">Are you sure you want to close this PO? Once closed, no further goods receipts or invoice modifications will be allowed.</p>
+                    <form method="POST" action="{{ route('po-register.closePO', $row->id) }}">
+                      @csrf
+                      <div class="mb-4">
+                        <label for="close_reason_{{ $row->id }}" class="block text-xs font-semibold text-gray-700 mb-1">Close Reason (Optional)</label>
+                        <textarea name="close_reason" id="close_reason_{{ $row->id }}" rows="3" class="form-control w-full text-sm" placeholder="Enter reason for closing this PO..."></textarea>
+                      </div>
+                      <div class="flex justify-end gap-2">
+                        <button type="button" onclick="document.getElementById('closePoModal_{{ $row->id }}').classList.add('hidden')" class="ti-btn ti-btn-secondary text-xs">Cancel</button>
+                        <button type="submit" class="ti-btn ti-btn-danger text-xs">Confirm Close PO</button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
             </div>@php
                 $remarksText = $row->remarks ?? 'No remarks available.';

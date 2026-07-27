@@ -64,37 +64,26 @@ class PORegisterController extends Controller
                 ]),
             ];
 
-            $status = strtolower($po->status ?? 'pending');
+            $status = mb_strtolower(trim((string)($po->status ?? 'open')));
 
             $baseParams = [
                 'indent_id'     => $po->indent_id,
                 'department_id' => $po->department_id,
             ];
 
-            if ($status === 'pending') {
+            $actions['file_invoice'] = route('indentroview.createInvoiceById', $po->id);
+
+            if (!in_array($status, ['closed', 'close', 'cancel', 'cancelled'])) {
                 $actions['file_po'] = route('po-register.create', $baseParams);
-                $actions['cancel'] = [
+                $actions['cancel']  = [
                     'route'  => route('po-register.statusCancel'),
                     'params' => $baseParams,
                 ];
-                $actions['close'] = [
+                $actions['close']   = [
                     'route'  => route('po-register.statusClose'),
                     'params' => $baseParams,
                 ];
-            } elseif ($status === 'close') {
-                $actions['pending'] = [
-                    'route'  => route('po-register.statusPending'),
-                    'params' => $baseParams,
-                ];
-                $actions['cancel'] = [
-                    'route'  => route('po-register.statusCancel'),
-                    'params' => $baseParams,
-                ];
-            } elseif ($status === 'cancel') {
-                $actions['close'] = [
-                    'route'  => route('po-register.statusClose'),
-                    'params' => $baseParams,
-                ];
+            } else {
                 $actions['pending'] = [
                     'route'  => route('po-register.statusPending'),
                     'params' => $baseParams,
