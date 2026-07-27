@@ -1,9 +1,12 @@
-<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+<div style="max-w-7xl; margin: 0 auto; padding: 24px; font-family: inherit;">
 
     @php
         $indentId    = $indent->indent_id ?? $indent_id;
         $deptName    = $indent->department_name ?? $indent->indent_department ?? $department_id;
         $projectName = $indent->indent_project ?? '-';
+        if (empty($projectName) || $projectName === '0') {
+            $projectName = '-';
+        }
         $indentDate  = !empty($indent->indent_date) ? date('d M Y', strtotime($indent->indent_date)) : (!empty($po->indent_date) ? date('d M Y', strtotime($po->indent_date)) : '-');
 
         // Extract indent items from indent_registers JSON
@@ -13,104 +16,147 @@
         } elseif (!empty($po->items_description)) {
             $indentItems = json_decode($po->items_description, true) ?? [];
         }
+
+        // Helper function for custom item icon boxes matching mockup
+        if (!function_exists('getMockupItemIcon')) {
+            function getMockupItemIcon($desc, $idx) {
+                $d = mb_strtolower(trim($desc));
+                if (str_contains($d, 'zinc') || str_contains($d, 'zink')) {
+                    return [
+                        'bg' => '#F3E8FF', 'color' => '#9333EA', 'border' => '#E9D5FF',
+                        'svg' => '<svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>'
+                    ];
+                }
+                if (str_contains($d, 'acetic') || str_contains($d, 'acid') || str_contains($d, 'glacial')) {
+                    return [
+                        'bg' => '#FEF3C7', 'color' => '#D97706', 'border' => '#FDE68A',
+                        'svg' => '<svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.6 15.12a2 2 0 00-1.022.547l-1.3 1.3A2 2 0 004.7 20h14.6a2 2 0 001.414-3.414l-1.286-1.158zM12 4v7"/></svg>'
+                    ];
+                }
+                if (str_contains($d, 'ammonium') || str_contains($d, 'acetate')) {
+                    return [
+                        'bg' => '#DCFCE7', 'color' => '#16A34A', 'border' => '#BBF7D0',
+                        'svg' => '<svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.6 15.12a2 2 0 00-1.022.547l-1.3 1.3A2 2 0 004.7 20h14.6a2 2 0 001.414-3.414l-1.286-1.158zM12 4v7"/></svg>'
+                    ];
+                }
+                if (str_contains($d, 'water') || str_contains($d, 'dis.')) {
+                    return [
+                        'bg' => '#E0F2FE', 'color' => '#0284C7', 'border' => '#BAE6FD',
+                        'svg' => '<svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>'
+                    ];
+                }
+                if (str_contains($d, 'tissue') || str_contains($d, 'roll') || str_contains($d, 'rool')) {
+                    return [
+                        'bg' => '#FFE4E6', 'color' => '#E11D48', 'border' => '#FECDD3',
+                        'svg' => '<svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>'
+                    ];
+                }
+                if (str_contains($d, 'gas') || str_contains($d, 'nitrogen') || str_contains($d, 'cylinder')) {
+                    return [
+                        'bg' => '#CCFBF1', 'color' => '#0D9488', 'border' => '#99F6E4',
+                        'svg' => '<svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>'
+                    ];
+                }
+                if (str_contains($d, 'funel') || str_contains($d, 'funnel')) {
+                    return [
+                        'bg' => '#FFEDD5', 'color' => '#EA580C', 'border' => '#FED7AA',
+                        'svg' => '<svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>'
+                    ];
+                }
+
+                $schemes = [
+                    ['bg' => '#F3E8FF', 'color' => '#9333EA', 'border' => '#E9D5FF'],
+                    ['bg' => '#FEF3C7', 'color' => '#D97706', 'border' => '#FDE68A'],
+                    ['bg' => '#DCFCE7', 'color' => '#16A34A', 'border' => '#BBF7D0'],
+                    ['bg' => '#E0F2FE', 'color' => '#0284C7', 'border' => '#BAE6FD'],
+                    ['bg' => '#FFE4E6', 'color' => '#E11D48', 'border' => '#FECDD3'],
+                    ['bg' => '#CCFBF1', 'color' => '#0D9488', 'border' => '#99F6E4'],
+                ];
+                $s = $schemes[$idx % count($schemes)];
+                $s['svg'] = '<svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>';
+                return $s;
+            }
+        }
     @endphp
 
-    <!-- Top Header -->
-    <div class="flex flex-wrap justify-between items-center gap-4">
-        <div>
-            <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Indent Summary</h1>
-            <p class="text-sm text-gray-500">Overview of requested and received items in this indent.</p>
-        </div>
+    <!-- Page Title Header -->
+    <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 26px; font-weight: 800; color: #1E1B4B; margin: 0 0 4px 0; letter-spacing: -0.5px;">Indent Summary</h1>
+        <p style="font-size: 14px; color: #6B7280; margin: 0;">Overview of requested and received items in this indent.</p>
     </div>
 
-    <!-- 1. Key Indent Metadata Cards -->
-    <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+    <!-- 1. Top Metadata Stat Cards Bar -->
+    <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;">
             <!-- Indent ID -->
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 shadow-sm border border-purple-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #F3E8FF; color: #9333EA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 </div>
                 <div>
-                    <span class="text-xs uppercase font-bold text-gray-400 tracking-wider block">INDENT ID</span>
-                    <span class="text-xl font-extrabold text-purple-700">{{ $indentId }}</span>
+                    <span style="font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; display: block;">INDENT ID</span>
+                    <span style="font-size: 20px; font-weight: 800; color: #1E1B4B;">{{ $indentId }}</span>
                 </div>
             </div>
 
             <!-- Department -->
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-sm border border-blue-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                 </div>
                 <div>
-                    <span class="text-xs uppercase font-bold text-gray-400 tracking-wider block">DEPARTMENT</span>
-                    <span class="text-lg font-bold text-gray-900 truncate block max-w-[150px]" title="{{ $deptName }}">{{ $deptName }}</span>
+                    <span style="font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; display: block;">DEPARTMENT</span>
+                    <span style="font-size: 18px; font-weight: 800; color: #1E1B4B;">{{ $deptName }}</span>
                 </div>
             </div>
 
             <!-- Project -->
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm border border-emerald-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                    </svg>
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #F3F4F6; color: #4B5563; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
                 </div>
                 <div>
-                    <span class="text-xs uppercase font-bold text-gray-400 tracking-wider block">PROJECT</span>
-                    <span class="text-lg font-bold text-gray-900 truncate block max-w-[150px]" title="{{ $projectName }}">{{ $projectName }}</span>
+                    <span style="font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; display: block;">PROJECT</span>
+                    <span style="font-size: 18px; font-weight: 800; color: #1E1B4B;">{{ $projectName }}</span>
                 </div>
             </div>
 
             <!-- Indent Date -->
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0 shadow-sm border border-orange-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #FFF7ED; color: #EA580C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </div>
                 <div>
-                    <span class="text-xs uppercase font-bold text-gray-400 tracking-wider block">INDENT DATE</span>
-                    <span class="text-lg font-bold text-orange-600 whitespace-nowrap">{{ $indentDate }}</span>
+                    <span style="font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; display: block;">INDENT DATE</span>
+                    <span style="font-size: 18px; font-weight: 800; color: #EA580C; white-space: nowrap;">{{ $indentDate }}</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 2. Requested vs Received (Summary) Cards Grid -->
-    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-        <div class="flex flex-wrap justify-between items-center mb-5 gap-3 border-b border-gray-100 pb-4">
-            <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <span>Requested vs Received (Summary)</span>
-            </h3>
-            <div class="flex items-center gap-4 text-xs font-semibold text-gray-500">
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Received</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Remaining</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block"></span> Requested</span>
+    <!-- 2. Requested vs Received (Summary) Grid Section -->
+    <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #F3F4F6;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <svg style="width: 20px; height: 20px; color: #4F46E5;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                <h3 style="font-size: 16px; font-weight: 800; color: #1E1B4B; margin: 0;">Requested vs Received (Summary)</h3>
+            </div>
+            <!-- Legend Indicators -->
+            <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 600; color: #6B7280;">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #16A34A; display: inline-block;"></span> Received
+                </span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563EB; display: inline-block;"></span> Remaining
+                </span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #9CA3AF; display: inline-block;"></span> Requested
+                </span>
             </div>
         </div>
 
         @if(!empty($indentItems) && count($indentItems) > 0)
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                @php
-                    $colors = [
-                        ['bg' => 'bg-purple-50', 'text' => 'text-purple-600', 'border' => 'border-purple-100'],
-                        ['bg' => 'bg-amber-50', 'text' => 'text-amber-600', 'border' => 'border-amber-100'],
-                        ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-600', 'border' => 'border-emerald-100'],
-                        ['bg' => 'bg-sky-50', 'text' => 'text-sky-600', 'border' => 'border-sky-100'],
-                        ['bg' => 'bg-rose-50', 'text' => 'text-rose-600', 'border' => 'border-rose-100'],
-                        ['bg' => 'bg-teal-50', 'text' => 'text-teal-600', 'border' => 'border-teal-100'],
-                        ['bg' => 'bg-indigo-50', 'text' => 'text-indigo-600', 'border' => 'border-indigo-100'],
-                        ['bg' => 'bg-orange-50', 'text' => 'text-orange-600', 'border' => 'border-orange-100'],
-                    ];
-                @endphp
-
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
                 @foreach($indentItems as $idx => $it)
                     @php
                         $desc = $it['description'] ?? 'Item ' . ($idx + 1);
@@ -118,22 +164,22 @@
                         $rec  = (int)($it['quantity_received'] ?? 0);
                         $canc = (int)($it['quantity_cancelled'] ?? 0);
                         $rem  = max(0, $req - ($rec + $canc));
-                        $cScheme = $colors[$idx % count($colors)];
+                        $icon = getMockupItemIcon($desc, $idx);
                     @endphp
 
-                    <div class="bg-gray-50/70 border border-gray-200/80 rounded-xl p-3.5 hover:shadow-md transition-all">
-                        <div class="flex items-start gap-3">
-                            <div class="w-9 h-9 rounded-xl {{ $cScheme['bg'] }} {{ $cScheme['text'] }} {{ $cScheme['border'] }} border flex items-center justify-center shrink-0 shadow-xs font-bold text-sm">
-                                🧪
+                    <div style="background: #FAFAFA; border: 1px solid #F3F4F6; border-radius: 14px; padding: 14px 16px; transition: all 0.2s ease;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: {{ $icon['bg'] }}; color: {{ $icon['color'] }}; border: 1px solid {{ $icon['border'] }}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                {!! $icon['svg'] !!}
                             </div>
-                            <div class="min-w-0 flex-1">
-                                <h4 class="text-sm font-bold text-gray-900 truncate" title="{{ $desc }}">{{ $desc }}</h4>
-                                <div class="text-xs font-medium text-gray-500 mt-1 flex flex-wrap items-center gap-1.5 whitespace-nowrap">
-                                    <span>Req: <strong class="text-gray-700">{{ $req }}</strong></span>
-                                    <span class="text-gray-300">|</span>
-                                    <span>Rec: <strong class="text-emerald-600 font-bold">{{ $rec }}</strong></span>
-                                    <span class="text-gray-300">|</span>
-                                    <span>Rem: <strong class="text-blue-600 font-bold">{{ $rem }}</strong></span>
+                            <div style="min-width: 0; flex: 1;">
+                                <h4 style="font-size: 14px; font-weight: 700; color: #111827; margin: 0 0 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $desc }}">{{ $desc }}</h4>
+                                <div style="font-size: 12px; color: #6B7280; font-weight: 500; white-space: nowrap;">
+                                    Req: <strong style="color: #4B5563; font-weight: 600;">{{ $req }}</strong>
+                                    <span style="color: #E5E7EB; margin: 0 4px;">|</span>
+                                    Rec: <strong style="color: #16A34A; font-weight: 700;">{{ $rec }}</strong>
+                                    <span style="color: #E5E7EB; margin: 0 4px;">|</span>
+                                    Rem: <strong style="color: #2563EB; font-weight: 700;">{{ $rem }}</strong>
                                 </div>
                             </div>
                         </div>
@@ -141,50 +187,48 @@
                 @endforeach
             </div>
         @else
-            <p class="text-xs text-gray-500 italic text-center py-4">No items listed on this indent.</p>
+            <p style="font-size: 13px; color: #9CA3AF; font-style: italic; text-align: center; margin: 20px 0;">No items listed on this indent.</p>
         @endif
     </div>
 
     <!-- 3. All Purchase Orders Section -->
-    <div class="space-y-4">
-        <div class="flex flex-wrap justify-between items-center gap-4">
-            <h2 class="text-xl font-bold text-gray-900 tracking-tight">All Purchase Orders</h2>
+    <div style="margin-bottom: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="font-size: 22px; font-weight: 800; color: #1E1B4B; margin: 0; letter-spacing: -0.5px;">All Purchase Orders</h2>
 
-            <!-- New PO File Button -->
+            <!-- New PO File Orange Button -->
             <a href="{{ route('po-register.create', ['indent_id' => $indentId, 'department_id' => $department_id]) }}"
-               class="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm px-4 py-2 rounded-xl shadow-sm transition-all hover:shadow-md">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
+               style="background: #FF6B00; color: #FFFFFF; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(255,107,0,0.25);">
+                <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                 <span>File PO / Remaining Items</span>
             </a>
         </div>
 
-        <!-- Filter & Search Toolbar -->
-        <div class="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+        <!-- Filter & Search Bar Toolbar -->
+        <div style="background: #F8F7FF; border: 1px solid #E0E7FF; border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
                 <!-- Search Input -->
-                <div class="relative flex-1 min-w-[200px]">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <div style="position: relative; flex: 1; max-width: 280px;">
+                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9CA3AF; pointer-events: none;">
+                        <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </span>
                     <input type="text" id="poSearchInput" placeholder="Search PO/WO No..." 
-                           class="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                           style="width: 100%; padding: 8px 12px 8px 36px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 10px; font-size: 13px; outline: none;">
                 </div>
 
                 <!-- PO Date Picker -->
-                <div class="relative w-40">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <div style="position: relative; width: 170px;">
+                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9CA3AF; pointer-events: none;">
+                        <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </span>
                     <input type="date" id="poDateFilter" 
-                           class="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                           style="width: 100%; padding: 8px 12px 8px 36px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 10px; font-size: 13px; outline: none;">
                 </div>
 
                 <!-- Status Filter Dropdown -->
-                <div class="relative w-48">
+                <div style="position: relative; width: 190px;">
                     <select id="poStatusFilter" 
-                            class="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none appearance-none">
+                            style="width: 100%; padding: 8px 12px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 10px; font-size: 13px; outline: none;">
                         <option value="">Status: All</option>
                         <option value="open">Open</option>
                         <option value="partially received">Partially received</option>
@@ -197,22 +241,20 @@
         </div>
 
         <!-- 4. PO Cards List -->
-        <div id="poListContainer" class="space-y-4">
+        <div id="poListContainer">
             @forelse($allPos as $row)
                 @php
                     $rowStStr   = is_object($row->status) ? $row->status->value : (string)($row->status ?? 'Open');
                     $normSt     = mb_strtolower(trim($rowStStr));
                     $canEdit    = !in_array($normSt, ['closed', 'close', 'cancel', 'cancelled']);
 
-                    // Status Badge Styling
-                    $badgeStyle = match($normSt) {
-                        'completed'          => 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                        'partially received' => 'bg-blue-100 text-blue-800 border-blue-200',
-                        'reopened'           => 'bg-purple-100 text-purple-800 border-purple-200',
-                        'closed', 'close'    => 'bg-gray-100 text-gray-700 border-gray-200',
-                        'cancel', 'cancelled'=> 'bg-red-100 text-red-800 border-red-200',
-                        default              => 'bg-green-100 text-green-800 border-green-200',
-                    };
+                    // Status Badge Styling matching mockup
+                    $badgeBg    = '#EFF6FF';
+                    $badgeColor = '#2563EB';
+                    if ($normSt === 'completed') { $badgeBg = '#ECFDF5'; $badgeColor = '#059669'; }
+                    elseif ($normSt === 'reopened') { $badgeBg = '#F3E8FF'; $badgeColor = '#7C3AED'; }
+                    elseif (in_array($normSt, ['closed', 'close'])) { $badgeBg = '#F3F4F6'; $badgeColor = '#4B5563'; }
+                    elseif (in_array($normSt, ['cancel', 'cancelled'])) { $badgeBg = '#FEF2F2'; $badgeColor = '#DC2626'; }
 
                     $poItemsDecoded = !empty($row->item_description) ? (is_array($row->item_description) ? $row->item_description : json_decode($row->item_description, true)) : [];
                     $poItemsCount   = is_array($poItemsDecoded) ? count($poItemsDecoded) : 0;
@@ -220,99 +262,102 @@
                     $poDateDisplay  = !empty($row->po_date) ? date('d M Y', strtotime($row->po_date)) : '-';
                 @endphp
 
-                <div class="po-card bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all space-y-4"
+                <div class="po-card" 
+                     style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 16px;"
                      data-po-no="{{ strtolower($poWoDisplay) }}"
                      data-po-date="{{ $row->po_date }}"
                      data-po-status="{{ $normSt }}">
                     
-                    <!-- PO Card Header -->
-                    <div class="flex flex-wrap justify-between items-center gap-4 border-b border-gray-100 pb-3">
-                        <div class="flex flex-wrap items-center gap-4 text-xs font-semibold">
+                    <!-- PO Card Header Row -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 1px solid #F3F4F6; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 20px;">
                             <!-- PO No -->
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-                                    📄
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 36px; height: 36px; border-radius: 10px; background: #F3E8FF; color: #9333EA; display: flex; align-items: center; justify-content: center;">
+                                    <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                 </div>
                                 <div>
-                                    <span class="text-gray-400 block uppercase text-[10px]">PO/WO No.</span>
-                                    <span class="text-sm font-extrabold text-purple-700">{{ $poWoDisplay }}</span>
+                                    <span style="font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; display: block;">PO/WO No.</span>
+                                    <span style="font-size: 14px; font-weight: 800; color: #7C3AED;">{{ $poWoDisplay }}</span>
                                 </div>
                             </div>
 
-                            <span class="text-gray-300">|</span>
+                            <span style="color: #E5E7EB;">|</span>
 
                             <!-- PO Date -->
-                            <div class="flex items-center gap-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <svg style="width: 16px; height: 16px; color: #9CA3AF;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 <div>
-                                    <span class="text-gray-400 block uppercase text-[10px]">PO Date</span>
-                                    <span class="text-xs font-bold text-gray-800">{{ $poDateDisplay }}</span>
+                                    <span style="font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; display: block;">PO Date</span>
+                                    <span style="font-size: 13px; font-weight: 700; color: #111827;">{{ $poDateDisplay }}</span>
                                 </div>
                             </div>
 
-                            <span class="text-gray-300">|</span>
+                            <span style="color: #E5E7EB;">|</span>
 
                             <!-- Status Badge -->
                             <div>
-                                <span class="text-gray-400 block uppercase text-[10px]">Status</span>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $badgeStyle }}">
+                                <span style="font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; display: block; margin-bottom: 2px;">Status</span>
+                                <span style="background: {{ $badgeBg }}; color: {{ $badgeColor }}; font-weight: 700; font-size: 12px; padding: 3px 12px; border-radius: 20px; display: inline-block;">
                                     {{ ucfirst($rowStStr) }}
                                 </span>
                             </div>
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="flex flex-wrap items-center gap-2">
+                        <div style="display: flex; align-items: center; gap: 8px;">
                             @if($canEdit)
                                 <a href="{{ route('po-register.edit', $row->id) }}" 
-                                   class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
-                                    📅 Update P.O.
+                                   style="background: #22C55E; color: #FFFFFF; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    <span>Update P.O.</span>
                                 </a>
 
                                 <a href="{{ route('indentroview.createInvoiceById', $row->id) }}" 
-                                   class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
-                                    📑 {{ !empty($row->invoice_date) ? 'Update Invoice' : 'File Invoice / Goods Receipt' }}
+                                   style="background: #3B82F6; color: #FFFFFF; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <span>{{ !empty($row->invoice_date) ? 'Update Invoice' : 'File Invoice / Goods Receipt' }}</span>
                                 </a>
 
                                 <button type="button" 
-                                        onclick="document.getElementById('closePoModal_{{ $row->id }}').classList.remove('hidden')" 
-                                        class="inline-flex items-center gap-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
+                                        onclick="document.getElementById('closePoModal_{{ $row->id }}').style.display='flex'" 
+                                        style="background: #FFF; color: #EF4444; border: 1px solid #FCA5A5; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                                     🔒 Close PO
                                 </button>
                             @elseif(in_array($normSt, ['closed', 'close']))
                                 <a href="{{ route('indentroview.createInvoiceById', $row->id) }}" 
-                                   class="inline-flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
+                                   style="background: #F3F4F6; color: #374151; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                                     👁️ View Goods Receipt
                                 </a>
 
-                                <form method="POST" action="{{ route('po-register.reopenPO', $row->id) }}" class="inline" onsubmit="return confirm('Are you sure you want to reopen this PO?');">
+                                <form method="POST" action="{{ route('po-register.reopenPO', $row->id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to reopen this PO?');">
                                     @csrf
-                                    <button type="submit" class="inline-flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
+                                    <button type="submit" style="background: #7C3AED; color: #FFFFFF; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; border: none;">
                                         🔓 Reopen PO
                                     </button>
                                 </form>
                             @else
                                 <a href="{{ route('indentroview.createInvoiceById', $row->id) }}" 
-                                   class="inline-flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs px-3 py-1.5 rounded-xl shadow-xs transition-all">
+                                   style="background: #F3F4F6; color: #374151; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none;">
                                     👁️ View Details
                                 </a>
                             @endif
                         </div>
                     </div>
 
-                    <!-- PO Metadata Row -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <!-- PO Metadata Grid Row -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 14px;">
                         <div>
-                            <span class="text-gray-400 block font-medium uppercase text-[10px]">Party</span>
-                            <span class="font-extrabold text-gray-900 text-sm">{{ $row->party_name ?? '-' }}</span>
+                            <span style="font-size: 10px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; display: block;">Party</span>
+                            <span style="font-size: 14px; font-weight: 800; color: #111827;">{{ $row->party_name ?? '-' }}</span>
                         </div>
                         <div>
-                            <span class="text-gray-400 block font-medium uppercase text-[10px]">PO Amount</span>
-                            <span class="font-extrabold text-gray-900 text-sm font-mono">₹ {{ number_format($row->po_amount ?? 0, 2) }}</span>
+                            <span style="font-size: 10px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; display: block;">PO Amount</span>
+                            <span style="font-size: 14px; font-weight: 800; color: #111827; font-family: monospace;">₹ {{ number_format($row->po_amount ?? 0, 2) }}</span>
                         </div>
                         <div>
-                            <span class="text-gray-400 block font-medium uppercase text-[10px]">Items</span>
-                            <span class="inline-block px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-extrabold text-xs">
+                            <span style="font-size: 10px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; display: block;">Items</span>
+                            <span style="background: #EFF6FF; color: #2563EB; font-weight: 800; font-size: 12px; padding: 3px 10px; border-radius: 6px; display: inline-block;">
                                 {{ $poItemsCount }} {{ Str::plural('Item', $poItemsCount) }}
                             </span>
                         </div>
@@ -320,7 +365,7 @@
 
                     <!-- PO Items List Breakdown -->
                     @if(is_array($poItemsDecoded) && count($poItemsDecoded) > 0)
-                        <div class="bg-gray-50/70 border border-gray-100 rounded-xl p-3 space-y-2">
+                        <div style="background: #FAFAFA; border: 1px solid #F3F4F6; border-radius: 10px; padding: 12px; margin-bottom: 14px;">
                             @foreach($poItemsDecoded as $pIt)
                                 @php
                                     $pDesc = is_array($pIt) ? ($pIt['description'] ?? '') : (string)$pIt;
@@ -330,17 +375,17 @@
                                     $pRem  = max(0, $pOrd - ($pRec + $pCanc));
                                 @endphp
 
-                                <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
-                                    <div class="flex items-center gap-2 font-bold text-gray-800">
-                                        <span class="w-2 h-2 rounded-full bg-purple-500 inline-block"></span>
+                                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1F2937;">
+                                        <span style="width: 6px; height: 6px; border-radius: 50%; background: #9333EA; display: inline-block;"></span>
                                         <span>{{ $pDesc }}</span>
                                     </div>
-                                    <div class="text-gray-500 font-medium whitespace-nowrap">
-                                        Req: <strong class="text-gray-700">{{ $pOrd }}</strong>
-                                        <span class="text-gray-300 mx-1">|</span>
-                                        Rec: <strong class="text-emerald-600 font-bold">{{ $pRec }}</strong>
-                                        <span class="text-gray-300 mx-1">|</span>
-                                        Rem: <strong class="text-blue-600 font-bold">{{ $pRem }}</strong>
+                                    <div style="color: #6B7280; font-weight: 500;">
+                                        Req: <strong style="color: #4B5563;">{{ $pOrd }}</strong>
+                                        <span style="color: #E5E7EB; margin: 0 4px;">|</span>
+                                        Rec: <strong style="color: #16A34A; font-weight: 700;">{{ $pRec }}</strong>
+                                        <span style="color: #E5E7EB; margin: 0 4px;">|</span>
+                                        Rem: <strong style="color: #2563EB; font-weight: 700;">{{ $pRem }}</strong>
                                     </div>
                                 </div>
                             @endforeach
@@ -348,35 +393,35 @@
                     @endif
 
                     <!-- Expandable Remarks Accordion -->
-                    <details class="group bg-indigo-50/30 border border-indigo-100/70 rounded-xl">
-                        <summary class="flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-700 cursor-pointer select-none">
-                            <div class="flex items-center gap-2">
-                                💬 <span>Remarks</span>
-                                <span class="text-gray-400 font-normal italic">
-                                    {{ !empty($row->remarks) ? Str::limit($row->remarks, 50) : 'No remarks added' }}
+                    <details style="background: #F9FAFB; border: 1px solid #F3F4F6; border-radius: 10px;">
+                        <summary style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; font-size: 12px; font-weight: 600; color: #4B5563; cursor: pointer;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                💬 <span style="font-weight: 700;">Remarks</span>
+                                <span style="color: #9CA3AF; font-style: italic; font-weight: 400;">
+                                    {{ !empty($row->remarks) ? Str::limit($row->remarks, 60) : 'No remarks added' }}
                                 </span>
                             </div>
-                            <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <svg style="width: 14px; height: 14px; color: #9CA3AF;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </summary>
-                        <div class="px-3 py-2 border-t border-indigo-100/50 text-xs text-gray-800 whitespace-pre-line bg-white/80 rounded-b-xl">
+                        <div style="padding: 10px 14px; border-top: 1px solid #F3F4F6; font-size: 12px; color: #1F2937; background: #FFFFFF;">
                             {{ !empty($row->remarks) ? $row->remarks : 'No remarks recorded for this Purchase Order.' }}
                         </div>
                     </details>
 
-                    <!-- Close PO Modal for this PO -->
-                    <div id="closePoModal_{{ $row->id }}" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4">
-                        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100">
-                            <h3 class="text-lg font-bold text-gray-900 mb-2">Close Purchase Order #{{ $row->id }}</h3>
-                            <p class="text-xs text-gray-600 mb-4">Are you sure you want to close this PO? Once closed, no further goods receipts or invoice modifications will be allowed.</p>
+                    <!-- Close PO Modal -->
+                    <div id="closePoModal_{{ $row->id }}" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+                        <div style="background: #FFFFFF; border-radius: 16px; padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+                            <h3 style="font-size: 18px; font-weight: 800; color: #111827; margin: 0 0 8px 0;">Close Purchase Order #{{ $row->id }}</h3>
+                            <p style="font-size: 12px; color: #4B5563; margin: 0 0 16px 0;">Are you sure you want to close this PO? Once closed, no further goods receipts or invoice modifications will be allowed.</p>
                             <form method="POST" action="{{ route('po-register.closePO', $row->id) }}">
                                 @csrf
-                                <div class="mb-4">
-                                    <label for="close_reason_{{ $row->id }}" class="block text-xs font-semibold text-gray-700 mb-1">Close Reason (Optional)</label>
-                                    <textarea name="close_reason" id="close_reason_{{ $row->id }}" rows="3" class="form-control w-full text-xs rounded-xl p-2.5 border" placeholder="Enter reason for closing this PO..."></textarea>
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Close Reason (Optional)</label>
+                                    <textarea name="close_reason" rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 12px; box-sizing: border-box;" placeholder="Enter reason for closing this PO..."></textarea>
                                 </div>
-                                <div class="flex justify-end gap-2">
-                                    <button type="button" onclick="document.getElementById('closePoModal_{{ $row->id }}').classList.add('hidden')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700">Cancel</button>
-                                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-xs">Confirm Close PO</button>
+                                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                                    <button type="button" onclick="document.getElementById('closePoModal_{{ $row->id }}').style.display='none'" style="padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; background: #F3F4F6; color: #374151; border: none; cursor: pointer;">Cancel</button>
+                                    <button type="submit" style="padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; background: #DC2626; color: #FFFFFF; border: none; cursor: pointer;">Confirm Close PO</button>
                                 </div>
                             </form>
                         </div>
@@ -384,16 +429,15 @@
 
                 </div>
             @empty
-                <div class="bg-white border border-gray-200 rounded-2xl p-10 text-center text-gray-500 shadow-sm">
-                    <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mx-auto mb-3 text-xl">📦</div>
-                    <p class="font-semibold text-sm text-gray-700">No purchase orders found for this indent.</p>
+                <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 40px; text-align: center; color: #6B7280;">
+                    <p style="font-weight: 700; font-size: 14px; color: #374151; margin: 0;">No purchase orders found for this indent.</p>
                 </div>
             @endforelse
         </div>
     </div>
 </div>
 
-<!-- Client-side Search & Filtering Script -->
+<!-- Search & Filter JavaScript -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('poSearchInput');
