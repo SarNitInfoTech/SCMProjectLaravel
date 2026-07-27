@@ -179,49 +179,63 @@ class IndentController extends Controller
     //     return view('pages.indent.generateIndent.generateIndent', compact('departments','items', 'title', 'columns', 'rows'));
     // }
     
-public function create()
+public function create(Request $request)
 {
     $title = 'Draft List';
-    $departments = Department::all();
+    $departments = Department::orderBy('name')->get();
     $items = Item::all();
 
     // it = indent_tickets, d = departments, ir = indent_registers
-    $rows = DB::table('indent_tickets as it')
+    $query = DB::table('indent_tickets as it')
         // 1) Get department name from departments.id
         ->join('departments as d', 'd.id', '=', 'it.department_id')
-        // 2) Left join to indent_registers by indent_id + department_name (stored as indent_department)
+        // 2) Left join to indent_registers by indent_id + department_name
         ->leftJoin('indent_registers as ir', function ($join) {
             $join->on('ir.indent_id', '=', 'it.indent_id')
-                 ->on('ir.indent_department', '=', 'd.name'); // compare to department NAME
+                 ->on('ir.indent_department', '=', 'd.name');
         })
         // 3) Keep only tickets not yet present in indent_registers
         ->whereNull('ir.id')
         ->select([
             'it.indent_id',
-            'it.department_id',           // numeric id
-            'd.name as department_name',  // resolved name
-        ])
-        ->get();
+            'it.department_id',
+            'd.name as department_name',
+            'it.created_at',
+        ]);
+
+    if ($search = $request->input('search')) {
+        $query->where(function ($q) use ($search) {
+            $q->where('it.indent_id', 'like', "%{$search}%")
+              ->orWhere('d.name', 'like', "%{$search}%");
+        });
+    }
+
+    if ($request->filled('department')) {
+        $query->where('d.name', $request->get('department'));
+    }
+
+    $perPage = (int) $request->get('per_page', 15);
+    $paginated = $query->orderByDesc('it.created_at')->paginate($perPage)->withQueryString();
 
     $columns = [
-        ['key' => 'indent_id', 'label' => 'Indent ID'],
-        ['key' => 'department_name', 'label' => 'Department Name'],
-        ['key' => 'action', 'label' => 'Action', 'type' => 'action'],
+        ['key' => 'indent_id', 'label' => 'INDENT ID'],
+        ['key' => 'department_name', 'label' => 'DEPARTMENT NAME'],
+        ['key' => 'action', 'label' => 'ACTION', 'type' => 'action'],
     ];
 
-    // Build action URL (passes both id and name if you want to use either)
-    $rows = $rows->map(function ($row) {
+    // Build action URL
+    $rows = collect($paginated->items())->map(function ($row) {
         $row = (array) $row;
         $row['action'] = route('indent.create.form', [
             'indent_id'       => $row['indent_id'],
-            'department_id'   => $row['department_id'],   // numeric
-            'department_name' => $row['department_name'], // optional convenience
+            'department_id'   => $row['department_id'],
+            'department_name' => $row['department_name'],
         ]);
         return $row;
     });
 
     return view('pages.indent.generateIndent.generateIndent',
-        compact('departments', 'items', 'title', 'columns', 'rows'));
+        compact('departments', 'items', 'title', 'columns', 'rows', 'paginated'));
 }
 
     public function store(Request $request)
