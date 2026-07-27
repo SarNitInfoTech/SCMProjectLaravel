@@ -20,6 +20,8 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
+        $remember = $request->boolean('remember');
+
         // Step 1: Check if user exists and is active
         $user = User::where('email', $credentials['email'])->first();
 
@@ -31,8 +33,8 @@ class AuthController extends Controller
             return back()->with('error', 'Your account is inactive. Please contact administrator.');
         }
 
-        // Step 2: Attempt authentication
-        if (Auth::attempt($credentials)) {
+        // Step 2: Attempt authentication with remember token enabled
+        if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
             // ✅ Redirect to dashboard after login

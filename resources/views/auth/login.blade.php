@@ -37,7 +37,7 @@
                                 </div>
                                 <div class="mt-2">
                                     <div class="form-check flex items-center gap-2">
-                                        <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                                        <input class="form-check-input" type="checkbox" name="remember" id="remember" value="1" {{ old('remember') ? 'checked' : '' }}>
                                         <label class="form-check-label text-[#8c9097] font-normal" for="remember">
                                             Remember Me
                                         </label>
