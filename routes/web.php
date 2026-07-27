@@ -179,6 +179,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/export-excel', [ReportController::class, 'exportExcel'])->name('export.excel');
     });
     Route::get('/report/view', [ReportController::class, 'viewReport'])->name('reports.po');
+    Route::get('/report/view-all-indent', [ReportController::class, 'viewAllIndent'])->name('reports.viewAllIndent');
 
     // routes/web.php
     Route::get('/reports/indents/filter', [ReportController::class, 'filterAllIndentAjax'])

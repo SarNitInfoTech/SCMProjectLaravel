@@ -51,7 +51,7 @@
             </div>
 
             <!-- Search & Right Filter Drawer Controls -->
-            <form method="GET" action="{{ route('reports.viewAllIndent') }}" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <form method="GET" action="{{ route('report.viewAllIndent') }}" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 @if(request('department')) <input type="hidden" name="department" value="{{ request('department') }}"> @endif
                 @if(request('project')) <input type="hidden" name="project" value="{{ request('project') }}"> @endif
                 @if(request('status')) <input type="hidden" name="status" value="{{ request('status') }}"> @endif
@@ -83,7 +83,7 @@
                 </button>
 
                 @if(request()->anyFilled(['search', 'department', 'project', 'status', 'date_from', 'date_to']))
-                    <a href="{{ route('reports.viewAllIndent') }}" style="padding: 9px 14px; font-size: 13px; font-weight: 600; background: #F1F5F9; color: #475569; border-radius: 10px; text-decoration: none;">Reset</a>
+                    <a href="{{ route('report.viewAllIndent') }}" style="padding: 9px 14px; font-size: 13px; font-weight: 600; background: #F1F5F9; color: #475569; border-radius: 10px; text-decoration: none;">Reset</a>
                 @endif
             </form>
         </div>
@@ -163,7 +163,7 @@
             </div>
 
             <!-- Per Page Selector -->
-            <form method="GET" action="{{ route('reports.viewAllIndent') }}" style="display: flex; align-items: center; gap: 8px;">
+            <form method="GET" action="{{ route('report.viewAllIndent') }}" style="display: flex; align-items: center; gap: 8px;">
                 @foreach(request()->except(['per_page', 'page']) as $k => $v)
                     <input type="hidden" name="{{ $k }}" value="{{ $v }}">
                 @endforeach
@@ -198,7 +198,7 @@
         </div>
 
         <!-- Body Form -->
-        <form id="drawerFilterForm" method="GET" action="{{ route('reports.viewAllIndent') }}" style="padding: 20px; overflow-y: auto; flex: 1;">
+        <form id="drawerFilterForm" method="GET" action="{{ route('report.viewAllIndent') }}" style="padding: 20px; overflow-y: auto; flex: 1;">
             @if(request('search')) <input type="hidden" name="search" value="{{ request('search') }}"> @endif
 
             <!-- Department Filter -->
@@ -258,7 +258,7 @@
 
         <!-- Footer -->
         <div style="padding: 16px 20px; border-top: 1px solid #E2E8F0; background: #F8FAFC; display: flex; justify-content: flex-end; gap: 10px;">
-            <a href="{{ route('reports.viewAllIndent') }}" style="padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; background: #F1F5F9; color: #475569; text-decoration: none;">Reset</a>
+            <a href="{{ route('report.viewAllIndent') }}" style="padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; background: #F1F5F9; color: #475569; text-decoration: none;">Reset</a>
             <button type="button" onclick="document.getElementById('drawerFilterForm').submit()" style="padding: 10px 22px; border-radius: 10px; font-size: 13px; font-weight: 700; background: #2563EB; color: #FFFFFF; border: none; cursor: pointer;">Apply Filters</button>
         </div>
     </div>
