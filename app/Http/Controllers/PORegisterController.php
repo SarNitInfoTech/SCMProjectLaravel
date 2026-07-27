@@ -152,30 +152,33 @@ class PORegisterController extends Controller
         $poItemsRaw = DB::table('po_registers')
             ->where('indent_id', $indent_id)
             ->whereNotIn(DB::raw('LOWER(status)'), ['cancel', 'cancelled'])
-            ->where(function($w) {
-                $w->whereNull('receiving_date')
-                  ->orWhere('receiving_date', '')
-                  ->orWhereNull('invoice_date')
-                  ->orWhere('invoice_date', '');
-            })
             ->pluck('item_description');
 
-        $openPoQtyMap = [];
+        $filedQtyMap = [];
         foreach ($poItemsRaw as $rawJson) {
             if (!empty($rawJson) && is_string($rawJson)) {
                 $decoded = json_decode($rawJson, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                     foreach ($decoded as $entry) {
                         if (is_array($entry) && isset($entry['description'])) {
-                            $descKey = mb_strtolower(trim($entry['description']));
-                            $ordered = (int)($entry['quantity'] ?? $entry['po_quantity'] ?? 1);
-                            $received = (int)($entry['quantity_received'] ?? 0);
+                            $descKey   = mb_strtolower(trim($entry['description']));
+                            $ordered   = (int)($entry['quantity'] ?? $entry['po_quantity'] ?? 1);
+                            $received  = isset($entry['quantity_received']) ? (int)$entry['quantity_received'] : 0;
                             $cancelled = (int)($entry['quantity_cancelled'] ?? 0);
-                            $pending = max(0, $ordered - ($received + $cancelled));
-                            $openPoQtyMap[$descKey] = ($openPoQtyMap[$descKey] ?? 0) + $pending;
+
+                            // If invoice receiving has been recorded (received > 0 or cancelled > 0),
+                            // committed qty for this PO is min(ordered, received + cancelled).
+                            // Otherwise, committed qty is ordered.
+                            if ($received > 0 || $cancelled > 0) {
+                                $committed = min($ordered, $received + $cancelled);
+                            } else {
+                                $committed = $ordered;
+                            }
+
+                            $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + $committed;
                         } elseif (is_string($entry)) {
                             $descKey = mb_strtolower(trim($entry));
-                            $openPoQtyMap[$descKey] = ($openPoQtyMap[$descKey] ?? 0) + 1;
+                            $filedQtyMap[$descKey] = ($filedQtyMap[$descKey] ?? 0) + 1;
                         }
                     }
                 }
@@ -184,20 +187,16 @@ class PORegisterController extends Controller
 
         // Keep indent items that still have remaining quantity to file (>0)
         $items = $itemsFromIndent
-            ->map(function ($item) use ($openPoQtyMap) {
+            ->map(function ($item) use ($filedQtyMap) {
                 $descKey = mb_strtolower(trim((string) ($item['description'] ?? '')));
                 if ($descKey === '') return null;
 
                 $req  = (int)($item['quantity_required'] ?? 1);
-                $rec  = (int)($item['quantity_received'] ?? 0);
-                $canc = (int)($item['quantity_cancelled'] ?? 0);
-                $openPo = (int)($openPoQtyMap[$descKey] ?? 0);
+                $alreadyCommitted = (int)($filedQtyMap[$descKey] ?? 0);
+                $remainingToFile  = max(0, $req - $alreadyCommitted);
 
-                // Remaining quantity available to file on a new PO = required - (received + cancelled + pending un-invoiced POs)
-                $alreadyFiled    = $rec + $canc;
-                $remainingToFile = max(0, $req - ($alreadyFiled + $openPo));
-
-                $item['already_filed']     = $alreadyFiled;
+                $item['quantity_required'] = $req;
+                $item['already_filed']     = $alreadyCommitted;
                 $item['remaining_to_file'] = $remainingToFile;
                 $item['quantity_balance']  = $remainingToFile;
 
