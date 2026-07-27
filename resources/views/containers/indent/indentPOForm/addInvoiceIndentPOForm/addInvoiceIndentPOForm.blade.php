@@ -143,13 +143,13 @@
 
     @if(!empty($indentItems) && count($indentItems) > 0)
     <div class="border rounded p-4 bg-gray-50 col-span-full">
-        <h4 class="font-semibold text-gray-800 mb-3">Item Received & Remaining Quantity Management</h4>
+        <h4 class="font-semibold text-gray-800 mb-3">Item Received & Remaining Quantity Management for PO #{{ $po->id }}</h4>
         <div class="overflow-x-auto">
             <table class="table min-w-full bg-white border text-sm">
                 <thead>
                     <tr class="bg-gray-100 border-b">
                         <th class="p-2 text-start">Item Description</th>
-                        <th class="p-2 text-center">Qty Required</th>
+                        <th class="p-2 text-center">PO Qty Ordered</th>
                         <th class="p-2 text-center">Qty Received</th>
                         <th class="p-2 text-center">Qty Cancelled</th>
                         <th class="p-2 text-center">Qty Balance (Remaining)</th>
@@ -159,24 +159,30 @@
                     @foreach($indentItems as $idx => $item)
                         @php
                             $req = (int)($item['quantity_required'] ?? 0);
+                            $poQty = (int)($item['po_quantity'] ?? $item['quantity'] ?? $req);
                             $rec = (int)($item['quantity_received'] ?? 0);
                             $canc = (int)($item['quantity_cancelled'] ?? 0);
-                            $bal = max(0, $req - ($rec + $canc));
+                            $bal = max(0, $poQty - ($rec + $canc));
                         @endphp
                         <tr class="border-b item-qty-row">
                             <td class="p-2 font-medium">
                                 {{ $item['description'] ?? '' }}
                                 <input type="hidden" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}">
                                 <input type="hidden" name="items[{{ $idx }}][unit]" value="{{ $item['unit'] ?? '' }}">
-                                <input type="hidden" name="items[{{ $idx }}][required]" value="{{ $req }}" class="js-qty-req">
+                                <input type="hidden" name="items[{{ $idx }}][required]" value="{{ $poQty }}" class="js-qty-req">
                             </td>
-                            <td class="p-2 text-center">{{ $req }}</td>
+                            <td class="p-2 text-center font-bold text-gray-900">
+                                {{ $poQty }}
+                                @if($req > 0 && $req !== $poQty)
+                                    <span class="text-xs text-gray-500 block font-normal">(Indent Req: {{ $req }})</span>
+                                @endif
+                            </td>
                             <td class="p-2 text-center w-36">
                                 <input type="number" 
                                        name="items[{{ $idx }}][received]" 
                                        value="{{ $rec }}" 
                                        min="0" 
-                                       max="{{ $req > 0 ? $req : 999999 }}"
+                                       max="{{ $poQty > 0 ? $poQty : 999999 }}"
                                        class="form-control text-center js-qty-rec w-full"
                                        {{ $isReadOnly ? 'disabled' : '' }}>
                             </td>
@@ -185,7 +191,7 @@
                                        name="items[{{ $idx }}][cancelled]" 
                                        value="{{ $canc }}" 
                                        min="0" 
-                                       max="{{ $req > 0 ? $req : 999999 }}"
+                                       max="{{ $poQty > 0 ? $poQty : 999999 }}"
                                        class="form-control text-center js-qty-canc w-full text-red-600 font-semibold"
                                        placeholder="0"
                                        {{ $isReadOnly ? 'disabled' : '' }}>

@@ -223,11 +223,45 @@ class PORegisterController extends Controller
             ->where('indent_id', $po->indent_id)
             ->first();
 
-        $indentItems = [];
-        if ($indent && !empty($indent->items_description)) {
-            $decoded = json_decode($indent->items_description, true);
+        // Extract items specifically ordered in THIS PO
+        $poItems = [];
+        if (!empty($po->item_description)) {
+            $decoded = json_decode($po->item_description, true);
             if (is_array($decoded)) {
-                $indentItems = $decoded;
+                foreach ($decoded as $entry) {
+                    if (is_array($entry) && isset($entry['description'])) {
+                        $desc = $entry['description'];
+                        $ordered = (int)($entry['quantity'] ?? $entry['po_quantity'] ?? 1);
+                        $received = (int)($entry['quantity_received'] ?? 0);
+                        $cancelled = (int)($entry['quantity_cancelled'] ?? 0);
+
+                        $unit = $entry['unit'] ?? '';
+                        $req = (int)($entry['quantity_required'] ?? $ordered);
+
+                        if ($indent && !empty($indent->items_description)) {
+                            $indDecoded = json_decode($indent->items_description, true);
+                            if (is_array($indDecoded)) {
+                                foreach ($indDecoded as $indIt) {
+                                    if (is_array($indIt) && isset($indIt['description']) && mb_strtolower(trim($indIt['description'])) === mb_strtolower(trim($desc))) {
+                                        if (empty($unit)) $unit = $indIt['unit'] ?? '';
+                                        if (empty($req) || $req < $ordered) $req = (int)($indIt['quantity_required'] ?? $ordered);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        $poItems[] = [
+                            'description'        => $desc,
+                            'unit'               => $unit,
+                            'po_quantity'        => $ordered,
+                            'quantity_required'  => $req,
+                            'quantity_received'  => $received,
+                            'quantity_cancelled' => $cancelled,
+                            'quantity_balance'   => max(0, $ordered - ($received + $cancelled)),
+                        ];
+                    }
+                }
             }
         }
 
@@ -235,7 +269,7 @@ class PORegisterController extends Controller
             'pages.indent.indentPOForm.addInvoiceIndentPOForm.addInvoiceIndentPOForm', [
                 'po'          => $po,
                 'indent'      => $indent,
-                'indentItems' => $indentItems,
+                'indentItems' => $poItems,
             ]
         );
     }
