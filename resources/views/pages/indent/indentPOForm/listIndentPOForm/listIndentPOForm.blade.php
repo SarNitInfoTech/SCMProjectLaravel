@@ -1,7 +1,7 @@
 @extends("layouts.layout")
 
 @section("bodyContent")
-<div style="max-width: 1280px; margin: 0 auto; padding: 24px; font-family: inherit;">
+<div style="max-width: 1280px; margin: 0 auto; padding: 24px; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 
     <!-- Top Page Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
@@ -82,18 +82,18 @@
 
         <!-- Table Responsive Container -->
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table style="width: 100%; min-width: 1300px; border-collapse: collapse; text-align: left; font-size: 13px;">
+            <table style="width: 100%; min-width: 1320px; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;">
                 <thead>
                     <tr style="background: #F8F7FF; border-bottom: 1px solid #E0E7FF; color: #6B7280; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <th style="padding: 14px 16px; width: 100px;">INDENT ID <span style="color:#C7D2FE;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 120px;">DEPARTMENT <span style="color:#C7D2FE;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 170px;">PARTY NAME <span style="color:#C7D2FE;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 220px;">ITEM DESCRIPTION <span style="color:#C7D2FE;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 120px;">AMOUNT <span style="color:#C7D2FE;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 110px;">REMARKS <span style="color:#C7D2FE;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 170px; text-align: center;">STATUS <span style="color:#C7D2FE;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 120px;">PO DATE <span style="color:#C7D2FE;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 300px; text-align: center;">ACTION</th>
+                        <th style="padding: 14px 16px; width: 90px; vertical-align: middle;">INDENT ID <span style="color:#C7D2FE;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 110px; vertical-align: middle;">DEPARTMENT <span style="color:#C7D2FE;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 170px; vertical-align: middle;">PARTY NAME <span style="color:#C7D2FE;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 220px; vertical-align: middle;">ITEM DESCRIPTION <span style="color:#C7D2FE;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 120px; vertical-align: middle;">AMOUNT <span style="color:#C7D2FE;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 90px; vertical-align: middle;">REMARKS <span style="color:#C7D2FE;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 160px; text-align: center; vertical-align: middle;">STATUS <span style="color:#C7D2FE;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 120px; vertical-align: middle;">PO DATE <span style="color:#C7D2FE;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 260px; text-align: center; vertical-align: middle;">ACTION</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -103,114 +103,117 @@
                             $normSt = strtolower(trim($status));
                             
                             // Exact badge styling matching mockup
-                            $badgeBg = '#F3F4F6'; $badgeColor = '#4B5563'; $dotColor = '#9CA3AF';
+                            $badgeBg = '#F3F4F6'; $badgeColor = '#4B5563'; $dotColor = '#9CA3AF'; $badgeBorder = '#E5E7EB';
                             if ($normSt === 'partially received') {
-                                $badgeBg = '#F3E8FF'; $badgeColor = '#7C3AED'; $dotColor = '#7C3AED';
+                                $badgeBg = '#F3E8FF'; $badgeColor = '#7C3AED'; $dotColor = '#7C3AED'; $badgeBorder = '#E9D5FF';
                             } elseif ($normSt === 'open') {
-                                $badgeBg = '#DCFCE7'; $badgeColor = '#16A34A'; $dotColor = '#16A34A';
+                                $badgeBg = '#DCFCE7'; $badgeColor = '#16A34A'; $dotColor = '#16A34A'; $badgeBorder = '#BBF7D0';
                             } elseif ($normSt === 'pending') {
-                                $badgeBg = '#FEF3C7'; $badgeColor = '#D97706'; $dotColor = '#D97706';
+                                $badgeBg = '#FEF3C7'; $badgeColor = '#D97706'; $dotColor = '#D97706'; $badgeBorder = '#FDE68A';
                             } elseif ($normSt === 'completed') {
-                                $badgeBg = '#ECFDF5'; $badgeColor = '#059669'; $dotColor = '#059669';
+                                $badgeBg = '#ECFDF5'; $badgeColor = '#059669'; $dotColor = '#059669'; $badgeBorder = '#A7F3D0';
                             } elseif (in_array($normSt, ['cancel', 'cancelled'])) {
-                                $badgeBg = '#FEF2F2'; $badgeColor = '#DC2626'; $dotColor = '#DC2626';
+                                $badgeBg = '#FEF2F2'; $badgeColor = '#DC2626'; $dotColor = '#DC2626'; $badgeBorder = '#FECDD3';
                             }
 
                             $actions = $row['action'];
                         @endphp
                         <tr style="border-bottom: 1px solid #F3F4F6; transition: background 0.15s ease;" onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background='#FFFFFF'">
                             <!-- Indent ID -->
-                            <td style="padding: 16px; font-weight: 800; color: #111827; white-space: nowrap;">{{ $row['indent_id'] }}</td>
+                            <td style="padding: 16px; vertical-align: middle; font-weight: 800; color: #111827; white-space: nowrap;">{{ $row['indent_id'] }}</td>
                             
                             <!-- Department -->
-                            <td style="padding: 16px; color: #4B5563; font-weight: 500; white-space: nowrap;">{{ $row['department_name'] && $row['department_name'] !== '-' ? $row['department_name'] : '-' }}</td>
+                            <td style="padding: 16px; vertical-align: middle; color: #4B5563; font-weight: 500; white-space: nowrap;">{{ $row['department_name'] && $row['department_name'] !== '-' ? $row['department_name'] : '-' }}</td>
                             
                             <!-- Party Name -->
-                            <td style="padding: 16px; color: #111827; font-weight: 700; white-space: nowrap;">{{ $row['party_name'] && $row['party_name'] !== '-' ? $row['party_name'] : '-' }}</td>
+                            <td style="padding: 16px; vertical-align: middle; color: #111827; font-weight: 700; white-space: nowrap;">{{ $row['party_name'] && $row['party_name'] !== '-' ? $row['party_name'] : '-' }}</td>
                             
                             <!-- Item Description -->
-                            <td style="padding: 16px; color: #1F2937; font-weight: 500; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $row['item_description'] }}">{{ $row['item_description'] }}</td>
+                            <td style="padding: 16px; vertical-align: middle; color: #1F2937; font-weight: 500; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $row['item_description'] }}">{{ $row['item_description'] }}</td>
                             
                             <!-- Amount -->
-                            <td style="padding: 16px; font-weight: 800; color: #111827; white-space: nowrap; font-family: monospace; font-size: 14px;">₹{{ $row['po_amount'] }}</td>
+                            <td style="padding: 16px; vertical-align: middle; font-weight: 800; color: #111827; white-space: nowrap; font-family: monospace; font-size: 14px;">₹{{ $row['po_amount'] }}</td>
                             
                             <!-- Remarks -->
-                            <td style="padding: 16px; color: #9CA3AF; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $row['remarks'] ?? '-' }}">{{ $row['remarks'] ?? '-' }}</td>
+                            <td style="padding: 16px; vertical-align: middle; color: #9CA3AF; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $row['remarks'] ?? '-' }}">{{ $row['remarks'] ?? '-' }}</td>
                             
                             <!-- Status Badge -->
-                            <td style="padding: 16px; text-align: center; white-space: nowrap;">
-                                <span style="background: {{ $badgeBg }}; color: {{ $badgeColor }}; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                            <td style="padding: 16px; vertical-align: middle; text-align: center; white-space: nowrap;">
+                                <span style="background: {{ $badgeBg }}; border: 1px solid {{ $badgeBorder }}; color: {{ $badgeColor }}; font-weight: 700; font-size: 12px; padding: 5px 14px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
                                     <span style="width: 6px; height: 6px; border-radius: 50%; background: {{ $dotColor }}; display: inline-block;"></span>
                                     {{ ucfirst($status) }}
                                 </span>
                             </td>
                             
                             <!-- PO Date -->
-                            <td style="padding: 16px; color: #6B7280; font-family: monospace; white-space: nowrap;">{{ !empty($row['po_date']) && $row['po_date'] !== '-' ? date('d-m-Y', strtotime($row['po_date'])) : '-' }}</td>
+                            <td style="padding: 16px; vertical-align: middle; color: #6B7280; font-family: monospace; white-space: nowrap;">{{ !empty($row['po_date']) && $row['po_date'] !== '-' ? date('d-m-Y', strtotime($row['po_date'])) : '-' }}</td>
                             
                             <!-- Actions Grid Buttons -->
-                            <td style="padding: 16px; text-align: center; white-space: nowrap;">
-                                <div style="display: flex; items-center: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
-                                    <!-- File Invoice Button -->
-                                    @if (isset($actions['viewPage']))
-                                        <a href="{{ $actions['viewPage'] }}"
-                                           style="background: #F3E8FF; border: 1px solid #DDD6FE; color: #7C3AED; font-weight: 700; font-size: 11px; padding: 5px 10px; border-radius: 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                                            👁️ {{ $viewBtnTitle }}
-                                        </a>
-                                    @endif
+                            <td style="padding: 16px; vertical-align: middle; text-align: center; white-space: nowrap;">
+                                <div style="display: inline-flex; align-items: center; gap: 8px;">
+                                    <!-- 2x2 Grid of Action Buttons -->
+                                    <div style="display: grid; grid-template-columns: repeat(2, auto); gap: 6px; align-items: center;">
+                                        <!-- File Invoice Button -->
+                                        @if (isset($actions['viewPage']))
+                                            <a href="{{ $actions['viewPage'] }}"
+                                               style="background: #F3E8FF; border: 1px solid #E9D5FF; color: #7C3AED; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+                                                👁️ {{ $viewBtnTitle }}
+                                            </a>
+                                        @endif
 
-                                    <!-- File PO Button -->
-                                    @if (isset($actions['file_po']))
-                                        <a href="{{ $actions['file_po'] }}"
-                                           style="background: #FFF7ED; border: 1px solid #FED7AA; color: #EA580C; font-weight: 700; font-size: 11px; padding: 5px 10px; border-radius: 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                                            📄 File PO
-                                        </a>
-                                    @endif
+                                        <!-- File PO Button -->
+                                        @if (isset($actions['file_po']))
+                                            <a href="{{ $actions['file_po'] }}"
+                                               style="background: #FFF7ED; border: 1px solid #FED7AA; color: #EA580C; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+                                                📄 File PO
+                                            </a>
+                                        @endif
 
-                                    <!-- Reopen Button -->
-                                    @if (isset($actions['pending']))
-                                        <form action="{{ $actions['pending']['route'] }}" method="POST" class="js-po-status-form" style="display: inline;">
-                                            @csrf
-                                            <input type="hidden" name="indent_id" value="{{ $actions['pending']['params']['indent_id'] }}">
-                                            <input type="hidden" name="department_id" value="{{ $actions['pending']['params']['department_id'] }}">
-                                            <input type="hidden" name="status" value="Pending">
-                                            <button type="button" data-action="Pending" onclick="confirmPOStatus(this)"
-                                                    style="background: #FFF7ED; border: 1px solid #FED7AA; color: #D97706; font-weight: 700; font-size: 11px; padding: 5px 10px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                                                🔓 Re-Open
-                                            </button>
-                                        </form>
-                                    @endif
+                                        <!-- Reopen Button -->
+                                        @if (isset($actions['pending']))
+                                            <form action="{{ $actions['pending']['route'] }}" method="POST" class="js-po-status-form" style="display: inline;">
+                                                @csrf
+                                                <input type="hidden" name="indent_id" value="{{ $actions['pending']['params']['indent_id'] }}">
+                                                <input type="hidden" name="department_id" value="{{ $actions['pending']['params']['department_id'] }}">
+                                                <input type="hidden" name="status" value="Pending">
+                                                <button type="button" data-action="Pending" onclick="confirmPOStatus(this)"
+                                                        style="background: #FFF7ED; border: 1px solid #FED7AA; color: #D97706; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+                                                    🔓 Re-Open
+                                                </button>
+                                            </form>
+                                        @endif
 
-                                    <!-- Close Button -->
-                                    @if (isset($actions['close']))
-                                        <form action="{{ $actions['close']['route'] }}" method="POST" class="js-po-status-form" style="display: inline;">
-                                            @csrf
-                                            <input type="hidden" name="indent_id" value="{{ $actions['close']['params']['indent_id'] }}">
-                                            <input type="hidden" name="department_id" value="{{ $actions['close']['params']['department_id'] }}">
-                                            <input type="hidden" name="status" value="Close">
-                                            <button type="button" data-action="Close" onclick="confirmPOStatus(this)"
-                                                    style="background: #F3F4F6; border: 1px solid #E5E7EB; color: #374151; font-weight: 700; font-size: 11px; padding: 5px 10px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                                                ⊗ Close
-                                            </button>
-                                        </form>
-                                    @endif
+                                        <!-- Close Button -->
+                                        @if (isset($actions['close']))
+                                            <form action="{{ $actions['close']['route'] }}" method="POST" class="js-po-status-form" style="display: inline;">
+                                                @csrf
+                                                <input type="hidden" name="indent_id" value="{{ $actions['close']['params']['indent_id'] }}">
+                                                <input type="hidden" name="department_id" value="{{ $actions['close']['params']['department_id'] }}">
+                                                <input type="hidden" name="status" value="Close">
+                                                <button type="button" data-action="Close" onclick="confirmPOStatus(this)"
+                                                        style="background: #F3F4F6; border: 1px solid #E5E7EB; color: #374151; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+                                                    ⊗ Close
+                                                </button>
+                                            </form>
+                                        @endif
 
-                                    <!-- Cancel Button -->
-                                    @if (isset($actions['cancel']))
-                                        <form action="{{ $actions['cancel']['route'] }}" method="POST" class="js-po-status-form" style="display: inline;">
-                                            @csrf
-                                            <input type="hidden" name="indent_id" value="{{ $actions['cancel']['params']['indent_id'] }}">
-                                            <input type="hidden" name="department_id" value="{{ $actions['cancel']['params']['department_id'] }}">
-                                            <input type="hidden" name="status" value="Cancel">
-                                            <button type="button" data-action="Cancel" onclick="confirmPOStatus(this)"
-                                                    style="background: #FEF2F2; border: 1px solid #FECDD3; color: #DC2626; font-weight: 700; font-size: 11px; padding: 5px 10px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                                                🗑️ Cancel
-                                            </button>
-                                        </form>
-                                    @endif
+                                        <!-- Cancel Button -->
+                                        @if (isset($actions['cancel']))
+                                            <form action="{{ $actions['cancel']['route'] }}" method="POST" class="js-po-status-form" style="display: inline;">
+                                                @csrf
+                                                <input type="hidden" name="indent_id" value="{{ $actions['cancel']['params']['indent_id'] }}">
+                                                <input type="hidden" name="department_id" value="{{ $actions['cancel']['params']['department_id'] }}">
+                                                <input type="hidden" name="status" value="Cancel">
+                                                <button type="button" data-action="Cancel" onclick="confirmPOStatus(this)"
+                                                        style="background: #FEF2F2; border: 1px solid #FECDD3; color: #DC2626; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+                                                    🗑️ Cancel
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
 
                                     <!-- 3-Dots Dropdown Trigger -->
-                                    <button type="button" style="background: transparent; border: none; font-size: 16px; font-weight: 700; color: #9CA3AF; cursor: pointer; padding: 0 4px;">
+                                    <button type="button" style="background: transparent; border: none; font-size: 16px; font-weight: 700; color: #9CA3AF; cursor: pointer; padding: 0 2px;">
                                         ⋮
                                     </button>
                                 </div>
