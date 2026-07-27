@@ -317,29 +317,37 @@
                                    style="background: #3B82F6; color: #FFFFFF; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                                     <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                     <span>{{ !empty($row->invoice_date) ? 'Update Invoice' : 'File Invoice / Goods Receipt' }}</span>
+                                <a href="{{ route('indentroview.createInvoiceById', $row->id) }}" 
+                                   style="background: #2563EB; color: #FFFFFF; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <span>File Invoice / Goods Receipt</span>
                                 </a>
 
                                 <button type="button" 
                                         onclick="document.getElementById('closePoModal_{{ $row->id }}').style.display='flex'" 
-                                        style="background: #FFF; color: #EF4444; border: 1px solid #FCA5A5; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                                    🔒 Close PO
+                                        style="background: #FFF; color: #EF4444; border: 1px solid #FCA5A5; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span>Close PO</span>
                                 </button>
                             @elseif(in_array($normSt, ['closed', 'close']))
                                 <a href="{{ route('indentroview.createInvoiceById', $row->id) }}" 
-                                   style="background: #F3F4F6; color: #374151; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                                    👁️ View Goods Receipt
+                                   style="background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <span>View Goods Receipt</span>
                                 </a>
 
                                 <form method="POST" action="{{ route('po-register.reopenPO', $row->id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to reopen this PO?');">
                                     @csrf
-                                    <button type="submit" style="background: #7C3AED; color: #FFFFFF; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; border: none;">
-                                        🔓 Reopen PO
+                                    <button type="submit" style="background: #4F46E5; color: #FFFFFF; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px;">
+                                        <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+                                        <span>Reopen PO</span>
                                     </button>
                                 </form>
                             @else
                                 <a href="{{ route('indentroview.createInvoiceById', $row->id) }}" 
-                                   style="background: #F3F4F6; color: #374151; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none;">
-                                    👁️ View Details
+                                   style="background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <span>View Details</span>
                                 </a>
                             @endif
                         </div>
