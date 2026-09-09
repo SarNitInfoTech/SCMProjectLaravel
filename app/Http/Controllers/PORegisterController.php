@@ -420,7 +420,7 @@ class PORegisterController extends Controller
                 $allCompleted = true;
 
                 foreach ($existingItems as $ex) {
-                    $desc = $ex['description'] ?? '';
+                    $desc = is_array($ex) ? ($ex['description'] ?? '') : (string)$ex;
                     $foundMatch = null;
                     foreach ($submittedItems as $sub) {
                         if (isset($sub['description']) && mb_strtolower(trim($sub['description'])) === mb_strtolower(trim($desc))) {
@@ -429,9 +429,9 @@ class PORegisterController extends Controller
                         }
                     }
 
-                    $req = (int)($ex['quantity_required'] ?? ($foundMatch['required'] ?? 0));
-                    $recRaw = $foundMatch ? (int)($foundMatch['received'] ?? 0) : (int)($ex['quantity_received'] ?? 0);
-                    $cancRaw = $foundMatch ? (int)($foundMatch['cancelled'] ?? 0) : (int)($ex['quantity_cancelled'] ?? 0);
+                    $req = (int)(is_array($ex) ? ($ex['quantity_required'] ?? ($foundMatch['required'] ?? 1)) : ($foundMatch['required'] ?? 1));
+                    $recRaw = $foundMatch ? (int)($foundMatch['received'] ?? 0) : (int)(is_array($ex) ? ($ex['quantity_received'] ?? 0) : 0);
+                    $cancRaw = $foundMatch ? (int)($foundMatch['cancelled'] ?? 0) : (int)(is_array($ex) ? ($ex['quantity_cancelled'] ?? 0) : 0);
 
                     // Clamp received and cancelled so they never exceed required quantity
                     $rec = $req > 0 ? min($req, max(0, $recRaw)) : max(0, $recRaw);
@@ -444,7 +444,7 @@ class PORegisterController extends Controller
 
                     $updatedItems[] = [
                         'description'        => $desc,
-                        'unit'               => $ex['unit'] ?? ($foundMatch['unit'] ?? ''),
+                        'unit'               => is_array($ex) ? ($ex['unit'] ?? ($foundMatch['unit'] ?? '')) : ($foundMatch['unit'] ?? ''),
                         'quantity_required'  => $req,
                         'quantity_received'  => $rec,
                         'quantity_cancelled' => $canc,
@@ -982,7 +982,11 @@ class PORegisterController extends Controller
 
         $poUpdated = DB::table('po_registers')->where('id', $id)->first();
         if ($poUpdated && $poUpdated->indent_id) {
-            self::syncIndentItemsBalance($poUpdated->indent_id);
+            try {
+                self::syncIndentItemsBalance($poUpdated->indent_id);
+            } catch (\Throwable $e) {
+                Log::error("Failed to sync indent items balance for indent_id={$poUpdated->indent_id}: " . $e->getMessage());
+            }
         }
 
         if ($affected === 0 && count($data) === 1) {
@@ -1238,12 +1242,12 @@ class PORegisterController extends Controller
         $allBalZero = true;
 
         foreach ($existingItems as $ex) {
-            $desc = $ex['description'] ?? '';
+            $desc = is_array($ex) ? ($ex['description'] ?? '') : (string) $ex;
             $dk   = mb_strtolower(trim($desc));
-            $req  = (int)($ex['quantity_required'] ?? 0);
-            $rec  = max((int)($ex['quantity_received'] ?? 0), (int)($allRecQtyMap[$dk] ?? 0));
-            $canc = max((int)($ex['quantity_cancelled'] ?? 0), (int)($allCancQtyMap[$dk] ?? 0));
-            $po   = (int)($allPoQtyMap[$dk] ?? 0);
+            $req  = (int) (is_array($ex) ? ($ex['quantity_required'] ?? 1) : 1);
+            $rec  = max((int) (is_array($ex) ? ($ex['quantity_received'] ?? 0) : 0), (int) ($allRecQtyMap[$dk] ?? 0));
+            $canc = max((int) (is_array($ex) ? ($ex['quantity_cancelled'] ?? 0) : 0), (int) ($allCancQtyMap[$dk] ?? 0));
+            $po   = (int) ($allPoQtyMap[$dk] ?? 0);
 
             // Remaining balance required for this item
             $bal = max(0, $req - ($rec + $canc));
@@ -1254,7 +1258,7 @@ class PORegisterController extends Controller
 
             $updatedIndentItems[] = [
                 'description'        => $desc,
-                'unit'               => $ex['unit'] ?? '',
+                'unit'               => is_array($ex) ? ($ex['unit'] ?? '') : '',
                 'quantity_required'  => $req,
                 'purchased_order'    => $po,
                 'quantity_received'  => $rec,
