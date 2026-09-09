@@ -871,38 +871,49 @@ class PORegisterController extends Controller
     public function updatePObyId(Request $request, int $id)
     {
         Gate::authorize('pos.edit');
-        // Same validation rules as store(), all nullable so you can send partial updates
+
+        $po = DB::table('po_registers')->where('id', $id)->first();
+        if (!$po) {
+            return back()->with('warning', 'Purchase Order not found.');
+        }
+
         $validated = $request->validate([
-            'indent_id' => 'nullable|integer',
-            'department_id' => 'nullable|string',
-            'po_date' => 'nullable|date',
-            'party_name' => 'nullable|string',
-            'po_wo_no' => 'nullable|string',
-            'po_amount' => 'nullable|numeric',
-            'debit_head' => 'nullable|string',
-            'item_description' => 'nullable|array',
-            'item_description.*' => 'nullable|string',
-            'expected_days' => 'nullable|integer',
-            'expected_date' => 'nullable|date',
-            'invoice_date' => 'nullable|date',
-            'receiving_date' => 'nullable|date',
-            'invoice' => 'nullable|string',
-            'delay_in_days' => 'nullable|integer',
-            'store_indent_no' => 'nullable|string',
-            'remarks' => 'nullable|string',
-            'is_mandatory' => 'nullable|string',
+            'indent_id'          => 'nullable|integer',
+            'department_id'      => 'nullable|string',
+            'status'             => 'nullable|string',
+            'po_date'            => 'nullable|date',
+            'party_name'         => 'nullable|string',
+            'po_wo_no'           => 'nullable|string',
+            'po_amount'          => 'nullable|numeric',
+            'debit_head'         => 'nullable|string',
+            'item_description'   => 'nullable',
+            'po_items'           => 'nullable|array',
+            'expected_days'      => 'nullable',
+            'expected_date'      => 'nullable|date',
+            'invoice_date'       => 'nullable|date',
+            'receiving_date'     => 'nullable',
+            'invoice'            => 'nullable|string',
+            'delay_in_days'      => 'nullable|integer',
+            'store_indent_no'    => 'nullable|string',
+            'remarks'            => 'nullable|string',
+            'is_mandatory'       => 'nullable|string',
         ]);
 
-        // Helper to format YYYY-MM-DD if present
-        $fmt = fn(string $k) => $request->filled($k)
-            ? Carbon::parse($request->input($k))->format('Y-m-d')
-            : null;
+        $fmt = function (string $k) use ($request) {
+            if (!$request->filled($k)) {
+                return null;
+            }
+            try {
+                return Carbon::parse($request->input($k))->format('Y-m-d');
+            } catch (\Throwable $e) {
+                return $request->input($k);
+            }
+        };
 
-        // Build payload only with provided fields (no accidental nulling)
         $data = [];
 
         foreach ([
-            'indent_id', 'department_id', 'party_name', 'po_wo_no',
+            'indent_id', 'department_id', 'status', 'party_name', 'po_wo_no',
             'po_amount', 'debit_head', 'invoice', 'delay_in_days',
             'store_indent_no', 'remarks', 'is_mandatory'
         ] as $k) {
@@ -911,47 +922,73 @@ class PORegisterController extends Controller
             }
         }
 
-        // Dates (only if provided)
         foreach (['po_date', 'expected_date', 'invoice_date', 'receiving_date'] as $k) {
             if ($request->filled($k)) {
                 $data[$k] = $fmt($k);
             }
         }
 
-        // expected_days is varchar in your table; cast to string if provided
         if ($request->has('expected_days')) {
             $data['expected_days'] = $request->filled('expected_days')
                 ? (string) $request->input('expected_days')
                 : null;
         }
 
-        // item_description -> JSON if provided
-        if ($request->has('item_description')) {
-            $data['item_description'] = $request->has('item_description')
-                ? json_encode($request->input('item_description'))
-                : null;
+        // Build structured po_items breakdown array (matching store() behavior)
+        $poItems = [];
+        if ($request->has('po_items') && is_array($request->input('po_items'))) {
+            foreach ($request->input('po_items') as $it) {
+                if (!empty($it['selected'])) {
+                    $req = (int)($it['quantity_required'] ?? 1);
+                    $filingQty = (int)($it['po_quantity'] ?? $req);
+                    $rec = (int)($it['quantity_received'] ?? 0);
+                    $bal = max(0, $req - ($rec + $filingQty));
+                    $poItems[] = [
+                        'description'       => $it['description'] ?? '',
+                        'unit'              => $it['unit'] ?? '',
+                        'quantity'          => $filingQty,
+                        'quantity_required' => $req,
+                        'quantity_received' => $rec,
+                        'quantity_balance'  => $bal,
+                    ];
+                }
+            }
         }
 
-        // Always touch updated_at
+        if (empty($poItems) && $request->has('item_description')) {
+            $rawDescs = (array) $request->input('item_description');
+            foreach ($rawDescs as $d) {
+                if (is_array($d) && isset($d['description'])) {
+                    $poItems[] = $d;
+                } elseif (is_string($d)) {
+                    $poItems[] = [
+                        'description' => $d,
+                        'quantity'    => 1,
+                    ];
+                }
+            }
+        }
+
+        if (!empty($poItems)) {
+            $data['item_description'] = json_encode($poItems);
+        }
+
         $data['updated_at'] = now();
 
-        // If nothing to update, bounce politely
-        if (count($data) === 1 && array_key_exists('updated_at', $data)) {
-            return back()->with('info', 'No changes submitted.');
-        }
-
+        $prevStatus = $po->status;
         $affected = DB::table('po_registers')->where('id', $id)->update($data);
 
-        $po = DB::table('po_registers')->where('id', $id)->first();
-        if ($po && $po->indent_id) {
-            self::syncIndentItemsBalance($po->indent_id);
+        self::logPOAction($id, 'updated', $prevStatus, $data['status'] ?? $prevStatus, null, ['items' => $poItems]);
+
+        $poUpdated = DB::table('po_registers')->where('id', $id)->first();
+        if ($poUpdated && $poUpdated->indent_id) {
+            self::syncIndentItemsBalance($poUpdated->indent_id);
         }
 
-        if ($affected === 0) {
-            // Could be "no row found" or "values identical" — up to you how to message
+        if ($affected === 0 && count($data) === 1) {
             return redirect()
                 ->route('po-register.index')
-                ->with('warning', 'No changes were applied. (Record may not exist or values are unchanged.)');
+                ->with('info', 'No changes submitted.');
         }
 
         return redirect()
