@@ -1003,9 +1003,13 @@ class PORegisterController extends Controller
     {
         //
     }
+    public function updateById(Request $request, int $id)
+    {
+        return $this->updatePObyId($request, $id);
+    }
+
     public function update(Request $request, int $id)
     {
-        // delegate to your existing implementation
         return $this->updatePObyId($request, $id);
     }
     public function updateStatus(Request $request)
