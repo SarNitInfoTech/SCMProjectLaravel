@@ -17,7 +17,8 @@ use App\Http\Controllers\{
     NotificationController,
     UnitController,
     RolePermissionController,
-    BulkUploadController
+    BulkUploadController,
+    MegaSearchController
 };
 
 // =======================
@@ -81,10 +82,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/create', [IndentController::class, 'create'])->name('create');
         Route::post('/store', [IndentController::class, 'store'])->name('store');
         Route::post('/generate-token', [IndentController::class, 'generateToken'])->name('token');
+        Route::delete('/ticket/{id}', [IndentController::class, 'destroyTicket'])->name('ticket.destroy');
     });
 
     Route::get('/indent/form', [IndentController::class, 'createForm'])->name('indent.create.form');
     Route::get('/indent', [IndentController::class, 'index'])->name('indent.index');
+    Route::get('/indent/{id}/edit', [IndentController::class, 'editForm'])->name('indent.edit');
 
     // Indent Register Routes
     Route::prefix('indent-register')->name('indent-register.')->group(function () {
@@ -92,6 +95,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [IndentController::class, 'registerStore'])->name('store');
         Route::get('/{id}/edit', [IndentController::class, 'editForm'])->name('edit');
         Route::put('/{id}', [IndentController::class, 'indentRegisterUpdate'])->name('indentRegisterUpdate');
+        Route::post('/cancel-item', [IndentController::class, 'cancelItem'])->name('cancelItem');
     });
 
 
@@ -111,6 +115,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/po-register/status-close', [PORegisterController::class, 'statusClose'])->name('po-register.statusClose');
     Route::post('/po-register/status-cancel', [PORegisterController::class, 'statusCancel'])->name('po-register.statusCancel');
     Route::post('/po-register/{id}/close', [PORegisterController::class, 'closePO'])->name('po-register.closePO');
+    Route::post('/po-register/{id}/cancel', [PORegisterController::class, 'cancelPO'])->name('po-register.cancelPO');
     Route::post('/po-register/{id}/reopen', [PORegisterController::class, 'reopenPO'])->name('po-register.reopenPO');
     Route::get('/po-register/{id}/audit-logs', [PORegisterController::class, 'getAuditLogs'])->name('po-register.auditLogs');
     Route::put('/po-register/{id}', [PORegisterController::class, 'updateInvoice'])->name('po-register.updateInvoice');
@@ -174,8 +179,10 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('report')->name('report.')->group(function () {
         Route::get('/view', [ReportController::class, 'viewReport'])->name('view');
         Route::get('/view-all-indent', [ReportController::class, 'viewAllIndent'])->name('viewAllIndent');
+        Route::get('/indents/export', [ReportController::class, 'exportIndents'])->name('indents.export');
         Route::get('/export-excel', [ReportController::class, 'exportExcel'])->name('export.excel');
     });
+    Route::get('/reports/indents/export', [ReportController::class, 'exportIndents'])->name('reports.indents.export');
     Route::get('/report/view', [ReportController::class, 'viewReport'])->name('reports.po');
     Route::get('/report/view-all-indent', [ReportController::class, 'viewAllIndent'])->name('reports.viewAllIndent');
     Route::get('/report/view-all-indent', [ReportController::class, 'viewAllIndent'])->name('report.viewAllIndent');
@@ -198,6 +205,11 @@ Route::get('/reports/indents-pos/filter', [ReportController::class, 'filterAllIn
     Route::get('/bulk-upload', [BulkUploadController::class, 'index'])->name('bulk-upload.index');
     Route::post('/bulk-upload', [BulkUploadController::class, 'store'])->name('bulk-upload.store');
     Route::get('/bulk-upload/template/{module}', [BulkUploadController::class, 'downloadTemplate'])->name('bulk-upload.template');
+
+    // -----------------------
+    // 🔍 Mega Search (Omnibox)
+    // -----------------------
+    Route::get('/mega-search/query', [MegaSearchController::class, 'search'])->name('mega-search.query');
 
     // -----------------------
     // 📦 Inventory Management

@@ -51,7 +51,7 @@
                 @if(request('date_to')) <input type="hidden" name="date_to" value="{{ request('date_to') }}"> @endif
 
                 <!-- Search Input -->
-                <div style="position: relative; width: 340px;">
+                <div style="position: relative; width: 300px;">
                     <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8;">
                         <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </span>
@@ -59,12 +59,22 @@
                            style="width: 100%; padding: 9px 12px 9px 38px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13px; outline: none; box-sizing: border-box;">
                 </div>
 
+                <!-- Quick Item Status Dropdown -->
+                <select name="item_status" onchange="this.form.submit()" style="padding: 9px 12px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13px; font-weight: 600; color: #334155; outline: none; cursor: pointer;">
+                    <option value="">All Item Statuses</option>
+                    <option value="pending" {{ strtolower(request('item_status')) === 'pending' ? 'selected' : '' }}>Item: Pending</option>
+                    <option value="po created" {{ in_array(strtolower(request('item_status')), ['po created', 'ordered']) ? 'selected' : '' }}>Item: PO Created</option>
+                    <option value="partially received" {{ strtolower(request('item_status')) === 'partially received' ? 'selected' : '' }}>Item: Partially Received</option>
+                    <option value="completed" {{ in_array(strtolower(request('item_status')), ['completed', 'received']) ? 'selected' : '' }}>Item: Completed</option>
+                    <option value="cancelled" {{ in_array(strtolower(request('item_status')), ['cancelled', 'cancel']) ? 'selected' : '' }}>Item: Cancelled</option>
+                </select>
+
                 <!-- Right Drawer Filter Button -->
                 <button type="button" onclick="openRightFilterDrawer()" 
                         style="background: #FFFFFF; border: 1px solid #C7D2FE; color: #4F46E5; font-weight: 700; padding: 9px 16px; border-radius: 10px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                     <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                     <span>Filter</span>
-                    @if(request()->anyFilled(['department_id', 'status', 'party_name', 'date_from', 'date_to']))
+                    @if(request()->anyFilled(['department_id', 'status', 'item_status', 'party_name', 'date_from', 'date_to']))
                         <span style="width: 8px; height: 8px; border-radius: 50%; background: #4F46E5; display: inline-block;"></span>
                     @endif
                 </button>
@@ -74,7 +84,7 @@
                     Search
                 </button>
 
-                @if(request()->anyFilled(['search', 'department_id', 'status', 'party_name', 'date_from', 'date_to']))
+                @if(request()->anyFilled(['search', 'department_id', 'status', 'item_status', 'party_name', 'date_from', 'date_to']))
                     <a href="{{ route('indentroview.index') }}" style="padding: 9px 14px; font-size: 13px; font-weight: 600; background: #F1F5F9; color: #475569; border-radius: 10px; text-decoration: none;">Reset</a>
                 @endif
             </form>
@@ -128,8 +138,42 @@
                             <!-- Party Name -->
                             <td style="padding: 16px; vertical-align: middle; color: #0F172A; font-weight: 700; white-space: nowrap;">{{ $row['party_name'] && $row['party_name'] !== '-' ? $row['party_name'] : '-' }}</td>
                             
-                            <!-- Item Description -->
-                            <td style="padding: 16px; vertical-align: middle; color: #334155; font-weight: 500; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $row['item_description'] }}">{{ $row['item_description'] }}</td>
+                            <!-- Item Description & Status -->
+                            <td style="padding: 16px; vertical-align: middle;">
+                                @if (!empty($row['items']) && count($row['items']) > 0)
+                                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                                        @foreach ($row['items'] as $it)
+                                            @php
+                                                $ist = strtolower($it['status'] ?? 'pending');
+                                                $ibg = '#FEF3C7'; $icol = '#B45309'; $iborder = '#FDE68A';
+                                                if (in_array($ist, ['cancelled', 'cancel'])) {
+                                                    $ibg = '#FEF2F2'; $icol = '#DC2626'; $iborder = '#FECDD3';
+                                                } elseif (in_array($ist, ['completed', 'received'])) {
+                                                    $ibg = '#ECFDF5'; $icol = '#047857'; $iborder = '#A7F3D0';
+                                                } elseif ($ist === 'partially received') {
+                                                    $ibg = '#F3E8FF'; $icol = '#7C3AED'; $iborder = '#E9D5FF';
+                                                } elseif (in_array($ist, ['po created', 'ordered'])) {
+                                                    $ibg = '#EFF6FF'; $icol = '#2563EB'; $iborder = '#BFDBFE';
+                                                }
+                                                $reqVal = $it['quantity_required'] ?? '-';
+                                                $cancVal = (float)($it['quantity_cancelled'] ?? 0);
+                                                $recVal = (float)($it['quantity_received'] ?? 0);
+                                            @endphp
+                                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; background: #FAFAFA; border: 1px solid #F1F5F9; padding: 4px 8px; border-radius: 6px;">
+                                                <span style="font-weight: 700; color: #1E293B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $it['description'] }}">
+                                                    {{ $it['description'] }}
+                                                    <span style="font-size: 11px; font-weight: 500; color: #64748B;">(Req: {{ $reqVal }}{{ $recVal > 0 ? ', Rec: ' . $recVal : '' }}{{ $cancVal > 0 ? ', Canc: ' . $cancVal : '' }})</span>
+                                                </span>
+                                                <span style="background: {{ $ibg }}; border: 1px solid {{ $iborder }}; color: {{ $icol }}; font-weight: 700; font-size: 10.5px; padding: 2px 7px; border-radius: 12px; white-space: nowrap;">
+                                                    {{ $it['status'] }}
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span style="color: #64748B; font-weight: 500;">{{ $row['item_description'] }}</span>
+                                @endif
+                            </td>
                             
                             <!-- Amount -->
                             <td style="padding: 16px; vertical-align: middle; font-weight: 800; color: #0F172A; white-space: nowrap; font-family: monospace; font-size: 14px;">₹{{ $row['po_amount'] }}</td>
@@ -151,7 +195,16 @@
                             <!-- Actions Grid Buttons with SVG Google/Material Icons -->
                             <td style="padding: 16px; vertical-align: middle; text-align: center; white-space: nowrap;">
                                 <div style="display: inline-flex; align-items: center; gap: 8px;">
-                                    <div style="display: grid; grid-template-columns: repeat(2, auto); gap: 6px; align-items: center;">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; max-width: 280px;">
+                                        <!-- Edit PO Button -->
+                                        @if (isset($actions['edit']))
+                                            <a href="{{ $actions['edit'] }}"
+                                               style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #2563EB; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                                                <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                <span>Edit PO</span>
+                                            </a>
+                                        @endif
+
                                         <!-- File Invoice Button -->
                                         @if (isset($actions['viewPage']))
                                             <a href="{{ $actions['viewPage'] }}"
@@ -305,6 +358,19 @@
                     <option value="pending" {{ strtolower(request('status')) === 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="closed" {{ strtolower(request('status')) === 'closed' ? 'selected' : '' }}>Closed</option>
                     <option value="cancel" {{ strtolower(request('status')) === 'cancel' ? 'selected' : '' }}>Cancelled</option>
+                </select>
+            </div>
+
+            <!-- Item Status Filter -->
+            <div style="margin-bottom: 18px;">
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px;">Item Status</label>
+                <select name="item_status" style="width: 100%; padding: 10px 12px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13px; outline: none; background: #F8FAFC;">
+                    <option value="">All Item Statuses</option>
+                    <option value="pending" {{ strtolower(request('item_status')) === 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="po created" {{ in_array(strtolower(request('item_status')), ['po created', 'ordered']) ? 'selected' : '' }}>PO Created</option>
+                    <option value="partially received" {{ strtolower(request('item_status')) === 'partially received' ? 'selected' : '' }}>Partially received</option>
+                    <option value="completed" {{ in_array(strtolower(request('item_status')), ['completed', 'received']) ? 'selected' : '' }}>Completed</option>
+                    <option value="cancelled" {{ in_array(strtolower(request('item_status')), ['cancelled', 'cancel']) ? 'selected' : '' }}>Cancelled</option>
                 </select>
             </div>
 

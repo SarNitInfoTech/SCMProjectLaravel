@@ -45,6 +45,29 @@ class IndentController extends Controller
         $query->whereRaw('LOWER(indent_registers.status) = ?', [mb_strtolower(trim($request->status))]);
     }
 
+    if ($request->filled('item_status')) {
+        $st = mb_strtolower(trim($request->item_status));
+        $query->where(function ($q) use ($st) {
+            $q->whereRaw('LOWER(indent_registers.items_description) LIKE ?', ['%"status":"' . $st . '"%'])
+              ->orWhereRaw('LOWER(indent_registers.items_description) LIKE ?', ['%"status": "' . $st . '"%']);
+
+            if (in_array($st, ['cancelled', 'cancel'])) {
+                $q->orWhereRaw('indent_registers.items_description REGEXP ?', ['"quantity_cancelled":\s*([1-9]|0\.[0-9]*[1-9])']);
+            } elseif (in_array($st, ['po created', 'ordered'])) {
+                $q->orWhereRaw('LOWER(indent_registers.items_description) LIKE ?', ['%"status":"ordered"%'])
+                  ->orWhereRaw('LOWER(indent_registers.items_description) LIKE ?', ['%"status":"po created"%']);
+            } elseif (in_array($st, ['completed', 'received'])) {
+                $q->orWhereRaw('LOWER(indent_registers.items_description) LIKE ?', ['%"status":"completed"%'])
+                  ->orWhereRaw('LOWER(indent_registers.items_description) LIKE ?', ['%"status":"received"%']);
+            } elseif ($st === 'pending') {
+                $q->orWhere(function ($sub) {
+                    $sub->whereRaw('indent_registers.items_description NOT LIKE ?', ['%"status":%'])
+                        ->whereRaw('LOWER(indent_registers.status) = "pending"');
+                });
+            }
+        });
+    }
+
     if ($request->filled('date_from')) {
         $query->whereDate('indent_registers.indent_date', '>=', $request->date_from);
     }
@@ -79,8 +102,36 @@ class IndentController extends Controller
 
     // Format rows
     $rows = $registers->map(function ($reg) {
-        $items = json_decode($reg->items_description, true) ?? [];
-        $itemDescriptions = collect($items)->pluck('description')->filter()->implode(', ');
+        $rawItems = json_decode($reg->items_description, true) ?? [];
+        $processedItems = array_map(function ($it) {
+            $desc = $it['description'] ?? '-';
+            $req  = (float) ($it['quantity_required'] ?? 1);
+            $rec  = (float) ($it['quantity_received'] ?? 0);
+            $canc = (float) ($it['quantity_cancelled'] ?? 0);
+            $po   = (float) ($it['purchased_order'] ?? 0);
+            $bal  = isset($it['quantity_balance']) ? (float) $it['quantity_balance'] : max(0, $req - ($rec + $canc));
+
+            $st = $it['status'] ?? null;
+            if (!$st) {
+                if ($canc >= $req - 0.0001 || ($canc > 0 && $bal <= 0.0001 && $rec <= 0.0001)) {
+                    $st = 'Cancelled';
+                } elseif (($rec >= $req - 0.0001 || ($bal <= 0.0001 && ($rec + $canc) >= $req - 0.0001)) && $req > 0) {
+                    $st = 'Completed';
+                } elseif ($rec > 0) {
+                    $st = 'Partially Received';
+                } elseif ($po > 0) {
+                    $st = 'PO Created';
+                } else {
+                    $st = 'Pending';
+                }
+            }
+
+            $it['status'] = ucfirst($st);
+            $it['quantity_balance'] = round($bal, 4);
+            return $it;
+        }, is_array($rawItems) ? $rawItems : []);
+
+        $itemDescriptions = collect($processedItems)->pluck('description')->filter()->implode(', ');
 
         return [
             'id' => $reg->id,
@@ -89,6 +140,7 @@ class IndentController extends Controller
             'department_id' => $reg->department_id,
             'project' => $reg->project,
             'date' => $reg->date,
+            'items' => $processedItems,
             'item_description' => $itemDescriptions ?: '-',
             'remarks' => $reg->remarks ?? '-',
             'status' => ucfirst($reg->status ?? 'Pending'),
@@ -197,6 +249,7 @@ public function create(Request $request)
         // 3) Keep only tickets not yet present in indent_registers
         ->whereNull('ir.id')
         ->select([
+            'it.id as ticket_id',
             'it.indent_id',
             'it.department_id',
             'd.name as department_name',
@@ -231,12 +284,39 @@ public function create(Request $request)
             'department_id'   => $row['department_id'],
             'department_name' => $row['department_name'],
         ]);
+        $row['delete_action'] = route('indent.ticket.destroy', $row['ticket_id']);
         return $row;
     });
 
     return view('pages.indent.generateIndent.generateIndent',
         compact('departments', 'items', 'title', 'columns', 'rows', 'paginated'));
 }
+
+    /**
+     * Delete an allocated Draft Indent Ticket.
+     */
+    public function destroyTicket($id)
+    {
+        $ticket = IndentTicket::find($id);
+        if (!$ticket) {
+            return redirect()->back()->with('warning', 'Draft indent ticket not found.');
+        }
+
+        $department = Department::find($ticket->department_id);
+        $deptName = $department ? $department->name : null;
+        $alreadyInRegister = IndentRegister::where('indent_id', $ticket->indent_id)
+            ->when($deptName, fn($q) => $q->where('indent_department', $deptName))
+            ->exists();
+
+        if ($alreadyInRegister) {
+            return redirect()->back()->with('warning', "Cannot delete allocated ID #{$ticket->indent_id} because it has already been filed in the Indent Register.");
+        }
+
+        $indentId = $ticket->indent_id;
+        $ticket->delete();
+
+        return redirect()->back()->with('success', "Allocated Indent Ticket ID #{$indentId} has been successfully deleted.");
+    }
 
     public function store(Request $request)
     {
@@ -386,13 +466,13 @@ public function create(Request $request)
     $items = [];
 
     foreach ($request->items as $item) {
-        $req = (int) ($item['required'] ?? 0);
-        $recRaw = (int) ($item['received'] ?? 0);
-        $cancRaw = (int) ($item['cancelled'] ?? 0);
+        $req = (float) ($item['required'] ?? 0);
+        $recRaw = (float) ($item['received'] ?? 0);
+        $cancRaw = (float) ($item['cancelled'] ?? 0);
 
         $rec = $req > 0 ? min($req, max(0, $recRaw)) : max(0, $recRaw);
         $canc = $req > 0 ? min(max(0, $req - $rec), max(0, $cancRaw)) : max(0, $cancRaw);
-        $bal = max(0, $req - ($rec + $canc));
+        $bal = round(max(0, $req - ($rec + $canc)), 4);
         $items[] = [
             'description'        => $item['description'] ?? '',
             'unit'               => $item['unit'] ?? '',
@@ -400,6 +480,7 @@ public function create(Request $request)
             'quantity_received'  => $rec,
             'quantity_cancelled' => $canc,
             'quantity_balance'   => $bal,
+            'status'             => ($bal <= 0.0001 && $canc >= $req && $req > 0) ? 'Cancelled' : 'Pending',
         ];
     }
 
@@ -444,13 +525,19 @@ public function create(Request $request)
     $processedItems = [];
 
     foreach ($items as $item) {
-        $req = (int)($item['required'] ?? 0);
-        $recRaw = (int)($item['received'] ?? 0);
-        $cancRaw = (int)($item['cancelled'] ?? 0);
+        $req = (float)($item['required'] ?? 0);
+        $recRaw = (float)($item['received'] ?? 0);
+        $cancRaw = (float)($item['cancelled'] ?? 0);
 
         $rec = $req > 0 ? min($req, max(0, $recRaw)) : max(0, $recRaw);
         $canc = $req > 0 ? min(max(0, $req - $rec), max(0, $cancRaw)) : max(0, $cancRaw);
-        $bal = max(0, $req - ($rec + $canc));
+        $bal = round(max(0, $req - ($rec + $canc)), 4);
+
+        $st = $item['status'] ?? null;
+        if (!$st) {
+            $st = ($bal <= 0.0001 && $canc >= $req && $req > 0) ? 'Cancelled' : (($rec >= $req - 0.0001 || ($bal <= 0.0001 && ($rec + $canc) >= $req - 0.0001)) && $req > 0 ? 'Completed' : ($rec > 0 ? 'Partially Received' : 'Pending'));
+        }
+
         $processedItems[] = [
             'description'        => $item['description'] ?? '',
             'unit'               => $item['unit'] ?? '',
@@ -458,6 +545,7 @@ public function create(Request $request)
             'quantity_received'  => $rec,
             'quantity_cancelled' => $canc,
             'quantity_balance'   => $bal,
+            'status'             => ucfirst($st),
         ];
     }
 
@@ -472,6 +560,109 @@ public function create(Request $request)
     return redirect()->route('indent.index')->with('success', 'Indent updated successfully!');
 }
 
+    /**
+     * Cancel an individual item from an indent.
+     */
+    public function cancelItem(Request $request)
+    {
+        $request->validate([
+            'indent_id'        => 'required',
+            'item_description' => 'required|string',
+            'cancel_qty'       => 'nullable|numeric|min:0.001',
+            'reason'           => 'nullable|string',
+        ]);
 
-    
+        $indent = IndentRegister::where('indent_id', $request->indent_id)->first();
+        if (!$indent) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Indent not found.'], 404);
+            }
+            return redirect()->back()->with('warning', 'Indent not found.');
+        }
+
+        $items = json_decode($indent->items_description, true);
+        if (!is_array($items) || empty($items)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No items found on this indent.'], 400);
+            }
+            return redirect()->back()->with('warning', 'No items found on this indent.');
+        }
+
+        $targetDesc = mb_strtolower(trim($request->item_description));
+        $itemFound = false;
+        $allBalZero = true;
+        $allCancelled = true;
+
+        $updatedItems = [];
+        foreach ($items as $it) {
+            $desc = $it['description'] ?? '';
+            $currentDesc = mb_strtolower(trim($desc));
+
+            $req  = (float) ($it['quantity_required'] ?? 1);
+            $rec  = (float) ($it['quantity_received'] ?? 0);
+            $canc = (float) ($it['quantity_cancelled'] ?? 0);
+            $po   = (float) ($it['purchased_order'] ?? 0);
+            $bal  = isset($it['quantity_balance']) ? (float) $it['quantity_balance'] : max(0, $req - ($rec + $canc));
+
+            if ($currentDesc === $targetDesc) {
+                $itemFound = true;
+                $remToCancel = max(0, $req - ($rec + $canc));
+                $cancelQty = $request->filled('cancel_qty') ? min($remToCancel, (float) $request->cancel_qty) : $remToCancel;
+
+                $canc = round($canc + $cancelQty, 4);
+                $bal  = round(max(0, $req - ($rec + $canc)), 4);
+                $it['quantity_cancelled'] = $canc;
+                $it['quantity_balance']   = $bal;
+                $it['status']             = ($bal <= 0.0001 && $rec <= 0.0001) ? 'Cancelled' : ($rec > 0 ? ($bal <= 0.0001 ? 'Completed' : 'Partially Received') : 'Pending');
+                if ($request->filled('reason')) {
+                    $it['cancel_reason'] = $request->reason;
+                }
+            }
+
+            $currentBal = (float) ($it['quantity_balance'] ?? $bal);
+            if ($currentBal > 0.0001) {
+                $allBalZero = false;
+            }
+            $currentStatus = strtolower($it['status'] ?? '');
+            if (!in_array($currentStatus, ['cancelled', 'cancel'])) {
+                $allCancelled = false;
+            }
+
+            $updatedItems[] = $it;
+        }
+
+        if (!$itemFound) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Item not found in indent.'], 404);
+            }
+            return redirect()->back()->with('warning', 'Item not found in indent.');
+        }
+
+        $indent->items_description = json_encode($updatedItems);
+        if ($allCancelled) {
+            $indent->status = 'Cancel';
+        } elseif ($allBalZero) {
+            $indent->status = 'Close';
+        }
+        $indent->save();
+
+        Notification::create([
+            'title'     => "Item '{$request->item_description}' Cancelled on Indent {$indent->indent_id}",
+            'link'      => route('indent.index'),
+            'icon'      => 'la la-times-circle',
+            'bg_color'  => 'bg-danger',
+            'is_read'   => false,
+        ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success'       => true,
+                'message'       => "Item '{$request->item_description}' cancelled successfully.",
+                'indent_status' => $indent->status,
+                'all_cancelled' => $allCancelled,
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Item '{$request->item_description}' cancelled successfully.");
+    }
 }

@@ -45,7 +45,18 @@
       </div>
 
       <!-- Action Buttons depending on status -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <a href="{{ route('po-register.edit', $po->id) }}" class="ti-btn ti-btn-primary text-xs font-semibold px-3 py-1.5 flex items-center gap-1">
+          <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          <span>Edit PO</span>
+        </a>
+        <a href="{{ route('indent.edit', $po->indent_id) }}" class="ti-btn ti-btn-light text-xs font-semibold px-3 py-1.5 flex items-center gap-1">
+          <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          <span>Edit Indent</span>
+        </a>
+        <a href="{{ route('po-register.viewByIndent', ['indent_id' => $po->indent_id, 'department_id' => $po->department_id]) }}" class="ti-btn ti-btn-light text-xs font-semibold px-3 py-1.5 flex items-center gap-1">
+          <span>Indent Summary</span>
+        </a>
         @if(in_array($normStatus, ['open', 'pending', 'partially received', 'reopened']))
           <button type="button" onclick="document.getElementById('closePoModal_{{ $po->id }}').classList.remove('hidden')" class="ti-btn ti-btn-danger text-xs font-semibold px-3 py-1.5">
             🔒 Close PO
@@ -158,11 +169,11 @@
                 <tbody>
                     @foreach($indentItems as $idx => $item)
                         @php
-                            $req = (int)($item['quantity_required'] ?? 0);
-                            $poQty = (int)($item['po_quantity'] ?? $item['quantity'] ?? $req);
-                            $rec = (int)($item['quantity_received'] ?? 0);
-                            $canc = (int)($item['quantity_cancelled'] ?? 0);
-                            $bal = max(0, $poQty - ($rec + $canc));
+                            $req = (float)($item['quantity_required'] ?? 0);
+                            $poQty = (float)($item['po_quantity'] ?? $item['quantity'] ?? $req);
+                            $rec = (float)($item['quantity_received'] ?? 0);
+                            $canc = (float)($item['quantity_cancelled'] ?? 0);
+                            $bal = round(max(0, $poQty - ($rec + $canc)), 4);
                         @endphp
                         <tr class="border-b item-qty-row">
                             <td class="p-2 font-medium">
@@ -182,6 +193,7 @@
                                        name="items[{{ $idx }}][received]" 
                                        value="{{ $rec }}" 
                                        min="0" 
+                                       step="any"
                                        max="{{ $poQty > 0 ? $poQty : 999999 }}"
                                        class="form-control text-center js-qty-rec w-full"
                                        {{ $isReadOnly ? 'disabled' : '' }}>
@@ -191,6 +203,7 @@
                                        name="items[{{ $idx }}][cancelled]" 
                                        value="{{ $canc }}" 
                                        min="0" 
+                                       step="any"
                                        max="{{ $poQty > 0 ? $poQty : 999999 }}"
                                        class="form-control text-center js-qty-canc w-full text-red-600 font-semibold"
                                        placeholder="0"
@@ -307,9 +320,9 @@
         const balEl = row.querySelector('.js-qty-bal');
 
         function updateBalance() {
-            const req = parseInt(reqEl?.value || 0, 10);
-            let rec = parseInt(recEl?.value || 0, 10);
-            let canc = parseInt(cancEl?.value || 0, 10);
+            const req = parseFloat(reqEl?.value || 0);
+            let rec = parseFloat(recEl?.value || 0);
+            let canc = parseFloat(cancEl?.value || 0);
 
             if (isNaN(rec) || rec < 0) rec = 0;
             if (isNaN(canc) || canc < 0) canc = 0;
@@ -322,18 +335,18 @@
 
             // Clamp cancelled quantity so received + cancelled cannot exceed required quantity
             if (req > 0 && (rec + canc) > req) {
-                canc = req - rec;
+                canc = parseFloat((req - rec).toFixed(4));
                 if (cancEl) cancEl.value = canc;
             }
 
-            const bal = Math.max(0, req - (rec + canc));
+            const bal = parseFloat(Math.max(0, req - (rec + canc)).toFixed(4));
 
             if (balEl) {
-                if (bal > 0) {
+                if (bal > 0.0001) {
                     balEl.textContent = bal + ' remaining';
                     balEl.className = 'js-qty-bal font-bold text-orange-600';
                 } else {
-                    balEl.textContent = '0 (' + (canc > 0 ? 'Closed: ' + canc + ' Cancelled' : 'Fully Accounted') + ')';
+                    balEl.textContent = '0 (' + (canc > 0.0001 ? 'Closed: ' + canc + ' Cancelled' : 'Fully Accounted') + ')';
                     balEl.className = 'js-qty-bal font-bold text-green-600';
                 }
             }

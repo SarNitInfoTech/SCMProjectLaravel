@@ -60,7 +60,7 @@
                     <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                         <th style="padding: 14px 20px; width: 180px; vertical-align: middle;">INDENT TICKET ID <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 20px; vertical-align: middle;">DEPARTMENT NAME <span style="color:#CBD5E1;">↕</span></th>
-                        <th style="padding: 14px 20px; width: 220px; text-align: center; vertical-align: middle;">ACTION</th>
+                        <th style="padding: 14px 20px; width: 260px; text-align: center; vertical-align: middle;">ACTION</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,11 +92,26 @@
                                 </div>
                             </td>
                             <td style="padding: 16px 20px; vertical-align: middle; text-align: center; white-space: nowrap;">
-                                <a href="{{ $row['action'] }}" 
-                                   style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-weight: 700; font-size: 12px; padding: 7px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    <span>Generate Form</span>
-                                </a>
+                                <div style="display: inline-flex; align-items: center; gap: 8px;">
+                                    <a href="{{ $row['action'] }}" 
+                                       style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-weight: 700; font-size: 12px; padding: 7px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                        <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        <span>Generate Form</span>
+                                    </a>
+
+                                    @if(!empty($row['delete_action']))
+                                        <form action="{{ $row['delete_action'] }}" method="POST" onsubmit="return confirm('Are you sure you want to delete and release allocated Indent ID #{{ $row['indent_id'] }}?');" style="display: inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" 
+                                                    style="background: #FEF2F2; border: 1px solid #FECDD3; color: #DC2626; font-weight: 700; font-size: 12px; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"
+                                                    title="Delete allocated Indent ID #{{ $row['indent_id'] }}">
+                                                <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>Delete</span>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

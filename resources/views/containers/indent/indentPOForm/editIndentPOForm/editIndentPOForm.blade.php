@@ -5,11 +5,11 @@
     foreach ($selectedItems ?? [] as $it) {
         $desc = is_array($it) ? ($it['description'] ?? '') : ($it->description ?? '');
         if (!$desc) continue;
-        $req = (int)(is_array($it) ? ($it['quantity_required'] ?? $it['quantity'] ?? 1) : ($it->quantity_required ?? 1));
-        $filed = (int)(is_array($it) ? ($it['already_filed'] ?? 0) : ($it->already_filed ?? 0));
-        $poQty = (int)(is_array($it) ? ($it['po_quantity'] ?? $it['quantity'] ?? $req) : ($it->po_quantity ?? $req));
+        $req = (float)(is_array($it) ? ($it['quantity_required'] ?? $it['quantity'] ?? 1) : ($it->quantity_required ?? 1));
+        $filed = (float)(is_array($it) ? ($it['already_filed'] ?? 0) : ($it->already_filed ?? 0));
+        $poQty = (float)(is_array($it) ? ($it['po_quantity'] ?? $it['quantity'] ?? $req) : ($it->po_quantity ?? $req));
         $unitVal = is_array($it) ? ($it['unit'] ?? '-') : ($it->unit ?? '-');
-        $rem = max(0, $req - $filed);
+        $rem = round(max(0, $req - $filed), 4);
         
         $allItemsCombined[$desc] = [
             'description' => $desc,
@@ -26,10 +26,10 @@
     foreach ($itemsRemaining ?? [] as $it) {
         $desc = is_array($it) ? ($it['description'] ?? '') : ($it->description ?? '');
         if (!$desc || isset($allItemsCombined[$desc])) continue;
-        $req = (int)(is_array($it) ? ($it['quantity_required'] ?? $it['quantity'] ?? 1) : ($it->quantity_required ?? 1));
-        $filed = (int)(is_array($it) ? ($it['already_filed'] ?? 0) : ($it->already_filed ?? 0));
+        $req = (float)(is_array($it) ? ($it['quantity_required'] ?? $it['quantity'] ?? 1) : ($it->quantity_required ?? 1));
+        $filed = (float)(is_array($it) ? ($it['already_filed'] ?? 0) : ($it->already_filed ?? 0));
         $unitVal = is_array($it) ? ($it['unit'] ?? '-') : ($it->unit ?? '-');
-        $rem = max(0, $req - $filed);
+        $rem = round(max(0, $req - $filed), 4);
         
         $allItemsCombined[$desc] = [
             'description' => $desc,
@@ -55,13 +55,27 @@
         <input type="hidden" name="status" value="{{ old('status', $po->status) }}">
 
         <!-- Top Page Header -->
-        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 4px;">
-            <div style="width: 48px; height: 48px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(37,99,235,0.25);">
-                <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(37,99,235,0.25);">
+                    <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </div>
+                <div>
+                    <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; margin: 0 0 2px 0; letter-spacing: -0.5px;">Update Purchase Order (#{{ $po->id }})</h1>
+                    <p style="font-size: 13px; color: #64748B; margin: 0; font-weight: 500;">Modify PO details, party info, dates, and breakdown quantities.</p>
+                </div>
             </div>
-            <div>
-                <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; margin: 0 0 2px 0; letter-spacing: -0.5px;">Update Purchase Order (#{{ $po->id }})</h1>
-                <p style="font-size: 13px; color: #64748B; margin: 0; font-weight: 500;">Modify PO details, party info, dates, and breakdown quantities.</p>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <a href="{{ route('indent.edit', $po->indent_id) }}" 
+                   style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #2563EB; font-weight: 700; font-size: 12px; padding: 8px 16px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    <span>Edit Indent</span>
+                </a>
+                <a href="{{ route('po-register.viewByIndent', ['indent_id' => $po->indent_id, 'department_id' => $po->department_id]) }}" 
+                   style="background: #F8FAFC; border: 1px solid #CBD5E1; color: #475569; font-weight: 700; font-size: 12px; padding: 8px 16px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    <span>Indent Summary</span>
+                </a>
             </div>
         </div>
 
@@ -306,8 +320,9 @@
                             </th>
                             <th style="padding: 14px 16px; vertical-align: middle;">ITEM DESCRIPTION</th>
                             <th style="padding: 14px 16px; width: 100px; text-align: center; vertical-align: middle;">UNIT</th>
-                            <th style="padding: 14px 16px; width: 140px; text-align: center; vertical-align: middle;">QTY REQUIRED</th>
-                            <th style="padding: 14px 16px; width: 150px; text-align: center; vertical-align: middle;">PREVIOUSLY FILED</th>
+                            <th style="padding: 14px 16px; width: 130px; text-align: center; vertical-align: middle;">QTY REQUIRED</th>
+                            <th style="padding: 14px 16px; width: 140px; text-align: center; vertical-align: middle;">PREVIOUSLY FILED</th>
+                            <th style="padding: 14px 16px; width: 120px; text-align: center; vertical-align: middle;">ITEM STATUS</th>
                             <th style="padding: 14px 16px; width: 180px; text-align: center; vertical-align: middle;">FILLING PO QTY (COUNT)</th>
                             <th style="padding: 14px 16px; width: 170px; text-align: center; vertical-align: middle;">REMAINING TO FILE</th>
                         </tr>
@@ -315,10 +330,10 @@
                     <tbody>
                         @foreach ($combinedItemsList as $idx => $item)
                             @php
-                                $req = (int)($item['quantity_required'] ?? 1);
-                                $filed = (int)($item['already_filed'] ?? 0);
-                                $poQty = (int)($item['po_quantity'] ?? $req);
-                                $rem = (int)($item['remaining_to_file'] ?? max(0, $req - $filed));
+                                $req = (float)($item['quantity_required'] ?? 1);
+                                $filed = (float)($item['already_filed'] ?? 0);
+                                $poQty = (float)($item['po_quantity'] ?? $req);
+                                $rem = (float)($item['remaining_to_file'] ?? max(0, $req - $filed));
                                 $isSel = $item['selected'];
                             @endphp
                             <tr class="po-item-row" data-item-desc="{{ $item['description'] }}" style="border-bottom: 1px solid #F1F5F9; background: #FFFFFF; {{ $isSel ? '' : 'display: none;' }}">
@@ -342,10 +357,16 @@
                                 <td style="padding: 14px 16px; text-align: center; font-weight: 800; color: #0F172A; vertical-align: middle;">{{ $req }}</td>
                                 <td style="padding: 14px 16px; text-align: center; color: #2563EB; font-weight: 800; vertical-align: middle;">{{ $filed }}</td>
                                 <td style="padding: 14px 16px; text-align: center; vertical-align: middle;">
+                                    <span style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #2563EB; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 20px; white-space: nowrap;">
+                                        {{ $item['status'] ?? 'PO Created' }}
+                                    </span>
+                                </td>
+                                <td style="padding: 14px 16px; text-align: center; vertical-align: middle;">
                                     <input type="number" 
                                            name="po_items[{{ $idx }}][po_quantity]" 
                                            value="{{ $poQty }}" 
-                                           min="1" 
+                                           min="0.001" 
+                                           step="any"
                                            class="js-po-qty" {{ $isSel ? 'required' : 'disabled' }}
                                            style="width: 110px; height: 38px; text-align: center; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 14px; font-weight: 800; color: #0F172A; outline: none; box-sizing: border-box;">
                                 </td>
@@ -601,10 +622,10 @@
             function updateRem() {
                 const maxRem = Math.max(0, reqVal - filedVal);
                 const filingQty = parseFloat(qtyInput?.value) || 0;
-                const rem = Math.max(0, maxRem - filingQty);
+                const rem = parseFloat(Math.max(0, maxRem - filingQty).toFixed(4));
 
                 if (remSpan) {
-                    if (rem === 0) {
+                    if (rem <= 0.0001) {
                         remSpan.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: #10B981; display: inline-block;"></span> 0 (Fully Filed)';
                         remSpan.style.background = '#ECFDF5';
                         remSpan.style.color = '#047857';

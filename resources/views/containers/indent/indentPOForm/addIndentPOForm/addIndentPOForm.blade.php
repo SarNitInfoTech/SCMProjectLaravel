@@ -6,13 +6,27 @@
         <input type="hidden" name="department_id" value="{{ $department_id }}">
 
         <!-- Top Page Header -->
-        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 4px;">
-            <div style="width: 48px; height: 48px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(37,99,235,0.25);">
-                <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(37,99,235,0.25);">
+                    <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div>
+                    <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; margin: 0 0 2px 0; letter-spacing: -0.5px;">File Purchase Order (Indent #{{ $indent_id }})</h1>
+                    <p style="font-size: 13px; color: #64748B; margin: 0; font-weight: 500;">Fill in the details below to file a new purchase order for this indent.</p>
+                </div>
             </div>
-            <div>
-                <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; margin: 0 0 2px 0; letter-spacing: -0.5px;">Create Indent</h1>
-                <p style="font-size: 13px; color: #64748B; margin: 0; font-weight: 500;">Fill in the details below to create a new indent request.</p>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <a href="{{ route('indent.edit', $indent_id) }}" 
+                   style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #2563EB; font-weight: 700; font-size: 12px; padding: 8px 16px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    <span>Edit Indent</span>
+                </a>
+                <a href="{{ route('po-register.viewByIndent', ['indent_id' => $indent_id, 'department_id' => $department_id]) }}" 
+                   style="background: #F8FAFC; border: 1px solid #CBD5E1; color: #475569; font-weight: 700; font-size: 12px; padding: 8px 16px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    <span>Indent Summary</span>
+                </a>
             </div>
         </div>
 
@@ -244,27 +258,31 @@
                 <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
                     <thead>
                         <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; color: #475569; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
-                            <th style="padding: 14px 16px; width: 60px; text-align: center; vertical-align: middle;">
+                            <th style="padding: 14px 16px; width: 50px; text-align: center; vertical-align: middle;">
                                 <input type="checkbox" id="selectAllPoItems" checked style="width: 16px; height: 16px; border-radius: 4px; accent-color: #2563EB; cursor: pointer;">
                             </th>
                             <th style="padding: 14px 16px; vertical-align: middle;">ITEM DESCRIPTION</th>
-                            <th style="padding: 14px 16px; width: 100px; text-align: center; vertical-align: middle;">UNIT</th>
-                            <th style="padding: 14px 16px; width: 140px; text-align: center; vertical-align: middle;">QTY REQUIRED</th>
-                            <th style="padding: 14px 16px; width: 150px; text-align: center; vertical-align: middle;">PREVIOUSLY FILED</th>
-                            <th style="padding: 14px 16px; width: 180px; text-align: center; vertical-align: middle;">FILLING PO QTY (COUNT)</th>
-                            <th style="padding: 14px 16px; width: 170px; text-align: center; vertical-align: middle;">REMAINING TO FILE</th>
+                            <th style="padding: 14px 16px; width: 90px; text-align: center; vertical-align: middle;">UNIT</th>
+                            <th style="padding: 14px 16px; width: 110px; text-align: center; vertical-align: middle;">QTY REQUIRED</th>
+                            <th style="padding: 14px 16px; width: 120px; text-align: center; vertical-align: middle;">PREVIOUSLY FILED</th>
+                            <th style="padding: 14px 16px; width: 120px; text-align: center; vertical-align: middle;">ITEM STATUS</th>
+                            <th style="padding: 14px 16px; width: 160px; text-align: center; vertical-align: middle;">FILLING PO QTY (COUNT)</th>
+                            <th style="padding: 14px 16px; width: 150px; text-align: center; vertical-align: middle;">REMAINING TO FILE</th>
+                            <th style="padding: 14px 16px; width: 140px; text-align: center; vertical-align: middle;">CANCEL OPTION</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($items as $idx => $item)
                             @php
-                                $req = (int)($item['quantity_required'] ?? 1);
-                                $rec = (int)($item['quantity_received'] ?? 0);
-                                $filed = (int)($item['already_filed'] ?? 0);
-                                $rem = (int)($item['remaining_to_file'] ?? max(0, $req - $filed));
+                                $req = (float)($item['quantity_required'] ?? 1);
+                                $rec = (float)($item['quantity_received'] ?? 0);
+                                $canc = (float)($item['quantity_cancelled'] ?? 0);
+                                $filed = (float)($item['already_filed'] ?? 0);
+                                $rem = (float)($item['remaining_to_file'] ?? max(0, $req - ($filed + $canc)));
                                 $defaultFiling = $rem > 0 ? $rem : $req;
+                                $itemStatus = $item['status'] ?? 'Pending';
                             @endphp
-                            <tr class="po-item-row" data-item-desc="{{ $item['description'] }}" style="border-bottom: 1px solid #F1F5F9; background: #FFFFFF;">
+                            <tr class="po-item-row" data-item-desc="{{ $item['description'] }}" style="border-bottom: 1px solid #F1F5F9; background: #FFFFFF; transition: background 0.15s ease;">
                                 <td style="padding: 14px 16px; text-align: center; vertical-align: middle;">
                                     <input type="checkbox" name="po_items[{{ $idx }}][selected]" value="1" checked class="po-item-check"
                                            style="width: 18px; height: 18px; border-radius: 4px; accent-color: #2563EB; cursor: pointer;">
@@ -280,16 +298,23 @@
                                     <input type="hidden" name="po_items[{{ $idx }}][unit]" value="{{ $item['unit'] ?? '' }}">
                                     <input type="hidden" name="po_items[{{ $idx }}][quantity_required]" value="{{ $req }}" class="js-po-req">
                                     <input type="hidden" name="po_items[{{ $idx }}][quantity_received]" value="{{ $rec }}" class="js-po-rec">
+                                    <input type="hidden" name="po_items[{{ $idx }}][quantity_cancelled]" value="{{ $canc }}" class="js-po-canc">
                                     <input type="hidden" name="po_items[{{ $idx }}][already_filed]" value="{{ $filed }}" class="js-po-filed">
                                 </td>
                                 <td style="padding: 14px 16px; text-align: center; color: #475569; font-weight: 600; vertical-align: middle;">{{ $item['unit'] ?? '-' }}</td>
                                 <td style="padding: 14px 16px; text-align: center; font-weight: 800; color: #0F172A; vertical-align: middle;">{{ $req }}</td>
                                 <td style="padding: 14px 16px; text-align: center; color: #2563EB; font-weight: 800; vertical-align: middle;">{{ $filed }}</td>
                                 <td style="padding: 14px 16px; text-align: center; vertical-align: middle;">
+                                    <span style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #2563EB; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 20px; white-space: nowrap;">
+                                        {{ $itemStatus }}
+                                    </span>
+                                </td>
+                                <td style="padding: 14px 16px; text-align: center; vertical-align: middle;">
                                     <input type="number" 
                                            name="po_items[{{ $idx }}][po_quantity]" 
                                            value="{{ $defaultFiling }}" 
-                                           min="1" 
+                                           min="0.001" 
+                                           step="any"
                                            max="{{ $rem }}"
                                            class="js-po-qty" required
                                            style="width: 110px; height: 38px; text-align: center; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 14px; font-weight: 800; color: #0F172A; outline: none; box-sizing: border-box;">
@@ -299,6 +324,21 @@
                                         <span style="width: 6px; height: 6px; border-radius: 50%; background: {{ max(0, $rem - $defaultFiling) > 0 ? '#2563EB' : '#10B981' }}; display: inline-block;"></span>
                                         {{ max(0, $rem - $defaultFiling) > 0 ? max(0, $rem - $defaultFiling) . ' remaining' : '0 (Fully Filed)' }}
                                     </span>
+                                </td>
+                                <td style="padding: 14px 16px; text-align: center; vertical-align: middle;">
+                                    <div style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
+                                        <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: #DC2626; cursor: pointer; background: #FEF2F2; border: 1px solid #FECDD3; padding: 4px 8px; border-radius: 6px; user-select: none;">
+                                            <input type="checkbox" name="po_items[{{ $idx }}][cancel_item]" value="1" class="js-cancel-item-check" style="accent-color: #DC2626; width: 14px; height: 14px; cursor: pointer;">
+                                            <span>Cancel Item</span>
+                                        </label>
+                                        <button type="button" 
+                                                onclick="openCancelModal('{{ addslashes($indent_id) }}', '{{ addslashes($item['description']) }}', {{ $rem }})" 
+                                                title="Cancel item immediately from this indent"
+                                                style="background: transparent; border: none; color: #64748B; font-size: 11px; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 0;">
+                                            Cancel Now
+                                        </button>
+                                        <input type="hidden" name="po_items[{{ $idx }}][cancel_qty]" value="{{ $rem }}" class="js-cancel-qty-val">
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -542,14 +582,24 @@
             const remSpan = row.querySelector('.js-po-rem');
             const reqVal = parseFloat(row.querySelector('.js-po-req')?.value) || 0;
             const filedVal = parseFloat(row.querySelector('.js-po-filed')?.value) || 0;
+            const cancVal = parseFloat(row.querySelector('.js-po-canc')?.value) || 0;
 
             function updateRem() {
-                const maxRem = Math.max(0, reqVal - filedVal);
+                const maxRem = Math.max(0, reqVal - (filedVal + cancVal));
                 const filingQty = parseFloat(qtyInput?.value) || 0;
-                const rem = Math.max(0, maxRem - filingQty);
+                const rem = parseFloat(Math.max(0, maxRem - filingQty).toFixed(4));
 
                 if (remSpan) {
-                    if (rem === 0) {
+                    const cancelCheck = row.querySelector('.js-cancel-item-check');
+                    if (cancelCheck && cancelCheck.checked) {
+                        remSpan.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: #DC2626; display: inline-block;"></span> Cancelling ' + maxRem;
+                        remSpan.style.background = '#FEE2E2';
+                        remSpan.style.color = '#DC2626';
+                        remSpan.style.border = '1px solid #FECDD3';
+                        return;
+                    }
+
+                    if (rem <= 0.0001) {
                         remSpan.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: #10B981; display: inline-block;"></span> 0 (Fully Filed)';
                         remSpan.style.background = '#ECFDF5';
                         remSpan.style.color = '#047857';
@@ -566,5 +616,114 @@
             qtyInput?.addEventListener('input', updateRem);
             updateRem();
         });
+
+        // Cancel Item Checkbox Toggle
+        document.querySelectorAll('.js-cancel-item-check').forEach(cancelCheck => {
+            cancelCheck.addEventListener('change', function() {
+                const row = this.closest('.po-item-row');
+                const poCheck = row.querySelector('.po-item-check');
+                const qtyInput = row.querySelector('.js-po-qty');
+                const remSpan = row.querySelector('.js-po-rem');
+                const maxRem = parseFloat(qtyInput?.getAttribute('max')) || 0;
+
+                if (this.checked) {
+                    row.style.background = '#FEF2F2';
+                    if (poCheck) {
+                        poCheck.checked = false;
+                        poCheck.disabled = true;
+                    }
+                    if (qtyInput) {
+                        qtyInput.value = 0;
+                        qtyInput.disabled = true;
+                        qtyInput.removeAttribute('required');
+                    }
+                    if (remSpan) {
+                        remSpan.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: #DC2626; display: inline-block;"></span> Cancelling ' + maxRem;
+                        remSpan.style.background = '#FEE2E2';
+                        remSpan.style.color = '#DC2626';
+                        remSpan.style.border = '1px solid #FECDD3';
+                    }
+                } else {
+                    row.style.background = '#FFFFFF';
+                    if (poCheck) {
+                        poCheck.disabled = false;
+                        poCheck.checked = true;
+                    }
+                    if (qtyInput) {
+                        qtyInput.disabled = false;
+                        qtyInput.value = maxRem;
+                        const isNonMandatory = isMandatorySelect && isMandatorySelect.value === 'Non-Mandatory';
+                        if (!isNonMandatory) qtyInput.setAttribute('required', 'required');
+                    }
+                    qtyInput?.dispatchEvent(new Event('input'));
+                }
+            });
+        });
     });
+
+    // Immediate Cancellation Modal Helpers
+    window.openCancelModal = function(indentId, itemDesc, remainingQty) {
+        const modal = document.getElementById('immediateCancelModal');
+        if (!modal) return;
+        document.getElementById('modal_cancel_indent_id').value = indentId;
+        document.getElementById('modal_cancel_item_desc').value = itemDesc;
+        document.getElementById('modal_cancel_display_desc').value = itemDesc;
+        const qtyInput = document.getElementById('modal_cancel_qty');
+        qtyInput.value = remainingQty;
+        qtyInput.max = remainingQty;
+        document.getElementById('modal_cancel_rem_hint').textContent = 'Remaining available to cancel: ' + remainingQty;
+        modal.style.display = 'flex';
+    };
+
+    window.closeCancelModal = function() {
+        const modal = document.getElementById('immediateCancelModal');
+        if (modal) modal.style.display = 'none';
+    };
 </script>
+
+<!-- Immediate Cancel Item Modal -->
+<div id="immediateCancelModal" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(15,23,42,0.5); align-items: center; justify-content: center;">
+  <div style="background: #FFFFFF; border-radius: 16px; padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9; margin-bottom: 16px;">
+      <h4 style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <svg style="width: 20px; height: 20px; color: #DC2626;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        Cancel Item from Indent
+      </h4>
+      <button type="button" onclick="closeCancelModal()" style="background: transparent; border: none; font-size: 20px; cursor: pointer; color: #94A3B8;">&times;</button>
+    </div>
+    
+    <form id="immediateCancelForm" method="POST" action="{{ route('indent-register.cancelItem') }}">
+      @csrf
+      <input type="hidden" name="indent_id" id="modal_cancel_indent_id" value="{{ $indent_id }}">
+      <input type="hidden" name="item_description" id="modal_cancel_item_desc">
+
+      <div style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px;">Item Description</label>
+        <input type="text" id="modal_cancel_display_desc" readonly disabled
+               style="width: 100%; padding: 8px 12px; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 13px; font-weight: 700; color: #0F172A; outline: none; box-sizing: border-box;">
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px;">Cancel Quantity</label>
+        <input type="number" name="cancel_qty" id="modal_cancel_qty" min="0.001" step="any" required
+               style="width: 100%; padding: 8px 12px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 13px; font-weight: 700; color: #0F172A; outline: none; box-sizing: border-box;">
+        <span id="modal_cancel_rem_hint" style="font-size: 11px; color: #64748B; margin-top: 4px; display: block;"></span>
+      </div>
+
+      <div style="margin-bottom: 18px;">
+        <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px;">Cancellation Reason / Remarks</label>
+        <textarea name="reason" id="modal_cancel_reason" rows="2" placeholder="e.g., Not required by department, Out of budget..."
+                  style="width: 100%; padding: 8px 12px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 12px; outline: none; box-sizing: border-box;"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" onclick="closeCancelModal()" style="padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; cursor: pointer;">
+          Keep Item
+        </button>
+        <button type="submit" style="padding: 8px 18px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #FFFFFF; background: #DC2626; border: none; cursor: pointer;">
+          Confirm Cancellation
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

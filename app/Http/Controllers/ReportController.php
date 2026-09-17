@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AllIndentsExport;
 use App\Exports\PORegisterExport;
 use App\Helpers\SearchHelper;
 use App\Models\IndentRegister;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -133,16 +135,17 @@ class ReportController extends Controller
         return view('pages.report.viewReport.viewReport', compact('reports', 'columns', 'departments', 'projects'));
     }
 
-    public function viewAllIndent(Request $request)
+    /**
+     * Helper to retrieve enriched indent records, KPI aggregates, and filter metadata.
+     */
+    protected function getEnrichedIndentData(Request $request, bool $paginate = true, int $perPage = 15)
     {
-        $title = 'All Indents';
-        $searchPlaceholder = 'Search indents…';
-        $perPage = (int) $request->get('per_page', 15);
-
         $query = IndentRegister::query();
+        $filterParts = [];
 
         if ($request->filled('search')) {
             $search = trim($request->get('search'));
+            $filterParts[] = "Search: '{$search}'";
             SearchHelper::applySearch($query, $search, [
                 'indent_id',
                 'indent_department',
@@ -153,15 +156,20 @@ class ReportController extends Controller
         }
 
         if ($request->filled('department')) {
-            $query->where('indent_department', $request->get('department'));
+            $dept = $request->get('department');
+            $filterParts[] = "Department: {$dept}";
+            $query->where('indent_department', $dept);
         }
 
         if ($request->filled('project')) {
-            $query->where('indent_project', $request->get('project'));
+            $proj = $request->get('project');
+            $filterParts[] = "Project: {$proj}";
+            $query->where('indent_project', $proj);
         }
 
         if ($request->filled('status')) {
             $st = strtolower(trim($request->get('status')));
+            $filterParts[] = "Status: " . ucfirst($st);
             if (in_array($st, ['pending', 'open'])) {
                 $query->whereIn(DB::raw('LOWER(status)'), ['pending', 'open']);
             } elseif ($st === 'partially received') {
@@ -175,140 +183,319 @@ class ReportController extends Controller
             }
         }
 
+        if ($request->filled('item_status')) {
+            $ist = strtolower(trim($request->get('item_status')));
+            $filterParts[] = "Item Status: " . ucfirst($ist);
+            if (in_array($ist, ['cancelled', 'cancel'])) {
+                $query->where(function ($q) {
+                    $q->whereRaw('items_description REGEXP ?', ['"quantity_cancelled":\s*([1-9]|0\.[0-9]*[1-9])'])
+                      ->orWhereRaw('LOWER(items_description) LIKE ?', ['%"status":"cancelled"%'])
+                      ->orWhereRaw('LOWER(items_description) LIKE ?', ['%"status": "cancelled"%']);
+                });
+            } elseif (in_array($ist, ['po created', 'ordered'])) {
+                $query->where(function ($q) {
+                    $q->whereRaw('LOWER(items_description) LIKE ?', ['%"status":"po created"%'])
+                      ->orWhereRaw('LOWER(items_description) LIKE ?', ['%"status": "po created"%'])
+                      ->orWhereRaw('LOWER(items_description) LIKE ?', ['%"status":"ordered"%']);
+                });
+            } elseif ($ist === 'partially received') {
+                $query->where(function ($q) {
+                    $q->whereRaw('LOWER(items_description) LIKE ?', ['%"status":"partially received"%'])
+                      ->orWhereRaw('LOWER(items_description) LIKE ?', ['%"status": "partially received"%']);
+                });
+            } elseif (in_array($ist, ['completed', 'received'])) {
+                $query->where(function ($q) {
+                    $q->whereRaw('LOWER(items_description) LIKE ?', ['%"status":"completed"%'])
+                      ->orWhereRaw('LOWER(items_description) LIKE ?', ['%"status": "completed"%'])
+                      ->orWhereRaw('LOWER(items_description) LIKE ?', ['%"status":"received"%']);
+                });
+            } elseif ($ist === 'pending') {
+                $query->where(function ($q) {
+                    $q->whereRaw('LOWER(items_description) LIKE ?', ['%"status":"pending"%'])
+                      ->orWhereRaw('LOWER(items_description) LIKE ?', ['%"status": "pending"%'])
+                      ->orWhere(function ($sub) {
+                          $sub->whereRaw('items_description NOT LIKE ?', ['%"status":%'])
+                              ->whereRaw('LOWER(status) = "pending"');
+                      });
+                });
+            }
+        }
+
         if ($request->filled('date_from')) {
-            $query->whereDate('indent_date', '>=', $request->get('date_from'));
+            $df = $request->get('date_from');
+            $filterParts[] = "From: {$df}";
+            $query->whereDate('indent_date', '>=', $df);
         }
 
         if ($request->filled('date_to')) {
-            $query->whereDate('indent_date', '<=', $request->get('date_to'));
+            $dt = $request->get('date_to');
+            $filterParts[] = "To: {$dt}";
+            $query->whereDate('indent_date', '<=', $dt);
         }
 
-        $pagination = $registers = $query->orderByDesc('indent_date')->paginate($perPage);
+        // Clone query to compute aggregate KPI stats across all matching records
+        $allMatching = (clone $query)->get();
+        $totalIndents = $allMatching->count();
+        $totReq = 0;
+        $totPO = 0;
+        $totRec = 0;
+        $totCanc = 0;
+        $totBal = 0;
 
-        $departments = \App\Models\Department::orderBy('name')->get();
-        $projects = \App\Models\Project::orderBy('name')->get();
+        $matchingIdsForPOs = [];
+        foreach ($allMatching as $ind) {
+            $matchingIdsForPOs[] = (string) $ind->indent_id;
+            $matchingIdsForPOs[] = (string) $ind->id;
+            if (!empty($ind->items_description)) {
+                $itemsArr = is_string($ind->items_description) ? json_decode($ind->items_description, true) : $ind->items_description;
+                if (is_array($itemsArr)) {
+                    foreach ($itemsArr as $it) {
+                        if (is_array($it)) {
+                            $rq = (float)($it['quantity_required'] ?? 0);
+                            $po = (float)($it['purchased_order'] ?? $it['already_filed'] ?? 0);
+                            $rc = (float)($it['quantity_received'] ?? 0);
+                            $cn = (float)($it['quantity_cancelled'] ?? 0);
+                            $bl = isset($it['quantity_balance']) ? (float)$it['quantity_balance'] : max(0, round($rq - ($rc + $cn), 4));
 
-        $columns = [
-            ['label' => 'Indent ID', 'key' => 'indent_id'],
-            ['label' => 'Department', 'key' => 'indent_department'],
-            ['label' => 'Project', 'key' => 'indent_project'],
-            ['label' => 'Items', 'key' => 'items_text'],
-            ['key' => 'status', 'label' => 'Status', 'type' => 'status'],
-            ['label' => 'Indent Date', 'key' => 'indent_date', 'type' => 'date'],
-        ];
-
-        $rows = $registers->getCollection()->map(function ($r) {
-            $items = [];
-            if (!empty($r->items_description) && is_string($r->items_description)) {
-                $decoded = json_decode($r->items_description, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $items = collect($decoded)->map(function ($it) {
-                        return is_array($it) ? (string) ($it['description'] ?? '') : (string) $it;
-                    })->filter()->values()->all();
+                            $totReq  += $rq;
+                            $totPO   += $po;
+                            $totRec  += $rc;
+                            $totCanc += $cn;
+                            $totBal  += $bl;
+                        }
+                    }
                 }
             }
+        }
+
+        $matchingIdsForPOs = array_values(array_unique(array_filter($matchingIdsForPOs)));
+        $matchingPOs = !empty($matchingIdsForPOs)
+            ? DB::table('po_registers')->whereIn(DB::raw('CAST(indent_id AS CHAR)'), $matchingIdsForPOs)->get()
+            : collect();
+        $totalPOAmount = $matchingPOs->sum(fn($p) => (float)($p->po_amount ?? 0));
+
+        $kpis = [
+            'total_indents' => $totalIndents,
+            'total_req'     => round($totReq, 4),
+            'total_po'      => round($totPO, 4),
+            'total_rec'     => round($totRec, 4),
+            'total_canc'    => round($totCanc, 4),
+            'total_bal'     => round($totBal, 4),
+            'total_amount'  => $totalPOAmount,
+        ];
+
+        // Fetch paginated or all records
+        if ($paginate) {
+            $registers = $query->orderByDesc('indent_date')->paginate($perPage)->withQueryString();
+            $dataset = $registers->items();
+        } else {
+            $registers = $query->orderByDesc('indent_date')->get();
+            $dataset = $registers;
+        }
+
+        $unitMap = DB::table('units')->pluck('name', 'id')->toArray();
+        $projectMap = DB::table('projects')->pluck('name', 'id')->toArray();
+
+        // Eager-load POs for current dataset
+        $currentIndentIds = [];
+        foreach ($dataset as $row) {
+            $currentIndentIds[] = (string)$row->indent_id;
+            $currentIndentIds[] = (string)$row->id;
+        }
+        $currentIndentIds = array_values(array_unique(array_filter($currentIndentIds)));
+
+        $posByIndent = !empty($currentIndentIds)
+            ? DB::table('po_registers')
+                ->whereIn(DB::raw('CAST(indent_id AS CHAR)'), $currentIndentIds)
+                ->orderByDesc('po_date')
+                ->get()
+                ->groupBy(fn($p) => (string)$p->indent_id)
+            : collect();
+
+        // Format enriched records
+        $records = collect($dataset)->map(function ($r) use ($unitMap, $projectMap, $posByIndent) {
+            $items = [];
+            $indReq = 0;
+            $indPO = 0;
+            $indRec = 0;
+            $indCanc = 0;
+            $indBal = 0;
+
+            if (!empty($r->items_description)) {
+                $decoded = is_string($r->items_description) ? json_decode($r->items_description, true) : $r->items_description;
+                if (is_array($decoded)) {
+                    foreach ($decoded as $it) {
+                        if (!is_array($it)) continue;
+                        $desc = (string)($it['description'] ?? '');
+                        $u = (string)($it['unit'] ?? '');
+                        if (is_numeric($u) && isset($unitMap[$u])) {
+                            $u = $unitMap[$u];
+                        }
+                        $rq = (float)($it['quantity_required'] ?? 0);
+                        $po = (float)($it['purchased_order'] ?? $it['already_filed'] ?? 0);
+                        $rc = (float)($it['quantity_received'] ?? 0);
+                        $cn = (float)($it['quantity_cancelled'] ?? 0);
+                        $bl = isset($it['quantity_balance']) ? (float)$it['quantity_balance'] : max(0, round($rq - ($rc + $cn), 4));
+
+                        $indReq  += $rq;
+                        $indPO   += $po;
+                        $indRec  += $rc;
+                        $indCanc += $cn;
+                        $indBal  += $bl;
+
+                        $st = $it['status'] ?? 'Pending';
+                        if (empty($st)) {
+                            if ($cn >= $rq && $rq > 0) $st = 'Cancelled';
+                            elseif ($rc >= $rq && $rq > 0) $st = 'Completed';
+                            elseif ($rc > 0) $st = 'Partially Received';
+                            elseif ($po > 0) $st = 'PO Created';
+                            else $st = 'Pending';
+                        }
+
+                        $items[] = [
+                            'description'        => $desc,
+                            'unit'               => $u ?: '-',
+                            'quantity_required'  => round($rq, 4),
+                            'purchased_order'    => round($po, 4),
+                            'quantity_received'  => round($rc, 4),
+                            'quantity_cancelled' => round($cn, 4),
+                            'quantity_balance'   => round($bl, 4),
+                            'status'             => $st,
+                        ];
+                    }
+                }
+            }
+
+            // Find linked POs
+            $linkedPOs = $posByIndent->get((string)$r->indent_id, collect())
+                ->merge($posByIndent->get((string)$r->id, collect()))
+                ->unique('id')
+                ->values();
+
+            $poTotalAmount = $linkedPOs->sum(fn($p) => (float)($p->po_amount ?? 0));
+
             $status = match (strtolower((string) ($r->status ?? ''))) {
                 'close', 'closed', 'completed' => 'Close',
                 'cancel', 'cancelled' => 'Cancel',
                 'partially received' => 'Partially Received',
                 default => 'Pending',
             };
+
+            $projName = $r->indent_project;
+            if (is_numeric($projName) && isset($projectMap[$projName])) {
+                $projName = $projectMap[$projName];
+            } elseif (empty($projName) || $projName === '0') {
+                $projName = '-';
+            }
+
             return [
-                'indent_id' => $r->indent_id,
-                'indent_department' => $r->indent_department,
-                'indent_project' => $r->indent_project ?? '-',
-                'items_text' => $items ? implode(', ', $items) : '-',
-                'status' => $status,
-                'indent_date' => $r->indent_date ? \Carbon\Carbon::parse($r->indent_date)->format('d-m-Y') : '-',
+                'id'                => $r->id,
+                'indent_id'         => (string)$r->indent_id,
+                'indent_department' => $r->indent_department ?? '-',
+                'department'        => $r->indent_department ?? '-',
+                'indent_project'    => $projName,
+                'project'           => $projName,
+                'status'            => $status,
+                'remarks'           => $r->remarks ?? '-',
+                'indent_date'       => $r->indent_date ? Carbon::parse($r->indent_date)->format('d-m-Y') : '-',
+                'raw_date'          => $r->indent_date,
+                'items'             => $items,
+                'items_count'       => count($items),
+                'items_text'        => !empty($items) ? implode(', ', array_column($items, 'description')) : '-',
+                'pos'               => $linkedPOs->all(),
+                'po_count'          => $linkedPOs->count(),
+                'po_amount'         => $poTotalAmount,
+                'totals'            => [
+                    'req'  => round($indReq, 4),
+                    'po'   => round($indPO, 4),
+                    'rec'  => round($indRec, 4),
+                    'canc' => round($indCanc, 4),
+                    'bal'  => round($indBal, 4),
+                ],
+                'action'            => [
+                    'view'    => route('po-register.viewByIndent', ['indent_id' => $r->indent_id, 'department_id' => $r->indent_department ?? '']),
+                    'edit'    => route('indent.edit', $r->id),
+                    'file_po' => route('po-register.create', ['indent_id' => $r->indent_id, 'department_id' => $r->indent_department ?? '']),
+                ],
             ];
         })->values()->all();
 
+        $departments = \App\Models\Department::orderBy('name')->get();
+        $projects = \App\Models\Project::orderBy('name')->get();
+        $filterText = implode(' | ', $filterParts);
+
+        return [$records, $kpis, $filterText, $registers, $departments, $projects];
+    }
+
+    public function viewAllIndent(Request $request)
+    {
+        $title = 'All Indents Report';
+        $searchPlaceholder = 'Search indents, departments, projects…';
+        $perPage = (int) $request->get('per_page', 15);
+        if (!in_array($perPage, [10, 15, 25, 50, 100])) {
+            $perPage = 15;
+        }
+
+        [$records, $kpis, $filterText, $registers, $departments, $projects] = $this->getEnrichedIndentData($request, true, $perPage);
+
         return view('pages.report.viewAllIndent.viewAllIndent', [
-            'title' => $title,
-            'columns' => $columns,
-            'rows' => $rows,
+            'title'             => $title,
+            'rows'              => $records,
+            'kpis'              => $kpis,
             'searchPlaceholder' => $searchPlaceholder,
-            'customButton' => null,
-            'registers' => $registers,
-            'pagination' => $pagination,
-            'departments' => $departments,
-            'projects' => $projects,
-            'filterUrl' => route('reports.indents.filter'),
-            'rowKey' => 'indent_id',
+            'registers'         => $registers,
+            'departments'       => $departments,
+            'projects'          => $projects,
+            'filterText'        => $filterText,
+            'filterUrl'         => route('reports.indents.filter'),
+            'rowKey'            => 'indent_id',
         ]);
+    }
+
+    /**
+     * Comprehensive Export for All Indents Report (Excel, PDF, CSV).
+     */
+    public function exportIndents(Request $request)
+    {
+        $type = strtolower($request->get('type', 'excel'));
+        [$records, $kpis, $filterText] = $this->getEnrichedIndentData($request, false);
+
+        $timestamp = now()->format('Ymd_His');
+
+        if ($type === 'pdf') {
+            $pdf = Pdf::loadView('exports.all_indents_pdf', [
+                'records'    => $records,
+                'kpis'       => $kpis,
+                'filterText' => $filterText,
+            ])->setPaper('a4', 'landscape');
+
+            return $pdf->download("All_Indents_Report_{$timestamp}.pdf");
+        }
+
+        if ($type === 'csv') {
+            return Excel::download(
+                new AllIndentsExport($records, $kpis, $filterText),
+                "All_Indents_Report_{$timestamp}.csv",
+                \Maatwebsite\Excel\Excel::CSV
+            );
+        }
+
+        // Default: Excel XLSX
+        return Excel::download(
+            new AllIndentsExport($records, $kpis, $filterText),
+            "All_Indents_Report_{$timestamp}.xlsx"
+        );
+    }
+
+    public function exportExcel(Request $request)
+    {
+        return $this->exportIndents($request);
     }
 
     public function filterAllIndentAjax(Request $request)
     {
-        $q = trim((string) $request->query('q', ''));
-        $from = $request->query('from');  // 'YYYY-MM-DD'
-        $to = $request->query('to');  // 'YYYY-MM-DD'
-
-        $query = IndentRegister::query();
-
-        // Date range (no pagination)
-        if ($from && $to) {
-            $query->whereBetween('indent_date', [$from, $to]);
-        } elseif ($from) {
-            $query->whereDate('indent_date', '>=', $from);
-        } elseif ($to) {
-            $query->whereDate('indent_date', '<=', $to);
-        }
-
-        // Text search across common fields
-        if ($q !== '') {
-            SearchHelper::applyFuzzySearch($query, $q, [
-                'indent_id',
-                'indent_department',
-                'indent_project',
-                'status',
-                'items_description',
-                'remarks'
-            ]);
-        }
-
-        $registers = $query->orderByDesc('indent_date')->get();
-
-        // Build rows in the SAME SHAPE your component expects
-        $rows = $registers->map(function ($r) {
-            // Parse items_description -> list of descriptions
-            $items = [];
-            if (!empty($r->items_description) && is_string($r->items_description)) {
-                $decoded = json_decode($r->items_description, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $items = collect($decoded)->map(function ($it) {
-                        if (is_array($it))
-                            return (string) ($it['description'] ?? '');
-                        if (is_string($it))
-                            return $it;
-                        return '';
-                    })->filter()->values()->all();
-                }
-            }
-
-            // Normalize status to title case
-            $status = match (strtolower((string) ($r->status ?? ''))) {
-                'close' => 'Close',
-                'cancel' => 'Cancel',
-                'pending' => 'Pending',
-                default => 'Pending',
-            };
-
-            return [
-                'indent_id' => $r->indent_id,
-                'indent_department' => $r->indent_department,
-                'indent_project' => $r->indent_project ?? '-',
-                'items_text' => $items ? implode(', ', $items) : '-',
-                'status' => $status,
-                'indent_date' => $r->indent_date
-                    ? Carbon::parse($r->indent_date)->format('d-m-Y')
-                    : '-',
-            ];
-        })->values();
-
-        return response()->json([
-            'rows' => $rows,
-        ]);
+        [$records] = $this->getEnrichedIndentData($request, false);
+        return response()->json(['rows' => $records]);
     }
 
     public function allIndentAndPOlist(Request $request)
@@ -451,11 +638,11 @@ class ReportController extends Controller
                     ? '-'
                     : collect(is_string($r->total_description) ? json_decode($r->total_description, true) : $r->total_description)
                         ->map(function ($i) {
-                            $req = (int)($i['quantity_required'] ?? 0);
-                            $po  = (int)($i['purchased_order'] ?? $i['already_filed'] ?? 0);
-                            $rec = (int)($i['quantity_received'] ?? 0);
-                            $canc = (int)($i['quantity_cancelled'] ?? 0);
-                            $bal = isset($i['quantity_balance']) ? (int)$i['quantity_balance'] : max(0, $req - max($po, $rec + $canc));
+                            $req = (float)($i['quantity_required'] ?? 0);
+                            $po  = (float)($i['purchased_order'] ?? $i['already_filed'] ?? 0);
+                            $rec = (float)($i['quantity_received'] ?? 0);
+                            $canc = (float)($i['quantity_cancelled'] ?? 0);
+                            $bal = isset($i['quantity_balance']) ? (float)$i['quantity_balance'] : round(max(0, $req - max($po, $rec + $canc)), 4);
                             $cancStr = $canc > 0 ? ", Canc:{$canc}" : '';
                             return sprintf(
                                 '%s (%s) [Req:%s, PO:%s, Rcvd:%s%s, Bal:%s]',
@@ -614,11 +801,11 @@ class ReportController extends Controller
                     if (is_array($items)) {
                         $totalDescription = collect($items)
                             ->map(function ($i) {
-                                $req = (int)($i['quantity_required'] ?? 0);
-                                $po  = (int)($i['purchased_order'] ?? $i['already_filed'] ?? 0);
-                                $rec = (int)($i['quantity_received'] ?? 0);
-                                $canc = (int)($i['quantity_cancelled'] ?? 0);
-                                $bal = isset($i['quantity_balance']) ? (int)$i['quantity_balance'] : max(0, $req - max($po, $rec + $canc));
+                                $req = (float)($i['quantity_required'] ?? 0);
+                                $po  = (float)($i['purchased_order'] ?? $i['already_filed'] ?? 0);
+                                $rec = (float)($i['quantity_received'] ?? 0);
+                                $canc = (float)($i['quantity_cancelled'] ?? 0);
+                                $bal = isset($i['quantity_balance']) ? (float)$i['quantity_balance'] : round(max(0, $req - max($po, $rec + $canc)), 4);
                                 $cancStr = $canc > 0 ? ", Canc:{$canc}" : '';
                                 return sprintf(
                                     '%s (%s) [Req:%s, PO:%s, Rcvd:%s%s, Bal:%s]',

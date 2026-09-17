@@ -441,7 +441,7 @@ class BulkUploadController extends Controller
                                 'department_name' => 'required|string',
                                 'item_description' => 'required|string',
                                 'unit_name' => 'required|string',
-                                'quantity_required' => 'required|integer|min:0',
+                                'quantity_required' => 'required|numeric|min:0',
                             ]);
                             if ($validator->fails()) {
                                 throw new \Exception(implode(', ', $validator->errors()->all()));
@@ -470,9 +470,9 @@ class BulkUploadController extends Controller
                             $indentGroups[$groupKey]['items'][] = [
                                 'description' => trim($row['item_description']),
                                 'unit' => $unit->id,
-                                'quantity_required' => (int)$row['quantity_required'],
-                                'quantity_received' => (int)($row['quantity_received'] ?? 0),
-                                'quantity_balance' => (int)($row['quantity_balance'] ?? max((int)$row['quantity_required'] - (int)($row['quantity_received'] ?? 0), 0))
+                                'quantity_required' => (float)$row['quantity_required'],
+                                'quantity_received' => (float)($row['quantity_received'] ?? 0),
+                                'quantity_balance' => round((float)($row['quantity_balance'] ?? max((float)$row['quantity_required'] - (float)($row['quantity_received'] ?? 0), 0)), 4)
                             ];
                             $indentGroups[$groupKey]['row_numbers'][] = $rowNum;
                             break;

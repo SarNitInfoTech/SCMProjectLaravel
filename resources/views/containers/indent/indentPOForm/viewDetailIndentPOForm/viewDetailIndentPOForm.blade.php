@@ -80,9 +80,23 @@
     @endphp
 
     <!-- Page Title Header -->
-    <div style="margin-bottom: 24px;">
-        <h1 style="font-size: 26px; font-weight: 800; color: #1E1B4B; margin: 0 0 4px 0; letter-spacing: -0.5px;">Indent Summary</h1>
-        <p style="font-size: 14px; color: #6B7280; margin: 0;">Overview of requested and received items in this indent.</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h1 style="font-size: 26px; font-weight: 800; color: #1E1B4B; margin: 0 0 4px 0; letter-spacing: -0.5px;">Indent Summary</h1>
+            <p style="font-size: 14px; color: #6B7280; margin: 0;">Overview of requested and received items in this indent.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <a href="{{ route('indent.edit', $indent->id ?? $indentId) }}"
+               style="background: #2563EB; color: #FFFFFF; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(37,99,235,0.25);">
+                <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>Edit Indent</span>
+            </a>
+            <a href="{{ route('po-register.create', ['indent_id' => $indentId, 'department_id' => $department_id]) }}"
+               style="background: #FF6B00; color: #FFFFFF; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(255,107,0,0.25);">
+                <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                <span>File PO / Remaining Items</span>
+            </a>
+        </div>
     </div>
 
     <!-- 1. Top Metadata Stat Cards Bar -->
@@ -136,21 +150,41 @@
 
     <!-- 2. Requested vs Received (Summary) Grid Section -->
     <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 32px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #F3F4F6;">
+        @php
+            $totReq = 0;
+            $totRec = 0;
+            $totCanc = 0;
+            $totRem = 0;
+            if (!empty($indentItems) && is_array($indentItems)) {
+                foreach ($indentItems as $iVal) {
+                    $rq = (float)($iVal['quantity_required'] ?? 0);
+                    $rc = (float)($iVal['quantity_received'] ?? 0);
+                    $cn = (float)($iVal['quantity_cancelled'] ?? 0);
+                    $totReq += $rq;
+                    $totRec += $rc;
+                    $totCanc += $cn;
+                    $totRem += max(0, round($rq - ($rc + $cn), 4));
+                }
+            }
+        @endphp
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #F3F4F6; flex-wrap: wrap; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <svg style="width: 20px; height: 20px; color: #4F46E5;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 <h3 style="font-size: 16px; font-weight: 800; color: #1E1B4B; margin: 0;">Requested vs Received (Summary)</h3>
             </div>
-            <!-- Legend Indicators -->
-            <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 600; color: #6B7280;">
+            <!-- Legend Indicators with Aggregate Totals -->
+            <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 600; color: #6B7280; flex-wrap: wrap;">
                 <span style="display: flex; align-items: center; gap: 6px;">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #16A34A; display: inline-block;"></span> Received
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #9CA3AF; display: inline-block;"></span> Requested: <strong style="color: #374151;">{{ round($totReq, 4) }}</strong>
                 </span>
                 <span style="display: flex; align-items: center; gap: 6px;">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563EB; display: inline-block;"></span> Remaining
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #16A34A; display: inline-block;"></span> Received: <strong style="color: #16A34A;">{{ round($totRec, 4) }}</strong>
                 </span>
                 <span style="display: flex; align-items: center; gap: 6px;">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #9CA3AF; display: inline-block;"></span> Requested
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #DC2626; display: inline-block;"></span> Cancelled: <strong style="color: {{ $totCanc > 0 ? '#DC2626' : '#6B7280' }};">{{ round($totCanc, 4) }}</strong>
+                </span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563EB; display: inline-block;"></span> Remaining: <strong style="color: #2563EB;">{{ round($totRem, 4) }}</strong>
                 </span>
             </div>
         </div>
@@ -160,10 +194,10 @@
                 @foreach($indentItems as $idx => $it)
                     @php
                         $desc = $it['description'] ?? 'Item ' . ($idx + 1);
-                        $req  = (int)($it['quantity_required'] ?? 0);
-                        $rec  = (int)($it['quantity_received'] ?? 0);
-                        $canc = (int)($it['quantity_cancelled'] ?? 0);
-                        $rem  = max(0, $req - ($rec + $canc));
+                        $req  = (float)($it['quantity_required'] ?? 0);
+                        $rec  = (float)($it['quantity_received'] ?? 0);
+                        $canc = (float)($it['quantity_cancelled'] ?? 0);
+                        $rem  = max(0, round($req - ($rec + $canc), 4));
                         $icon = getMockupItemIcon($desc, $idx);
                     @endphp
 
@@ -173,12 +207,21 @@
                                 {!! $icon['svg'] !!}
                             </div>
                             <div style="min-width: 0; flex: 1;">
-                                <h4 style="font-size: 14px; font-weight: 700; color: #111827; margin: 0 0 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $desc }}">{{ $desc }}</h4>
-                                <div style="font-size: 12px; color: #6B7280; font-weight: 500; white-space: nowrap;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px;">
+                                    <h4 style="font-size: 14px; font-weight: 700; color: #111827; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $desc }}">{{ $desc }}</h4>
+                                    @if($canc > 0 && $rem <= 0 && $rec <= 0)
+                                        <span style="font-size: 10px; font-weight: 700; color: #DC2626; background: #FEF2F2; border: 1px solid #FECDD3; padding: 1px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;">Cancelled</span>
+                                    @elseif($canc > 0)
+                                        <span style="font-size: 10px; font-weight: 700; color: #DC2626; background: #FEF2F2; border: 1px solid #FECDD3; padding: 1px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;">Partial Canc</span>
+                                    @endif
+                                </div>
+                                <div style="font-size: 11.5px; color: #6B7280; font-weight: 500; white-space: nowrap;">
                                     Req: <strong style="color: #4B5563; font-weight: 600;">{{ $req }}</strong>
-                                    <span style="color: #E5E7EB; margin: 0 4px;">|</span>
+                                    <span style="color: #E5E7EB; margin: 0 3px;">|</span>
                                     Rec: <strong style="color: #16A34A; font-weight: 700;">{{ $rec }}</strong>
-                                    <span style="color: #E5E7EB; margin: 0 4px;">|</span>
+                                    <span style="color: #E5E7EB; margin: 0 3px;">|</span>
+                                    Canc: <strong style="color: {{ $canc > 0 ? '#DC2626' : '#9CA3AF' }}; font-weight: 700;">{{ $canc }}</strong>
+                                    <span style="color: #E5E7EB; margin: 0 3px;">|</span>
                                     Rem: <strong style="color: #2563EB; font-weight: 700;">{{ $rem }}</strong>
                                 </div>
                             </div>
@@ -325,6 +368,13 @@
                                     <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     <span>Close PO</span>
                                 </button>
+
+                                <button type="button" 
+                                        onclick="document.getElementById('cancelPoModal_{{ $row->id }}').style.display='flex'" 
+                                        style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECDD3; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    <span>Cancel PO</span>
+                                </button>
                             @elseif(in_array($normSt, ['closed', 'close']))
                                 <a href="{{ route('indentroview.createInvoiceById', $row->id) }}" 
                                    style="background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
@@ -373,21 +423,28 @@
                             @foreach($poItemsDecoded as $pIt)
                                 @php
                                     $pDesc = is_array($pIt) ? ($pIt['description'] ?? '') : (string)$pIt;
-                                    $pOrd  = is_array($pIt) ? (int)($pIt['quantity'] ?? $pIt['po_quantity'] ?? 1) : 1;
-                                    $pRec  = is_array($pIt) ? (int)($pIt['quantity_received'] ?? 0) : 0;
-                                    $pCanc = is_array($pIt) ? (int)($pIt['quantity_cancelled'] ?? 0) : 0;
-                                    $pRem  = max(0, $pOrd - ($pRec + $pCanc));
+                                    $pOrd  = is_array($pIt) ? (float)($pIt['quantity'] ?? $pIt['po_quantity'] ?? 1) : 1;
+                                    $pRec  = is_array($pIt) ? (float)($pIt['quantity_received'] ?? 0) : 0;
+                                    $pCanc = is_array($pIt) ? (float)($pIt['quantity_cancelled'] ?? 0) : 0;
+                                    $pRem  = max(0, round($pOrd - ($pRec + $pCanc), 4));
                                 @endphp
 
                                 <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
                                     <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1F2937;">
                                         <span style="width: 6px; height: 6px; border-radius: 50%; background: #9333EA; display: inline-block;"></span>
                                         <span>{{ $pDesc }}</span>
+                                        @if($pCanc > 0 && $pRem <= 0 && $pRec <= 0)
+                                            <span style="font-size: 10px; font-weight: 700; color: #DC2626; background: #FEF2F2; border: 1px solid #FECDD3; padding: 1px 6px; border-radius: 4px;">Cancelled</span>
+                                        @elseif($pCanc > 0)
+                                            <span style="font-size: 10px; font-weight: 700; color: #DC2626; background: #FEF2F2; border: 1px solid #FECDD3; padding: 1px 6px; border-radius: 4px;">Canc: {{ $pCanc }}</span>
+                                        @endif
                                     </div>
                                     <div style="color: #6B7280; font-weight: 500;">
                                         Req: <strong style="color: #4B5563;">{{ $pOrd }}</strong>
                                         <span style="color: #E5E7EB; margin: 0 4px;">|</span>
                                         Rec: <strong style="color: #16A34A; font-weight: 700;">{{ $pRec }}</strong>
+                                        <span style="color: #E5E7EB; margin: 0 4px;">|</span>
+                                        Canc: <strong style="color: {{ $pCanc > 0 ? '#DC2626' : '#9CA3AF' }}; font-weight: 700;">{{ $pCanc }}</strong>
                                         <span style="color: #E5E7EB; margin: 0 4px;">|</span>
                                         Rem: <strong style="color: #2563EB; font-weight: 700;">{{ $pRem }}</strong>
                                     </div>
@@ -426,6 +483,25 @@
                                 <div style="display: flex; justify-content: flex-end; gap: 8px;">
                                     <button type="button" onclick="document.getElementById('closePoModal_{{ $row->id }}').style.display='none'" style="padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; background: #F3F4F6; color: #374151; border: none; cursor: pointer;">Cancel</button>
                                     <button type="submit" style="padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; background: #DC2626; color: #FFFFFF; border: none; cursor: pointer;">Confirm Close PO</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Cancel PO Modal -->
+                    <div id="cancelPoModal_{{ $row->id }}" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+                        <div style="background: #FFFFFF; border-radius: 16px; padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+                            <h3 style="font-size: 18px; font-weight: 800; color: #111827; margin: 0 0 8px 0;">Cancel Purchase Order #{{ $row->id }}</h3>
+                            <p style="font-size: 12px; color: #4B5563; margin: 0 0 16px 0;">Are you sure you want to cancel this PO? This will mark the PO as cancelled and release remaining balances.</p>
+                            <form method="POST" action="{{ route('po-register.cancelPO', $row->id) }}">
+                                @csrf
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Cancel Reason (Optional)</label>
+                                    <textarea name="cancel_reason" rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 12px; box-sizing: border-box;" placeholder="Enter reason for cancelling this PO..."></textarea>
+                                </div>
+                                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                                    <button type="button" onclick="document.getElementById('cancelPoModal_{{ $row->id }}').style.display='none'" style="padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; background: #F3F4F6; color: #374151; border: none; cursor: pointer;">Back</button>
+                                    <button type="submit" style="padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; background: #DC2626; color: #FFFFFF; border: none; cursor: pointer;">Confirm Cancel PO</button>
                                 </div>
                             </form>
                         </div>

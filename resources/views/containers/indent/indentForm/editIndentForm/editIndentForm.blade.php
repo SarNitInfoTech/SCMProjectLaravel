@@ -161,7 +161,7 @@
                             <label style="display: block; font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 6px;">
                                 QUANTITY REQUIRED <span style="color: #EF4444;">*</span>
                             </label>
-                            <input type="number" name="items[{{ $i }}][required]" class="qty-required" value="{{ $item['quantity_required'] ?? 0 }}" min="0" required
+                            <input type="number" name="items[{{ $i }}][required]" class="qty-required" value="{{ $item['quantity_required'] ?? 0 }}" min="0" step="any" required
                                    style="width: 100%; height: 42px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 14px; font-weight: 700; padding: 0 12px; color: #0F172A; outline: none; box-sizing: border-box;">
                         </div>
 
@@ -170,7 +170,7 @@
                             <label style="display: block; font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 6px;">
                                 QUANTITY RECEIVED
                             </label>
-                            <input type="number" name="items[{{ $i }}][received]" class="qty-received" value="{{ $item['quantity_received'] ?? 0 }}" min="0" readonly
+                            <input type="number" name="items[{{ $i }}][received]" class="qty-received" value="{{ $item['quantity_received'] ?? 0 }}" min="0" step="any" readonly
                                    style="width: 100%; height: 42px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 14px; font-weight: 700; padding: 0 12px; color: #475569; outline: none; box-sizing: border-box;">
                         </div>
 
@@ -179,7 +179,7 @@
                             <label style="display: block; font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 6px;">
                                 QTY CANCELLED
                             </label>
-                            <input type="number" name="items[{{ $i }}][cancelled]" class="qty-cancelled" value="{{ $item['quantity_cancelled'] ?? 0 }}" min="0" readonly
+                            <input type="number" name="items[{{ $i }}][cancelled]" class="qty-cancelled" value="{{ $item['quantity_cancelled'] ?? 0 }}" min="0" step="any" readonly
                                    style="width: 100%; height: 42px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 14px; font-weight: 700; padding: 0 12px; color: #475569; outline: none; box-sizing: border-box;">
                         </div>
 
@@ -188,7 +188,7 @@
                             <label style="display: block; font-size: 10px; font-weight: 800; color: #2563EB; text-transform: uppercase; margin-bottom: 6px;">
                                 QUANTITY BALANCE
                             </label>
-                            <input type="number" name="items[{{ $i }}][balance]" class="qty-balance" value="{{ $item['quantity_balance'] ?? 0 }}" readonly
+                            <input type="number" name="items[{{ $i }}][balance]" class="qty-balance" value="{{ $item['quantity_balance'] ?? 0 }}" step="any" readonly
                                    style="width: 100%; height: 42px; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 10px; font-size: 15px; font-weight: 800; padding: 0 12px; color: #2563EB; outline: none; box-sizing: border-box;">
                         </div>
                     </div>
@@ -302,7 +302,7 @@
             <label style="display: block; font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 6px;">
                 QUANTITY REQUIRED <span style="color: #EF4444;">*</span>
             </label>
-            <input type="number" name="items[__index__][required]" class="qty-required" value="0" min="0" required
+            <input type="number" name="items[__index__][required]" class="qty-required" value="0" min="0" step="any" required
                    style="width: 100%; height: 42px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 14px; font-weight: 700; padding: 0 12px; color: #0F172A; outline: none; box-sizing: border-box;">
         </div>
 
@@ -310,7 +310,7 @@
             <label style="display: block; font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 6px;">
                 QUANTITY RECEIVED
             </label>
-            <input type="number" name="items[__index__][received]" class="qty-received" value="0" min="0" readonly
+            <input type="number" name="items[__index__][received]" class="qty-received" value="0" min="0" step="any" readonly
                    style="width: 100%; height: 42px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 14px; font-weight: 700; padding: 0 12px; color: #475569; outline: none; box-sizing: border-box;">
         </div>
 
@@ -318,7 +318,7 @@
             <label style="display: block; font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 6px;">
                 QTY CANCELLED
             </label>
-            <input type="number" name="items[__index__][cancelled]" class="qty-cancelled" value="0" min="0" readonly
+            <input type="number" name="items[__index__][cancelled]" class="qty-cancelled" value="0" min="0" step="any" readonly
                    style="width: 100%; height: 42px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 14px; font-weight: 700; padding: 0 12px; color: #475569; outline: none; box-sizing: border-box;">
         </div>
 
@@ -326,7 +326,7 @@
             <label style="display: block; font-size: 10px; font-weight: 800; color: #2563EB; text-transform: uppercase; margin-bottom: 6px;">
                 QUANTITY BALANCE
             </label>
-            <input type="number" name="items[__index__][balance]" class="qty-balance" value="0" readonly
+            <input type="number" name="items[__index__][balance]" class="qty-balance" value="0" step="any" readonly
                    style="width: 100%; height: 42px; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 10px; font-size: 15px; font-weight: 800; padding: 0 12px; color: #2563EB; outline: none; box-sizing: border-box;">
         </div>
     </div>
@@ -368,10 +368,10 @@
             });
 
             document.getElementById('summary-total-items').textContent = totalItems;
-            document.getElementById('summary-total-required').textContent = totalReq;
-            document.getElementById('summary-total-received').textContent = totalRec;
-            document.getElementById('summary-total-cancelled').textContent = totalCanc;
-            document.getElementById('summary-total-balance').textContent = totalBal;
+            document.getElementById('summary-total-required').textContent = parseFloat(totalReq.toFixed(4));
+            document.getElementById('summary-total-received').textContent = parseFloat(totalRec.toFixed(4));
+            document.getElementById('summary-total-cancelled').textContent = parseFloat(totalCanc.toFixed(4));
+            document.getElementById('summary-total-balance').textContent = parseFloat(totalBal.toFixed(4));
         }
 
         function updateQtyListeners(row) {
@@ -398,7 +398,7 @@
                     if (qtyCancelled) qtyCancelled.value = canc;
                 }
 
-                qtyBalance.value = Math.max(req - (rec + canc), 0);
+                qtyBalance.value = parseFloat(Math.max(req - (rec + canc), 0).toFixed(4));
                 calculateOverallSummary();
             }
 

@@ -305,8 +305,14 @@
       }
   });
 
-  function exportToExcel() { alert('Exporting report to Excel...'); }
-  function exportToPDF() { alert('Exporting report to PDF...'); }
-  function exportToCSV() { alert('Exporting report to CSV...'); }
+  function triggerExport(type) {
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.set('type', type);
+      window.location.href = "{{ route('report.indents.export') }}?" + currentParams.toString();
+  }
+
+  function exportToExcel() { triggerExport('excel'); }
+  function exportToPDF() { triggerExport('pdf'); }
+  function exportToCSV() { triggerExport('csv'); }
 </script>
 @endsection
