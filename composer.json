@@ -13,7 +13,8 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
-        "maatwebsite/excel": "^3.1"
+        "maatwebsite/excel": "^3.1",
+        "maennchen/zipstream-php": "^3.1.0 <3.2.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -65,6 +66,9 @@
         }
     },
     "config": {
+        "platform": {
+            "php": "8.2.33"
+        },
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
