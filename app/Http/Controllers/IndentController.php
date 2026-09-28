@@ -12,6 +12,7 @@ use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Gate;
 
 class IndentController extends Controller
 {
@@ -182,6 +183,9 @@ class IndentController extends Controller
                         'params' => $baseParams,
                     ];
                 }
+
+                $actions['delete'] = route('indent.destroy', $reg->id);
+
                 return $actions;
             })(),
         ];
@@ -316,6 +320,39 @@ public function create(Request $request)
         $ticket->delete();
 
         return redirect()->back()->with('success', "Allocated Indent Ticket ID #{$indentId} has been successfully deleted.");
+    }
+
+    /**
+     * Delete an Indent record from IndentRegister.
+     */
+    public function destroy($id)
+    {
+        if (Gate::has('indents.delete')) {
+            Gate::authorize('indents.delete');
+        }
+
+        $indent = IndentRegister::find($id);
+        if (!$indent) {
+            return redirect()->back()->with('error', 'Indent record not found.');
+        }
+
+        $indentId = $indent->indent_id;
+
+        // Check if any Purchase Orders are linked to this indent
+        $hasLinkedPos = DB::table('po_registers')
+            ->whereRaw('CAST(indent_id AS CHAR) = ?', [(string)$indentId])
+            ->exists();
+
+        if ($hasLinkedPos) {
+            return redirect()->back()->with('warning', "Cannot delete Indent #{$indentId} because Purchase Orders are already linked to it. Please delete or cancel the Purchase Orders first.");
+        }
+
+        // Clean up draft ticket/token if any exists
+        IndentTicket::where('indent_id', $indentId)->delete();
+
+        $indent->delete();
+
+        return redirect()->back()->with('success', "Indent #{$indentId} has been successfully deleted.");
     }
 
     public function store(Request $request)

@@ -108,7 +108,7 @@
                         <th style="padding: 14px 16px; width: 120px; vertical-align: middle;">REMARKS <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 150px; text-align: center; vertical-align: middle;">INDENT STATUS <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 120px; vertical-align: middle;">CREATED DATE <span style="color:#CBD5E1;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 240px; text-align: center; vertical-align: middle;">ACTION</th>
+                        <th style="padding: 14px 16px; width: 280px; text-align: center; vertical-align: middle;">ACTION</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -251,8 +251,21 @@
                                                 <input type="hidden" name="status" value="Cancel">
                                                 <button type="button" data-action="Cancel" onclick="confirmIndentStatus(this)"
                                                         style="background: #FEF2F2; border: 1px solid #FECDD3; color: #DC2626; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
-                                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                     <span>Cancel</span>
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        <!-- Delete Button -->
+                                        @if (isset($actions['delete']))
+                                            <form action="{{ $actions['delete'] }}" method="POST" class="js-indent-status-form" style="display: inline;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" data-action="Delete" onclick="confirmIndentStatus(this)"
+                                                        style="background: #FEF2F2; border: 1px solid #FECDD3; color: #DC2626; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    <span>Delete</span>
                                                 </button>
                                             </form>
                                         @endif
@@ -449,7 +462,8 @@
     const config = {
       close: { title: 'Confirm Close', text: 'This will mark the Indent as Closed. Continue?', bg: '#0F172A' },
       cancel: { title: 'Confirm Cancel', text: 'This will mark the Indent as Cancelled. Continue?', bg: '#DC2626' },
-      pending: { title: 'Re-Open (Pending)', text: 'This will set the status back to Pending. Continue?', bg: '#047857' }
+      pending: { title: 'Re-Open (Pending)', text: 'This will set the status back to Pending. Continue?', bg: '#047857' },
+      delete: { title: 'Confirm Delete Indent', text: 'Are you sure you want to permanently delete this Indent? Linked PO checks will apply.', bg: '#DC2626' }
     };
 
     const cfg = config[action] || config.close;

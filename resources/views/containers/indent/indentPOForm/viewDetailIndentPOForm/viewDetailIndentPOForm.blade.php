@@ -85,7 +85,7 @@
             <h1 style="font-size: 26px; font-weight: 800; color: #1E1B4B; margin: 0 0 4px 0; letter-spacing: -0.5px;">Indent Summary</h1>
             <p style="font-size: 14px; color: #6B7280; margin: 0;">Overview of requested and received items in this indent.</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <a href="{{ route('indent.edit', $indent->id ?? $indentId) }}"
                style="background: #2563EB; color: #FFFFFF; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(37,99,235,0.25);">
                 <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -96,6 +96,14 @@
                 <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                 <span>File PO / Remaining Items</span>
             </a>
+            <form method="POST" action="{{ route('indent.destroy', $indent->id ?? $indentId) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete Indent #{{ $indentId }}? (Note: Cannot be deleted if POs exist)');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" style="background: #FFFFFF; color: #DC2626; border: 1px solid #FECDD3; font-weight: 700; font-size: 13px; padding: 10px 16px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                    <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <span>Delete Indent</span>
+                </button>
+            </form>
         </div>
     </div>
 
@@ -396,18 +404,27 @@
                                     <span>View Details</span>
                                 </a>
                             @endif
+
+                            <form method="POST" action="{{ route('po-register.destroy', $row->id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to permanently delete PO {{ $poWoDisplay }}? Indent balance will be recalculated.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" style="background: #FFFFFF; color: #DC2626; border: 1px solid #FECDD3; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    <span>Delete PO</span>
+                                </button>
+                            </form>
                         </div>
                     </div>
 
                     <!-- PO Metadata Grid Row -->
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 14px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 14px;">
                         <div>
                             <span style="font-size: 10px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; display: block;">Party</span>
-                            <span style="font-size: 14px; font-weight: 800; color: #111827;">{{ $row->party_name ?? '-' }}</span>
+                            <span style="font-size: 14px; font-weight: 800; color: #111827; word-break: break-word;">{{ $row->party_name ?? '-' }}</span>
                         </div>
                         <div>
                             <span style="font-size: 10px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; display: block;">PO Amount</span>
-                            <span style="font-size: 14px; font-weight: 800; color: #111827; font-family: monospace;">₹ {{ number_format($row->po_amount ?? 0, 2) }}</span>
+                            <span style="font-size: 14px; font-weight: 800; color: #111827; font-family: monospace; white-space: nowrap;">₹ {{ number_format($row->po_amount ?? 0, 2) }}</span>
                         </div>
                         <div>
                             <span style="font-size: 10px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; display: block;">Items</span>

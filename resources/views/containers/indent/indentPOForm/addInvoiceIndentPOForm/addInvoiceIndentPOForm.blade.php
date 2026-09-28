@@ -1,9 +1,34 @@
 <div class="w-full px-4 py-6 bg-white shadow rounded space-y-6">
 
+  @if(session('success'))
+    <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded text-emerald-900 text-sm">
+      {{ session('success') }}
+    </div>
+  @endif
+  @if(session('warning'))
+    <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded text-amber-900 text-sm">
+      {{ session('warning') }}
+    </div>
+  @endif
+  @if(session('error'))
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded text-red-900 text-sm">
+      {{ session('error') }}
+    </div>
+  @endif
+  @if ($errors->any())
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded text-red-900 text-sm">
+      <ul class="list-disc pl-5">
+        @foreach ($errors->all() as $error)
+          <li>{{ $error }}</li>
+        @endforeach
+      </ul>
+    </div>
+  @endif
+
   @php
       $poStatusStr = is_object($po->status) ? $po->status->value : (string)($po->status ?? 'Open');
       $normStatus  = mb_strtolower(trim($poStatusStr));
-      $isReadOnly  = in_array($normStatus, ['closed', 'close', 'cancel', 'cancelled', 'completed']);
+      $isReadOnly  = in_array($normStatus, ['cancel', 'cancelled']);
 
       // Calculate summary metrics for this PO
       $itemsDecoded = !empty($po->item_description) ? (is_array($po->item_description) ? $po->item_description : json_decode($po->item_description, true)) : [];
@@ -105,15 +130,16 @@
   </div>
 
   @if($isReadOnly)
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded text-red-900 text-sm">
+      <strong>Notice:</strong> This Purchase Order is <strong>Cancelled</strong>. No further goods receipts or invoice updates can be performed.
+    </div>
+  @elseif(in_array($normStatus, ['closed', 'close']))
     <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded text-amber-900 text-sm">
-      <strong>Notice:</strong> This Purchase Order status is currently <strong>{{ ucfirst($poStatusStr) }}</strong>.
-      @if(in_array($normStatus, ['closed', 'close']))
-        It was manually closed{{ !empty($po->close_reason) ? ' (Reason: ' . $po->close_reason . ')' : '' }}. Reopen the PO to record additional goods receipts.
-      @elseif($normStatus === 'completed')
-        All ordered quantities have been 100% received.
-      @else
-        No modifications are allowed.
-      @endif
+      <strong>Notice:</strong> This Purchase Order status is currently <strong>{{ ucfirst($poStatusStr) }}</strong>{{ !empty($po->close_reason) ? ' (Reason: ' . $po->close_reason . ')' : '' }}. You can record invoice details or item receipts below.
+    </div>
+  @elseif($normStatus === 'completed')
+    <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded text-emerald-900 text-sm">
+      <strong>Notice:</strong> All ordered items have been 100% received. You can review or update the vendor invoice details below.
     </div>
   @endif
 
@@ -147,8 +173,8 @@
 
       <div class="col-span-1">
         <label for="store_indent_no" class="form-label text-black block mb-1">Invoice No.</label>
-        <input type="text" name="store_indent_no" id="store_indent_no" class="form-control w-full"
-               value="{{ old('store_indent_no', $po->store_indent_no) }}" {{ $isReadOnly ? 'disabled' : '' }}>
+        <input type="text" name="store_indent_no" id="store_indent_no" class="form-control w-full" placeholder="Enter invoice number"
+               value="{{ old('store_indent_no', $po->store_indent_no ?: $po->invoice) }}" {{ $isReadOnly ? 'disabled' : '' }}>
       </div>
     </div>
 

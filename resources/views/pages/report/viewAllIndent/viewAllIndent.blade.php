@@ -51,7 +51,7 @@
     </div>
 
     <!-- Top KPI Stat Cards Bar -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 24px;">
         <!-- Total Indents -->
         <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 12px;">
             <div style="width: 42px; height: 42px; border-radius: 10px; background: #F3E8FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -125,7 +125,7 @@
             </div>
             <div>
                 <div style="font-size: 10px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total PO Value</div>
-                <div style="font-size: 18px; font-weight: 800; color: #4F46E5;">₹{{ number_format($kpis['total_amount'] ?? 0, 2) }}</div>
+                <div style="font-size: 16px; font-weight: 800; color: #4F46E5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="₹{{ number_format($kpis['total_amount'] ?? 0, 2) }}">₹{{ number_format($kpis['total_amount'] ?? 0, 2) }}</div>
             </div>
         </div>
     </div>
@@ -195,7 +195,7 @@
 
         <!-- Table Responsive Container (Full Width) -->
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table style="width: 100%; min-width: 1200px; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;" id="indent-report-table">
+            <table style="width: 100%; min-width: 1260px; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;" id="indent-report-table">
                 <thead>
                     <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                         <th style="padding: 14px 10px; width: 45px; text-align: center;"></th>
@@ -203,7 +203,7 @@
                         <th style="padding: 14px 14px; width: 100px; vertical-align: middle;">DATE</th>
                         <th style="padding: 14px 14px; width: 160px; vertical-align: middle;">DEPARTMENT & PROJECT</th>
                         <th style="padding: 14px 14px; vertical-align: middle;">ITEMS & FULFILLMENT BREAKDOWN</th>
-                        <th style="padding: 14px 14px; width: 220px; vertical-align: middle;">LINKED POs & VENDORS</th>
+                        <th style="padding: 14px 14px; width: 250px; vertical-align: middle;">LINKED POs & VENDORS</th>
                         <th style="padding: 14px 14px; width: 125px; text-align: center; vertical-align: middle;">STATUS</th>
                         <th style="padding: 14px 14px; width: 145px; text-align: center; vertical-align: middle;">ACTIONS</th>
                     </tr>
@@ -310,15 +310,15 @@
                                 @if(!empty($pos))
                                     <div style="display: flex; flex-direction: column; gap: 4px;">
                                         @foreach($pos as $p)
-                                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px;">
-                                                <div style="font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $p->party_name ?? 'PO #' . $p->id }}">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px;">
+                                                <div style="font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0;" title="{{ $p->party_name ?? 'PO #' . $p->id }}">
                                                     {{ !empty($p->po_wo_no) ? $p->po_wo_no : ('PO #' . $p->id) }}
                                                     @if(!empty($p->party_name))
                                                         <span style="color: #64748B; font-weight: 500;">({{ $p->party_name }})</span>
                                                     @endif
                                                 </div>
                                                 @if(!empty($p->po_amount))
-                                                    <span style="font-weight: 800; color: #16A34A; font-family: monospace; font-size: 11px; white-space: nowrap;">₹{{ number_format((float)$p->po_amount, 2) }}</span>
+                                                    <span style="font-weight: 800; color: #16A34A; font-family: monospace; font-size: 11px; white-space: nowrap; flex-shrink: 0;">₹{{ number_format((float)$p->po_amount, 2) }}</span>
                                                 @endif
                                             </div>
                                         @endforeach

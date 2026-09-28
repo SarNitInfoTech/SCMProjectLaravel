@@ -90,7 +90,7 @@
 
         <!-- Table Responsive Container (Full Width) -->
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table style="width: 100%; min-width: 1100px; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;" id="po-report-table">
+            <table style="width: 100%; min-width: 1180px; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;" id="po-report-table">
                 <thead>
                     <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                         <th style="padding: 14px 16px; width: 110px; vertical-align: middle;">INDENT TICKET <span style="color:#CBD5E1;">↕</span></th>
@@ -98,7 +98,7 @@
                         <th style="padding: 14px 16px; width: 140px; vertical-align: middle;">PROJECT <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 180px; vertical-align: middle;">PARTY NAME <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 140px; vertical-align: middle;">PO NO. <span style="color:#CBD5E1;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 130px; vertical-align: middle;">PO AMOUNT <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 155px; vertical-align: middle;">PO AMOUNT <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 150px; text-align: center; vertical-align: middle;">STATUS <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 130px; vertical-align: middle;">CREATED ON <span style="color:#CBD5E1;">↕</span></th>
                     </tr>

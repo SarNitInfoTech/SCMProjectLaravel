@@ -89,7 +89,7 @@
 
         <!-- Table Responsive Container (Full Width) -->
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table style="width: 100%; min-width: 2200px; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;" id="combined-report-table">
+            <table style="width: 100%; min-width: 2260px; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;" id="combined-report-table">
                 <thead>
                     <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                         <th style="padding: 14px 16px; width: 100px; vertical-align: middle;">Indent ID <span style="color:#CBD5E1;">↕</span></th>
@@ -101,7 +101,7 @@
                         <th style="padding: 14px 16px; width: 120px; vertical-align: middle;">PO Date <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 130px; vertical-align: middle;">PO/WO No <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 180px; vertical-align: middle;">PO Description <span style="color:#CBD5E1;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 120px; vertical-align: middle;">PO Amount <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 155px; vertical-align: middle;">PO Amount <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 150px; text-align: center; vertical-align: middle;">PO Status <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 120px; vertical-align: middle;">Expected Days <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 130px; vertical-align: middle;">Expected Date <span style="color:#CBD5E1;">↕</span></th>
@@ -140,7 +140,7 @@
                             <td style="padding: 16px; vertical-align: middle; color: #64748B; font-family: monospace; white-space: nowrap;">{{ $row['po_date'] }}</td>
                             <td style="padding: 16px; vertical-align: middle; color: #2563EB; font-weight: 700; white-space: nowrap;">{{ $row['po_no'] }}</td>
                             <td style="padding: 16px; vertical-align: middle; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $row['po_description'] }}">{{ $row['po_description'] }}</td>
-                            <td style="padding: 16px; vertical-align: middle; font-weight: 800; color: #059669; white-space: nowrap;">{{ $row['po_amount'] !== '-' ? '₹' . $row['po_amount'] : '-' }}</td>
+                            <td style="padding: 16px; vertical-align: middle; font-weight: 800; color: #059669; white-space: nowrap; font-family: monospace; font-size: 13.5px;">{{ $row['po_amount'] !== '-' ? '₹' . $row['po_amount'] : '-' }}</td>
                             <td style="padding: 16px; vertical-align: middle; text-align: center; white-space: nowrap;">
                                 <span style="background: {{ $badgeBg }}; border: 1px solid {{ $badgeBorder }}; color: {{ $badgeColor }}; font-weight: 700; font-size: 12px; padding: 5px 14px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
                                     <span style="width: 6px; height: 6px; border-radius: 50%; background: {{ $dotColor }}; display: inline-block;"></span>

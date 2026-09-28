@@ -88,6 +88,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/indent/form', [IndentController::class, 'createForm'])->name('indent.create.form');
     Route::get('/indent', [IndentController::class, 'index'])->name('indent.index');
     Route::get('/indent/{id}/edit', [IndentController::class, 'editForm'])->name('indent.edit');
+    Route::delete('/indent/{id}', [IndentController::class, 'destroy'])->name('indent.destroy');
 
     // Indent Register Routes
     Route::prefix('indent-register')->name('indent-register.')->group(function () {
@@ -96,6 +97,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}/edit', [IndentController::class, 'editForm'])->name('edit');
         Route::put('/{id}', [IndentController::class, 'indentRegisterUpdate'])->name('indentRegisterUpdate');
         Route::post('/cancel-item', [IndentController::class, 'cancelItem'])->name('cancelItem');
+        Route::delete('/{id}', [IndentController::class, 'destroy'])->name('destroy');
     });
 
 

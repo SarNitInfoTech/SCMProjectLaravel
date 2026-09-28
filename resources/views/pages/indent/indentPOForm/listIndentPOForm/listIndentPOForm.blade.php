@@ -92,18 +92,18 @@
 
         <!-- Table Responsive Container (Full Width) -->
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table style="width: 100%; min-width: 1320px; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;">
+            <table style="width: 100%; min-width: 1440px; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;">
                 <thead>
                     <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                         <th style="padding: 14px 16px; width: 90px; vertical-align: middle;">INDENT ID <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 120px; vertical-align: middle;">DEPARTMENT <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 170px; vertical-align: middle;">PARTY NAME <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 220px; vertical-align: middle;">ITEM DESCRIPTION <span style="color:#CBD5E1;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 120px; vertical-align: middle;">AMOUNT <span style="color:#CBD5E1;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 90px; vertical-align: middle;">REMARKS <span style="color:#CBD5E1;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 170px; text-align: center; vertical-align: middle;">STATUS <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 155px; vertical-align: middle;">AMOUNT <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 100px; vertical-align: middle;">REMARKS <span style="color:#CBD5E1;">↕</span></th>
+                        <th style="padding: 14px 16px; width: 160px; text-align: center; vertical-align: middle;">STATUS <span style="color:#CBD5E1;">↕</span></th>
                         <th style="padding: 14px 16px; width: 120px; vertical-align: middle;">PO DATE <span style="color:#CBD5E1;">↕</span></th>
-                        <th style="padding: 14px 16px; width: 260px; text-align: center; vertical-align: middle;">ACTION</th>
+                        <th style="padding: 14px 16px; width: 330px; text-align: center; vertical-align: middle;">ACTION</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -176,7 +176,7 @@
                             </td>
                             
                             <!-- Amount -->
-                            <td style="padding: 16px; vertical-align: middle; font-weight: 800; color: #0F172A; white-space: nowrap; font-family: monospace; font-size: 14px;">₹{{ $row['po_amount'] }}</td>
+                            <td style="padding: 16px; vertical-align: middle; font-weight: 800; color: #0F172A; white-space: nowrap; font-family: monospace; font-size: 13.5px;">₹{{ $row['po_amount'] }}</td>
                             
                             <!-- Remarks -->
                             <td style="padding: 16px; vertical-align: middle; color: #94A3B8; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $row['remarks'] ?? '-' }}">{{ $row['remarks'] ?? '-' }}</td>
@@ -195,7 +195,7 @@
                             <!-- Actions Grid Buttons with SVG Google/Material Icons -->
                             <td style="padding: 16px; vertical-align: middle; text-align: center; white-space: nowrap;">
                                 <div style="display: inline-flex; align-items: center; gap: 8px;">
-                                    <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; max-width: 280px;">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; max-width: 320px;">
                                         <!-- Edit PO Button -->
                                         @if (isset($actions['edit']))
                                             <a href="{{ $actions['edit'] }}"
@@ -205,12 +205,21 @@
                                             </a>
                                         @endif
 
-                                        <!-- File Invoice Button -->
+                                        <!-- File Invoice Button (Direct to Invoice Form) -->
+                                        @if (isset($actions['file_invoice']))
+                                            <a href="{{ $actions['file_invoice'] }}"
+                                               style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                                                <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                <span>File Invoice</span>
+                                            </a>
+                                        @endif
+
+                                        <!-- View Indent Summary Button -->
                                         @if (isset($actions['viewPage']))
                                             <a href="{{ $actions['viewPage'] }}"
                                                style="background: #F3E8FF; border: 1px solid #E9D5FF; color: #7C3AED; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
                                                 <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                                <span>{{ $viewBtnTitle }}</span>
+                                                <span>Summary</span>
                                             </a>
                                         @endif
 
@@ -262,8 +271,21 @@
                                                 <input type="hidden" name="status" value="Cancel">
                                                 <button type="button" data-action="Cancel" onclick="confirmPOStatus(this)"
                                                         style="background: #FEF2F2; border: 1px solid #FECDD3; color: #DC2626; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
-                                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                     <span>Cancel</span>
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        <!-- Delete PO Button -->
+                                        @if (isset($actions['delete']))
+                                            <form action="{{ $actions['delete'] }}" method="POST" class="js-po-status-form" style="display: inline;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" data-action="Delete" onclick="confirmPOStatus(this)"
+                                                        style="background: #FEF2F2; border: 1px solid #FECDD3; color: #DC2626; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    <span>Delete</span>
                                                 </button>
                                             </form>
                                         @endif
@@ -454,7 +476,8 @@
     const config = {
       close: { title: 'Confirm Close', text: 'This will mark the Indent & PO as Closed. Continue?', bg: '#0F172A' },
       cancel: { title: 'Confirm Cancel', text: 'This will mark the Indent & PO as Cancelled. Continue?', bg: '#DC2626' },
-      pending: { title: 'Re-Open (Pending)', text: 'This will set the status back to Pending. Continue?', bg: '#047857' }
+      pending: { title: 'Re-Open (Pending)', text: 'This will set the status back to Pending. Continue?', bg: '#047857' },
+      delete: { title: 'Confirm Delete Purchase Order', text: 'Are you sure you want to permanently delete this Purchase Order? Indent balances will be automatically recalculated.', bg: '#DC2626' }
     };
 
     const cfg = config[action] || config.close;
