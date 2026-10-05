@@ -4,22 +4,24 @@
 <style>
     /* Full view reset for auth layout */
     html, body {
-        height: 100%;
+        min-height: 100%;
         margin: 0;
         padding: 0;
         font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
         background-color: #ebf3fa !important;
         background: radial-gradient(circle at 50% 25%, #f4f8fd 0%, #e2ecf7 50%, #d5e3f2 100%) !important;
-        overflow-x: hidden;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
     }
 
     .page {
         min-height: 100vh !important;
+        height: auto !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: center !important;
         align-items: center !important;
-        padding: 2.5rem 1rem !important;
+        padding: 1.5rem 1rem !important;
         box-sizing: border-box !important;
     }
 
@@ -35,10 +37,11 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        margin: auto 0;
     }
 
     .auth-card-body {
-        padding: 2.5rem 2.25rem 2rem 2.25rem;
+        padding: 1.75rem 2rem 1.5rem 2rem;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -48,17 +51,17 @@
 
     /* Logo card box */
     .nitra-logo-box {
-        width: 110px;
-        height: 110px;
+        width: 90px;
+        height: 90px;
         background: #ffffff;
-        border-radius: 22px;
+        border-radius: 20px;
         border: 1px solid #e2e8f0;
         box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 12px;
-        margin-bottom: 1.5rem;
+        padding: 10px;
+        margin-bottom: 1.15rem;
     }
 
     .nitra-logo-box img {
@@ -71,16 +74,16 @@
     .portal-badge {
         display: inline-flex;
         align-items: center;
-        gap: 7px;
+        gap: 6px;
         background: #eff6ff;
         color: #2563eb;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 700;
         letter-spacing: 0.05em;
         text-transform: uppercase;
-        padding: 5px 14px;
+        padding: 4px 12px;
         border-radius: 9999px;
-        margin-bottom: 1.25rem;
+        margin-bottom: 1rem;
     }
 
     .portal-badge-dot {
@@ -92,31 +95,31 @@
 
     /* Titles */
     .title-pms {
-        font-size: 1.85rem !important;
+        font-size: 1.75rem !important;
         font-weight: 900 !important;
         color: #000000 !important;
         line-height: 1.15 !important;
-        margin: 0 0 0.35rem 0 !important;
+        margin: 0 0 0.25rem 0 !important;
         text-align: center !important;
         letter-spacing: -0.02em !important;
     }
 
     .subtitle-system {
-        font-size: 0.85rem !important;
+        font-size: 0.82rem !important;
         font-weight: 700 !important;
         color: #1d4ed8 !important;
-        margin: 0 0 0.45rem 0 !important;
+        margin: 0 0 0.35rem 0 !important;
         text-align: center !important;
         letter-spacing: 0.01em !important;
     }
 
     .instruction-text {
-        font-size: 0.75rem !important;
+        font-size: 0.73rem !important;
         font-weight: 500 !important;
         color: #64748b !important;
-        margin: 0 0 1.75rem 0 !important;
+        margin: 0 0 1.25rem 0 !important;
         text-align: center !important;
-        line-height: 1.4 !important;
+        line-height: 1.35 !important;
     }
 
     /* Form styling */
@@ -125,7 +128,7 @@
     }
 
     .form-group-item {
-        margin-bottom: 1.15rem;
+        margin-bottom: 1rem;
         width: 100%;
         display: flex;
         flex-direction: column;
@@ -428,7 +431,7 @@
             </button>
         </form>
 
-        @include("common.toast.commonToast")
+       
 
         <!-- Help / Admin Contact -->
         <div class="contact-help-text" style="display: block !important; visibility: visible !important; opacity: 1 !important; margin-top: 1.75rem !important; margin-bottom: 0.25rem !important; text-align: center !important; font-size: 0.82rem !important; color: #475569 !important; font-weight: 500 !important;">
@@ -437,6 +440,7 @@
                 Contact System Admin
             </a>
         </div>
+         @include("common.toast.commonToast")
     </div>
 
     <!-- Security Footer Strip -->
