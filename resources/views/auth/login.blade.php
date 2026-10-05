@@ -389,11 +389,7 @@
             <div class="form-group-item">
                 <label for="password">
                     <span>Password <span class="req-star">*</span></span>
-                    @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}" class="forgot-link">Forgot password?</a>
-                    @else
-                        <a href="#" class="forgot-link">Forgot password?</a>
-                    @endif
+                    <a href="javascript:void(0)" onclick="openModal('forgotPasswordModal')" class="forgot-link">Forgot password?</a>
                 </label>
                 <div class="input-field-wrapper">
                     <span class="field-icon"><i class="ri-lock-2-line"></i></span>
@@ -435,9 +431,9 @@
 
         <!-- Subtle Divider & Help / Admin Contact -->
         <div style="width: 100%; border-top: 1px solid #f1f5f9; margin-top: 28px; padding-top: 22px; text-align: center;">
-            <p style="font-size: 0.85rem; color: #475569; font-weight: 500; margin: 0; line-height: 1.4;">
+            <p style="font-size: 0.75rem; color: #475569; font-weight: 500; margin: 0; line-height: 1.4;">
                 Don’t have an account or need access? 
-                <a href="mailto:admin@nitratextile.org" style="color: #2563eb; font-weight: 700; text-decoration: none; margin-left: 4px;">
+                <a href="javascript:void(0)" onclick="openModal('contactAdminModal')" style="color: #2563eb; font-weight: 700; text-decoration: none; margin-left: 4px; cursor: pointer;">
                     Contact System Admin
                 </a>
             </p>
@@ -461,7 +457,171 @@
     &copy; {{ date('Y') }} Northern India Textile Research Association (NITRA)
 </div>
 
+<!-- ======================= MODAL: FORGOT PASSWORD ======================= -->
+<div id="forgotPasswordModal" class="custom-modal-backdrop" style="display: none;">
+    <div class="custom-modal-card">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+                    <i class="ri-mail-send-line"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">Password Reset Notice</h3>
+                    <span style="display: inline-block; font-size: 0.68rem; font-weight: 700; color: #d97706; background: #fef3c7; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;">Coming Soon</span>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('forgotPasswordModal')" style="background: none; border: none; font-size: 1.4rem; color: #94a3b8; cursor: pointer; padding: 4px; line-height: 1;">&times;</button>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 1.25rem;">
+            <p style="font-size: 0.85rem; color: #334155; margin: 0 0 8px 0; line-height: 1.5; font-weight: 500;">
+                Automated self-service password reset via institutional email is currently under integration and <strong>coming soon</strong>.
+            </p>
+            <p style="font-size: 0.82rem; color: #64748b; margin: 0; line-height: 1.5;">
+                In the meantime, please contact the <strong>System Administrator</strong> to instantly verify your identity and have your password reset or credentials reissued.
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" onclick="closeModal('forgotPasswordModal')" style="padding: 9px 18px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 0.82rem; font-weight: 600; border-radius: 8px; cursor: pointer;">
+                Close
+            </button>
+            <button type="button" onclick="closeModal('forgotPasswordModal'); openModal('contactAdminModal');" style="padding: 9px 18px; background: #2563eb; color: #ffffff; font-size: 0.82rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <span>View Contact Details</span>
+                <i class="ri-arrow-right-line"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ======================= MODAL: CONTACT SYSTEM ADMIN ======================= -->
+<div id="contactAdminModal" class="custom-modal-backdrop" style="display: none;">
+    <div class="custom-modal-card">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+                    <i class="ri-customer-service-2-line"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">Contact System Administrator</h3>
+                    <p style="font-size: 0.76rem; color: #64748b; margin: 0;">NITRA IT &amp; Systems Helpdesk</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('contactAdminModal')" style="background: none; border: none; font-size: 1.4rem; color: #94a3b8; cursor: pointer; padding: 4px; line-height: 1;">&times;</button>
+        </div>
+
+        <p style="font-size: 0.82rem; color: #475569; margin: 0 0 1rem 0; line-height: 1.45;">
+            For account creation, access permissions, or credential resets for PMS (Purchase &amp; Inventory Management System), please reach out via any of the channels below:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem;">
+            <!-- Email Item -->
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 8px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                    <i class="ri-mail-line"></i>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Official Helpdesk Email</div>
+                    <a href="mailto:admin@nitratextile.org" style="font-size: 0.85rem; font-weight: 700; color: #2563eb; text-decoration: none; word-break: break-all;">
+                        admin@nitratextile.org
+                    </a>
+                </div>
+            </div>
+
+            <!-- Location / Dept Item -->
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 8px; background: #fef3c7; color: #b45309; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                    <i class="ri-building-line"></i>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase;">In-Person Desk</div>
+                    <div style="font-size: 0.82rem; font-weight: 600; color: #1e293b;">
+                        IT &amp; Computer Centre, NITRA Campus
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hours Item -->
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                    <i class="ri-time-line"></i>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Working Hours</div>
+                    <div style="font-size: 0.82rem; font-weight: 600; color: #1e293b;">
+                        Mon – Fri: 9:00 AM – 5:30 PM IST
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="button" onclick="closeModal('contactAdminModal')" style="padding: 9px 22px; background: #2563eb; color: #ffffff; font-size: 0.82rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;">
+                Got it
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Modal styles */
+    .custom-modal-backdrop {
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(15, 23, 42, 0.5) !important;
+        backdrop-filter: blur(4px) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 99999 !important;
+        padding: 1rem !important;
+    }
+    .custom-modal-card {
+        background: #ffffff !important;
+        border-radius: 18px !important;
+        max-width: 440px !important;
+        width: 100% !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
+        border: 1px solid #e2e8f0 !important;
+        animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-sizing: border-box !important;
+    }
+    @keyframes modalScaleIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+</style>
+
 <script>
+    function openModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    function closeModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // Close when clicking on backdrop
+    window.addEventListener('click', function(e) {
+        if (e.target.classList.contains('custom-modal-backdrop')) {
+            e.target.style.display = 'none';
+        }
+    });
+
+    // Close on Escape key
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.custom-modal-backdrop').forEach(m => m.style.display = 'none');
+        }
+    });
+
     function createpassword(id, btn) {
         const input = document.getElementById(id);
         const icon = btn.querySelector('i');
