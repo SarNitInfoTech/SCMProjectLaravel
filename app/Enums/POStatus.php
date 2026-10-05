@@ -8,6 +8,7 @@ enum POStatus: string
     case PARTIALLY_RECEIVED = 'Partially Received';
     case COMPLETED = 'Completed';
     case CLOSED = 'Closed';
+    case CLOSE = 'Close';
     case REOPENED = 'Reopened';
     case CANCEL = 'Cancel';
     case PENDING = 'Pending';

@@ -341,10 +341,16 @@ class PORegisterController extends Controller
         );
     }
 
-    public function createInvoiceById(Request $request, int $id)
+    public function createInvoiceById(Request $request, $id)
     {
         Gate::authorize('pos.edit');
-        $po = DB::table('po_registers')->where('id', $id)->firstOrFail();
+        $po = DB::table('po_registers')->where('id', $id)->first();
+        if (!$po) {
+            $po = DB::table('po_registers')->where('indent_id', (string)$id)->orderByDesc('id')->first();
+        }
+        if (!$po) {
+            return redirect()->route('po-register.index')->with('warning', "Purchase Order #{$id} not found.");
+        }
 
         $indent = DB::table('indent_registers')
             ->where('indent_id', $po->indent_id)
@@ -353,7 +359,7 @@ class PORegisterController extends Controller
         // Extract items specifically ordered in THIS PO
         $poItems = [];
         if (!empty($po->item_description)) {
-            $decoded = json_decode($po->item_description, true);
+            $decoded = is_array($po->item_description) ? $po->item_description : json_decode($po->item_description, true);
             if (is_array($decoded)) {
                 foreach ($decoded as $entry) {
                     if (is_array($entry) && isset($entry['description'])) {
@@ -387,14 +393,19 @@ class PORegisterController extends Controller
                             'quantity_cancelled' => $cancelled,
                             'quantity_balance'   => round(max(0, $ordered - ($received + $cancelled)), 4),
                         ];
+                    } elseif (is_string($entry)) {
+                        $poItems[] = [
+                            'description'        => $entry,
+                            'unit'               => '',
+                            'po_quantity'        => 1,
+                            'quantity_required'  => 1,
+                            'quantity_received'  => 0,
+                            'quantity_cancelled' => 0,
+                            'quantity_balance'   => 1,
+                        ];
                     }
                 }
-            }
-        }
-
-        // Fallback: If po items were empty or plain string, extract from po item_description or indent items
-        if (empty($poItems)) {
-            if (!empty($po->item_description) && is_string($po->item_description)) {
+            } elseif (is_string($po->item_description)) {
                 $poItems[] = [
                     'description'        => $po->item_description,
                     'unit'               => '',
@@ -404,7 +415,12 @@ class PORegisterController extends Controller
                     'quantity_cancelled' => 0,
                     'quantity_balance'   => 1,
                 ];
-            } elseif ($indent && !empty($indent->items_description)) {
+            }
+        }
+
+        // Fallback: If po items were empty or plain string, extract from indent items
+        if (empty($poItems)) {
+            if ($indent && !empty($indent->items_description)) {
                 $indDecoded = json_decode($indent->items_description, true);
                 if (is_array($indDecoded)) {
                     foreach ($indDecoded as $indIt) {
@@ -428,20 +444,26 @@ class PORegisterController extends Controller
             }
         }
 
+        $departmentName = Department::find($po->department_id)?->name ?? $po->department_id ?? '-';
+
         return view(
             'pages.indent.indentPOForm.addInvoiceIndentPOForm.addInvoiceIndentPOForm', [
-                'po'          => $po,
-                'indent'      => $indent,
-                'indentItems' => $poItems,
+                'po'              => $po,
+                'indent'          => $indent,
+                'indentItems'     => $poItems,
+                'department_name' => $departmentName,
             ]
         );
     }
 
-    public function updateInvoice(Request $request, int $id)
+    public function updateInvoice(Request $request, $id)
     {
         Gate::authorize('pos.edit');
 
         $po = DB::table('po_registers')->where('id', $id)->first();
+        if (!$po) {
+            $po = DB::table('po_registers')->where('indent_id', (string)$id)->orderByDesc('id')->first();
+        }
         if (!$po) {
             return back()->with('warning', 'Purchase Order not found.');
         }
@@ -452,23 +474,28 @@ class PORegisterController extends Controller
         }
 
         $validated = $request->validate([
-            'invoice_date'   => 'nullable|date',
-            'receiving_date' => 'nullable|date',
-            'delay_in_days'  => 'nullable|integer',
-            'store_indent_no'=> 'nullable|string|max:255',
-            'invoice'        => 'nullable|string|max:255',
-            'items'          => 'nullable|array',
+            'invoice_date'    => 'nullable|date',
+            'receiving_date'  => 'nullable|date',
+            'delay_in_days'   => 'nullable|integer|min:0',
+            'store_indent_no' => 'nullable|string|max:255',
+            'invoice'         => 'nullable|string|max:255',
+            'items'           => 'nullable|array',
         ]);
 
-        $fmt = fn($k) => $request->filled($k)
-            ? Carbon::parse($request->input($k))->format('Y-m-d')
-            : null;
+        $fmt = function ($k) use ($request) {
+            if (!$request->filled($k)) return null;
+            try {
+                return Carbon::parse($request->input($k))->format('Y-m-d');
+            } catch (\Throwable $e) {
+                return null;
+            }
+        };
 
         $data = ['updated_at' => now()];
 
         if ($request->has('invoice_date'))   $data['invoice_date']   = $fmt('invoice_date');
         if ($request->has('receiving_date')) $data['receiving_date'] = $fmt('receiving_date');
-        if ($request->has('delay_in_days'))  $data['delay_in_days']  = $request->input('delay_in_days');
+        if ($request->has('delay_in_days'))  $data['delay_in_days']  = $request->filled('delay_in_days') ? (int)$request->input('delay_in_days') : null;
         
         $invNo = $request->input('store_indent_no') ?: $request->input('invoice');
         if ($request->has('store_indent_no') || $request->has('invoice')) {
@@ -476,45 +503,55 @@ class PORegisterController extends Controller
             $data['invoice'] = $invNo;
         }
 
-        // Update item_description JSON in po_registers for THIS PO with received & cancelled quantities
+        // Process submitted items and update item_description JSON
         $updatedPoItems = [];
         if ($request->has('items') && is_array($request->input('items'))) {
             $submittedItems = $request->input('items');
-            if (!empty($po->item_description)) {
-                $poItemDesc = json_decode($po->item_description, true);
-                if (is_array($poItemDesc)) {
-                    foreach ($poItemDesc as $pItem) {
-                        $pDesc = is_array($pItem) ? ($pItem['description'] ?? '') : (string)$pItem;
-                        $foundMatch = null;
-                        foreach ($submittedItems as $sub) {
-                            if (isset($sub['description']) && mb_strtolower(trim($sub['description'])) === mb_strtolower(trim($pDesc))) {
-                                $foundMatch = $sub;
-                                break;
-                            }
-                        }
-                        if (is_array($pItem)) {
-                            if ($foundMatch) {
-                                $req = (float)($pItem['quantity'] ?? $pItem['po_quantity'] ?? 1);
-                                $recRaw = (float)($foundMatch['received'] ?? 0);
-                                $cancRaw = (float)($foundMatch['cancelled'] ?? 0);
-                                $rec = $req > 0 ? min($req, max(0, $recRaw)) : max(0, $recRaw);
-                                $canc = $req > 0 ? min(max(0, $req - $rec), max(0, $cancRaw)) : max(0, $cancRaw);
 
-                                $pItem['quantity_received']  = round($rec, 4);
-                                $pItem['quantity_cancelled'] = round($canc, 4);
-                            }
-                            $updatedPoItems[] = $pItem;
-                        } else {
-                            $updatedPoItems[] = [
-                                'description'        => $pDesc,
-                                'quantity'           => 1,
-                                'quantity_received'  => $foundMatch ? (float)($foundMatch['received'] ?? 0) : 0,
-                                'quantity_cancelled' => $foundMatch ? (float)($foundMatch['cancelled'] ?? 0) : 0,
-                            ];
+            // Build map of existing items for this PO
+            $existingPoItemsMap = [];
+            if (!empty($po->item_description)) {
+                $decoded = is_array($po->item_description) ? $po->item_description : json_decode($po->item_description, true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $pItem) {
+                        $desc = is_array($pItem) ? ($pItem['description'] ?? '') : (string)$pItem;
+                        $k = mb_strtolower(trim($desc));
+                        if ($k !== '') {
+                            $existingPoItemsMap[$k] = is_array($pItem) ? $pItem : ['description' => $desc];
                         }
                     }
-                    $data['item_description'] = json_encode($updatedPoItems);
                 }
+            }
+
+            foreach ($submittedItems as $sub) {
+                if (!is_array($sub) || empty($sub['description'])) continue;
+                $desc = trim($sub['description']);
+                $dk   = mb_strtolower($desc);
+                $orig = $existingPoItemsMap[$dk] ?? [];
+
+                $req     = (float)($sub['required'] ?? $orig['quantity'] ?? $orig['po_quantity'] ?? 1);
+                $recRaw  = (float)($sub['received'] ?? 0);
+                $cancRaw = (float)($sub['cancelled'] ?? 0);
+                $unit    = $sub['unit'] ?? ($orig['unit'] ?? '');
+
+                $rec  = $req > 0 ? min($req, max(0, $recRaw)) : max(0, $recRaw);
+                $canc = $req > 0 ? min(max(0, $req - $rec), max(0, $cancRaw)) : max(0, $cancRaw);
+                $bal  = round(max(0, $req - ($rec + $canc)), 4);
+
+                $updatedPoItems[] = [
+                    'description'        => $desc,
+                    'unit'               => $unit,
+                    'quantity'           => $req,
+                    'po_quantity'        => $req,
+                    'quantity_required'  => $req,
+                    'quantity_received'  => round($rec, 4),
+                    'quantity_cancelled' => round($canc, 4),
+                    'quantity_balance'   => $bal,
+                ];
+            }
+
+            if (!empty($updatedPoItems)) {
+                $data['item_description'] = json_encode($updatedPoItems);
             }
         }
 
@@ -536,7 +573,7 @@ class PORegisterController extends Controller
         $prevStatus = $po->status;
         $newPoStatus = 'Open';
         if ($totRec > 0 || $totCanc > 0) {
-            if ($totOrd > 0 && ($totRec + $totCanc) >= $totOrd) {
+            if ($totOrd > 0 && ($totRec + $totCanc) >= $totOrd - 0.0001) {
                 $newPoStatus = 'Completed';
             } else {
                 $newPoStatus = 'Partially Received';
@@ -544,38 +581,40 @@ class PORegisterController extends Controller
         }
 
         $data['status'] = $newPoStatus;
-        DB::table('po_registers')->where('id', $id)->update($data);
+        DB::table('po_registers')->where('id', $po->id)->update($data);
 
-        self::logPOAction($id, 'receipt_added', $prevStatus, $newPoStatus, null, ['items' => $itemsToEvaluate]);
+        self::logPOAction($po->id, 'receipt_added', $prevStatus, $newPoStatus, null, [
+            'invoice' => $invNo,
+            'items'   => $itemsToEvaluate
+        ]);
 
         // Sync item received quantities to indent_registers
-        if ($po && $po->indent_id && $request->has('items') && is_array($request->input('items'))) {
+        if ($po->indent_id && !empty($updatedPoItems)) {
             $indent = DB::table('indent_registers')
                 ->where('indent_id', $po->indent_id)
                 ->first();
 
             if ($indent && !empty($indent->items_description)) {
                 $existingItems = json_decode($indent->items_description, true) ?? [];
-                $submittedItems = $request->input('items');
-
                 $updatedItems = [];
                 $allCompleted = true;
 
                 foreach ($existingItems as $ex) {
                     $desc = is_array($ex) ? ($ex['description'] ?? '') : (string)$ex;
+                    $dk = mb_strtolower(trim($desc));
                     $foundMatch = null;
-                    foreach ($submittedItems as $sub) {
-                        if (isset($sub['description']) && mb_strtolower(trim($sub['description'])) === mb_strtolower(trim($desc))) {
+                    foreach ($updatedPoItems as $sub) {
+                        if (mb_strtolower(trim($sub['description'])) === $dk) {
                             $foundMatch = $sub;
                             break;
                         }
                     }
 
-                    $req = (float)(is_array($ex) ? ($ex['quantity_required'] ?? ($foundMatch['required'] ?? 1)) : ($foundMatch['required'] ?? 1));
+                    $req = (float)(is_array($ex) ? ($ex['quantity_required'] ?? ($foundMatch['quantity_required'] ?? 1)) : 1);
                     $exRec = (float)(is_array($ex) ? ($ex['quantity_received'] ?? 0) : 0);
                     $exCanc = (float)(is_array($ex) ? ($ex['quantity_cancelled'] ?? 0) : 0);
-                    $recRaw = max($exRec, $foundMatch ? (float)($foundMatch['received'] ?? 0) : 0);
-                    $cancRaw = max($exCanc, $foundMatch ? (float)($foundMatch['cancelled'] ?? 0) : 0);
+                    $recRaw = max($exRec, $foundMatch ? (float)($foundMatch['quantity_received'] ?? 0) : 0);
+                    $cancRaw = max($exCanc, $foundMatch ? (float)($foundMatch['quantity_cancelled'] ?? 0) : 0);
 
                     // Clamp received and cancelled so they never exceed required quantity
                     $rec = $req > 0 ? min($req, max(0, $recRaw)) : max(0, $recRaw);
@@ -610,12 +649,9 @@ class PORegisterController extends Controller
             }
         }
 
-        $deptId = $po->department_id ?: (DB::table('indent_registers')->whereRaw('CAST(indent_id AS CHAR) = ?', [(string)$po->indent_id])->value('indent_department') ?? '1');
-
-        return redirect()->route('po-register.viewByIndent', [
-            'indent_id'     => $po->indent_id,
-            'department_id' => $deptId,
-        ])->with('success', 'Invoice & Item receiving info saved successfully.');
+        return redirect()
+            ->route('indentroview.createInvoiceById', $po->id)
+            ->with('success', 'Invoice & Goods Receipt updated successfully.');
     }
 
     public function edit(int $id)
@@ -740,8 +776,8 @@ class PORegisterController extends Controller
     {
         Gate::authorize('pos.create');
         $validated = $request->validate([
-            'indent_id' => 'nullable|string',
-            'department_id' => 'nullable|string',
+            'indent_id' => 'nullable',
+            'department_id' => 'nullable',
             'po_date' => 'nullable|date',
             'party_name' => 'nullable|string',
             'po_wo_no' => 'nullable|string',
@@ -1324,8 +1360,8 @@ class PORegisterController extends Controller
     {
         Gate::authorize('pos.edit');
         $data = $request->validate([
-            'indent_id' => ['required', 'string'],
-            'department_id' => ['required', 'string'],
+            'indent_id' => ['required'],
+            'department_id' => ['required'],
         ]);
 
         $indentId = (string) $data['indent_id'];
@@ -1353,8 +1389,6 @@ class PORegisterController extends Controller
             return [$poRows, $indentRows];
         });
 
-        self::syncIndentItemsBalance($indentId);
-
         $total = $poRows + $indentRows;
 
         return back()->with(
@@ -1368,8 +1402,8 @@ class PORegisterController extends Controller
     {
         Gate::authorize('pos.edit');
         $data = $request->validate([
-            'indent_id' => ['required', 'string'],
-            'department_id' => ['required', 'string'],
+            'indent_id' => ['required'],
+            'department_id' => ['required'],
         ]);
 
         $indentId = (string) $data['indent_id'];
@@ -1396,8 +1430,6 @@ class PORegisterController extends Controller
             return [$poRows, $indentRows];
         });
 
-        self::syncIndentItemsBalance($indentId);
-
         $total = $poRows + $indentRows;
 
         return back()->with(
@@ -1411,8 +1443,8 @@ class PORegisterController extends Controller
     {
         Gate::authorize('pos.edit');
         $data = $request->validate([
-            'indent_id' => ['required', 'string'],
-            'department_id' => ['required', 'string'],
+            'indent_id' => ['required'],
+            'department_id' => ['required'],
         ]);
 
         $indentId = (string) $data['indent_id'];

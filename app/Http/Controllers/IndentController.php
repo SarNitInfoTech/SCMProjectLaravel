@@ -439,7 +439,13 @@ public function create(Request $request)
 
     public function editForm($id)
     {
-        $indent = IndentRegister::findOrFail($id);
+        $indent = IndentRegister::find($id);
+        if (!$indent) {
+            $indent = IndentRegister::where('indent_id', (string)$id)->first();
+        }
+        if (!$indent) {
+            abort(404, 'Indent not found.');
+        }
 
         $departments = Department::all();
         $projects = Project::all();

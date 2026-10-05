@@ -15,6 +15,11 @@ class SearchHelper
      * @param array $columns
      * @return QueryBuilder|EloquentBuilder
      */
+    public static function applySearch($query, ?string $search, array $columns)
+    {
+        return self::applyFuzzySearch($query, $search, $columns);
+    }
+
     public static function applyFuzzySearch($query, ?string $search, array $columns)
     {
         if (empty($search) || empty($columns)) {

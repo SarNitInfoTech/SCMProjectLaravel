@@ -143,8 +143,8 @@ class ReportController extends Controller
         $query = IndentRegister::query();
         $filterParts = [];
 
-        if ($request->filled('search')) {
-            $search = trim($request->get('search'));
+        $search = trim($request->get('search') ?: $request->get('q') ?: '');
+        if ($search !== '') {
             $filterParts[] = "Search: '{$search}'";
             SearchHelper::applySearch($query, $search, [
                 'indent_id',

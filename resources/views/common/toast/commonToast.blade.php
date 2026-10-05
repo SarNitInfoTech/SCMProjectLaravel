@@ -1,3 +1,22 @@
+{{-- Success Alert --}}
+@if(session('success'))
+<div class="fixed top-5 z-50" style="right: 10px">
+    <div class="bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-xl flex items-start justify-between space-x-4 w-full max-w-sm" style="border-left: 4px solid #059669;">
+        <div class="text-sm font-semibold flex items-center gap-2">
+            <svg style="width: 18px; height: 18px; flex-shrink: 0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>{{ session('success') }}</span>
+        </div>
+        <button onclick="this.closest('div').parentElement.remove()" class="text-white hover:text-white/80">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+</div>
+@endif
+
 {{-- Warning Alert --}}
 @if(session('warning'))
 <div class="fixed top-5 z-50" style="right: 10px">
