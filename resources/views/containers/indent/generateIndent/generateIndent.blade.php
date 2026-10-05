@@ -43,7 +43,7 @@
                     <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8;">
                         <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
                     </span>
-                    <input type="number" name="indent_id" id="indent_id" required min="0" placeholder="Enter Indent Ticket ID"
+                    <input type="text" name="indent_id" id="indent_id" required placeholder="Enter Indent Ticket ID (e.g., IND-101, CSE-04)"
                            style="width: 100%; padding: 10px 14px 10px 38px; background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13px; font-weight: 600; color: #0F172A; outline: none; box-sizing: border-box;">
                 </div>
                 @error('indent_id')
