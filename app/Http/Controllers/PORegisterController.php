@@ -740,7 +740,7 @@ class PORegisterController extends Controller
     {
         Gate::authorize('pos.create');
         $validated = $request->validate([
-            'indent_id' => 'nullable|integer',
+            'indent_id' => 'nullable|string',
             'department_id' => 'nullable|string',
             'po_date' => 'nullable|date',
             'party_name' => 'nullable|string',
@@ -1324,11 +1324,11 @@ class PORegisterController extends Controller
     {
         Gate::authorize('pos.edit');
         $data = $request->validate([
-            'indent_id' => ['required', 'integer'],  // indent_id (numeric in your flow)
-            'department_id' => ['required', 'string'],  // department code like "NTC"
+            'indent_id' => ['required', 'string'],
+            'department_id' => ['required', 'string'],
         ]);
 
-        $indentId = (int) $data['indent_id'];
+        $indentId = (string) $data['indent_id'];
         $departmentId = is_numeric($data['department_id']) ? (int)$data['department_id'] : $data['department_id'];
 
         [$poRows, $indentRows] = DB::transaction(function () use ($indentId, $departmentId) {
@@ -1368,11 +1368,11 @@ class PORegisterController extends Controller
     {
         Gate::authorize('pos.edit');
         $data = $request->validate([
-            'indent_id' => ['required', 'integer'],
+            'indent_id' => ['required', 'string'],
             'department_id' => ['required', 'string'],
         ]);
 
-        $indentId = (int) $data['indent_id'];
+        $indentId = (string) $data['indent_id'];
         $departmentId = is_numeric($data['department_id']) ? (int)$data['department_id'] : $data['department_id'];
 
         [$poRows, $indentRows] = DB::transaction(function () use ($indentId, $departmentId) {
@@ -1411,11 +1411,11 @@ class PORegisterController extends Controller
     {
         Gate::authorize('pos.edit');
         $data = $request->validate([
-            'indent_id' => ['required', 'integer'],
+            'indent_id' => ['required', 'string'],
             'department_id' => ['required', 'string'],
         ]);
 
-        $indentId = (int) $data['indent_id'];
+        $indentId = (string) $data['indent_id'];
         $departmentId = is_numeric($data['department_id']) ? (int)$data['department_id'] : $data['department_id'];
 
         [$poRows, $indentRows] = DB::transaction(function () use ($indentId, $departmentId) {
