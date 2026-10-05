@@ -251,17 +251,17 @@
     /* Submit Button */
     .btn-submit-action {
         width: 100% !important;
-        height: 46px !important;
+        height: 48px !important;
         background: #1d4ed8 !important;
         border: none !important;
-        border-radius: 10px !important;
+        border-radius: 12px !important;
         color: #ffffff !important;
-        font-size: 0.92rem !important;
-        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 8px !important;
+        gap: 10px !important;
         cursor: pointer !important;
         box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35) !important;
         transition: all 0.2s ease !important;
@@ -270,7 +270,7 @@
 
     .btn-submit-action:hover {
         background: #1e40af !important;
-        box-shadow: 0 6px 18px rgba(29, 78, 216, 0.45) !important;
+        box-shadow: 0 6px 20px rgba(29, 78, 216, 0.45) !important;
         transform: translateY(-1px);
     }
 
@@ -280,16 +280,19 @@
 
     /* Contact Admin Help */
     .contact-help-text {
-        font-size: 0.74rem;
-        color: #64748b;
-        margin-top: 1.5rem;
+        font-size: 0.8rem;
+        color: #475569;
+        font-weight: 500;
+        margin-top: 2rem;
+        margin-bottom: 0.25rem;
         text-align: center;
     }
 
     .contact-help-text a {
-        color: #2563eb;
+        color: #1d4ed8;
         font-weight: 700;
         text-decoration: none;
+        margin-left: 2px;
     }
 
     .contact-help-text a:hover {
@@ -300,8 +303,8 @@
     .security-strip {
         width: 100%;
         background-color: #f8fafc;
-        border-top: 1px solid #eef2f6;
-        padding: 0.85rem 1rem;
+        border-top: 1px solid #f1f5f9;
+        padding: 0.95rem 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -310,15 +313,16 @@
     }
 
     .security-strip i {
-        color: #10b981;
-        font-size: 1rem;
+        color: #059669;
+        font-size: 1.1rem;
+        font-weight: bold;
     }
 
     .security-strip span {
         font-size: 0.72rem;
-        font-weight: 700;
+        font-weight: 800;
         color: #475569;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
     }
 
@@ -420,17 +424,23 @@
             <!-- Submit button -->
             <button type="submit" class="btn-submit-action">
                 <span>Sign In to PMS</span>
-                <i class="ri-arrow-right-line" style="font-size: 1.1rem; font-weight: bold;"></i>
+                <i class="ri-arrow-right-line" style="font-size: 1.15rem; font-weight: bold;"></i>
             </button>
         </form>
 
         @include("common.toast.commonToast")
+
+        <!-- Help / Admin Contact -->
+        <div class="contact-help-text">
+            Don’t have an account or need access? 
+            <a href="mailto:admin@nitratextile.org">Contact System Admin</a>
+        </div>
     </div>
 
     <!-- Security Footer Strip -->
     <div class="security-strip">
         <i class="ri-shield-check-line"></i>
-        <span>Secure Purchase &amp; Inventory Portal</span>
+        <span>AUTHORIZED PERSONNEL &amp; RESEARCHER ACCESS ONLY</span>
     </div>
 </div>
 
