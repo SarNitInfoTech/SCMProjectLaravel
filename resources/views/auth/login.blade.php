@@ -424,23 +424,25 @@
             <!-- Submit button -->
             <button type="submit" class="btn-submit-action">
                 <span>Sign In to PMS</span>
-                <i class="ri-arrow-right-line" style="font-size: 1.15rem; font-weight: bold;"></i>
+                <i class="ri-arrow-right-line" style="font-size: 1.1rem; font-weight: bold;"></i>
             </button>
         </form>
 
         @include("common.toast.commonToast")
 
         <!-- Help / Admin Contact -->
-        <div class="contact-help-text">
+        <div class="contact-help-text" style="display: block !important; visibility: visible !important; opacity: 1 !important; margin-top: 1.75rem !important; margin-bottom: 0.25rem !important; text-align: center !important; font-size: 0.82rem !important; color: #475569 !important; font-weight: 500 !important;">
             Don’t have an account or need access? 
-            <a href="mailto:admin@nitratextile.org">Contact System Admin</a>
+            <a href="mailto:admin@nitratextile.org" style="color: #1d4ed8 !important; font-weight: 700 !important; text-decoration: none !important; display: inline-block !important; margin-left: 3px !important;">
+                Contact System Admin
+            </a>
         </div>
     </div>
 
     <!-- Security Footer Strip -->
     <div class="security-strip">
         <i class="ri-shield-check-line"></i>
-        <span>AUTHORIZED PERSONNEL &amp; RESEARCHER ACCESS ONLY</span>
+        <span>Secure Purchase & Inventory Portal</span>
     </div>
 </div>
 
