@@ -1112,7 +1112,7 @@ class PORegisterController extends Controller
         }
 
         $validated = $request->validate([
-            'indent_id'          => 'nullable|integer',
+            'indent_id'          => 'nullable|string',
             'department_id'      => 'nullable|string',
             'status'             => 'nullable|string',
             'po_date'            => 'nullable|date',
@@ -1277,12 +1277,12 @@ class PORegisterController extends Controller
         Gate::authorize('pos.edit');
         // Expect: id (indent_id), department (department_id), action
         $data = $request->validate([
-            'id' => ['required', 'integer'],  // indent_id
+            'id' => ['required', 'string'],  // indent_id
             'department' => ['required', 'string'],  // department_id (string in your schema)
             'action' => ['required', Rule::in(['close', 'cancel', 'pending', 'Close', 'Cancel', 'Pending'])],
         ]);
 
-        $indentId = (int) $data['id'];
+        $indentId = (string) $data['id'];
         $departmentId = (string) $data['department'];
         $newStatus = match (strtolower($data['action'])) {
             'cancel' => 'Cancel',
