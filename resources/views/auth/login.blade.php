@@ -447,7 +447,7 @@
             <polyline points="9 12 11 14 15 10"></polyline>
         </svg>
         <span style="font-size: 0.76rem; font-weight: 800; color: #475569; letter-spacing: 0.05em; text-transform: uppercase;">
-            AUTHORIZED PERSONNEL &amp; RESEARCHER ACCESS ONLY
+            Secure Purchase & Inventory Portal
         </span>
     </div>
 </div>
