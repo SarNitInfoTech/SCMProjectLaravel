@@ -570,11 +570,14 @@
         inset: 0 !important;
         background: rgba(15, 23, 42, 0.5) !important;
         backdrop-filter: blur(4px) !important;
-        display: flex !important;
+        display: none !important;
         align-items: center !important;
         justify-content: center !important;
         z-index: 99999 !important;
         padding: 1rem !important;
+    }
+    .custom-modal-backdrop.is-open {
+        display: flex !important;
     }
     .custom-modal-card {
         background: #ffffff !important;
@@ -597,28 +600,28 @@
     function openModal(id) {
         const modal = document.getElementById(id);
         if (modal) {
-            modal.style.display = 'flex';
+            modal.classList.add('is-open');
         }
     }
 
     function closeModal(id) {
         const modal = document.getElementById(id);
         if (modal) {
-            modal.style.display = 'none';
+            modal.classList.remove('is-open');
         }
     }
 
     // Close when clicking on backdrop
     window.addEventListener('click', function(e) {
         if (e.target.classList.contains('custom-modal-backdrop')) {
-            e.target.style.display = 'none';
+            e.target.classList.remove('is-open');
         }
     });
 
     // Close on Escape key
     window.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            document.querySelectorAll('.custom-modal-backdrop').forEach(m => m.style.display = 'none');
+            document.querySelectorAll('.custom-modal-backdrop').forEach(m => m.classList.remove('is-open'));
         }
     });
 
