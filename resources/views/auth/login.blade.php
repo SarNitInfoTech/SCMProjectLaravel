@@ -425,12 +425,6 @@
         </form>
 
         @include("common.toast.commonToast")
-
-        <!-- Help / Admin Contact -->
-        <div class="contact-help-text">
-            Don't have an account or need access? 
-            <a href="mailto:admin@nitratextile.org">Contact System Admin</a>
-        </div>
     </div>
 
     <!-- Security Footer Strip -->
