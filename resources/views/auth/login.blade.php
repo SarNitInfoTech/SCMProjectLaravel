@@ -427,26 +427,32 @@
             <!-- Submit button -->
             <button type="submit" class="btn-submit-action">
                 <span>Sign In to PMS</span>
-                <i class="ri-arrow-right-line" style="font-size: 1.1rem; font-weight: bold;"></i>
+                <i class="ri-arrow-right-line" style="font-size: 1.15rem; font-weight: bold;"></i>
             </button>
         </form>
 
-       
+        @include("common.toast.commonToast")
 
-        <!-- Help / Admin Contact -->
-        <div class="contact-help-text" style="display: block !important; visibility: visible !important; opacity: 1 !important; margin-top: 1.75rem !important; margin-bottom: 0.25rem !important; text-align: center !important; font-size: 0.82rem !important; color: #475569 !important; font-weight: 500 !important;">
-            Don’t have an account or need access? 
-            <a href="mailto:admin@nitratextile.org" style="color: #1d4ed8 !important; font-weight: 700 !important; text-decoration: none !important; display: inline-block !important; margin-left: 3px !important;">
-                Contact System Admin
-            </a>
+        <!-- Subtle Divider & Help / Admin Contact -->
+        <div style="width: 100%; border-top: 1px solid #f1f5f9; margin-top: 28px; padding-top: 22px; text-align: center;">
+            <p style="font-size: 0.85rem; color: #475569; font-weight: 500; margin: 0; line-height: 1.4;">
+                Don’t have an account or need access? 
+                <a href="mailto:admin@nitratextile.org" style="color: #2563eb; font-weight: 700; text-decoration: none; margin-left: 4px;">
+                    Contact System Admin
+                </a>
+            </p>
         </div>
-         @include("common.toast.commonToast")
     </div>
 
     <!-- Security Footer Strip -->
-    <div class="security-strip">
-        <i class="ri-shield-check-line"></i>
-        <span>Secure Purchase & Inventory Portal</span>
+    <div style="width: 100%; background-color: #f8fafc; border-top: 1px solid #f1f5f9; padding: 16px 20px; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box;">
+        <svg style="width: 18px; height: 18px; color: #059669; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <polyline points="9 12 11 14 15 10"></polyline>
+        </svg>
+        <span style="font-size: 0.76rem; font-weight: 800; color: #475569; letter-spacing: 0.05em; text-transform: uppercase;">
+            AUTHORIZED PERSONNEL &amp; RESEARCHER ACCESS ONLY
+        </span>
     </div>
 </div>
 
